@@ -1,0 +1,118 @@
+import type { Maybe } from "Maybe"
+
+import { equals, when } from "Function"
+import IO from "IO"
+import List from "List"
+import { Just, Nothing, fromMaybe, isJust } from "Maybe"
+import Print from "PrettyPrint"
+import String from "String"
+
+
+
+export alias Scope = Maybe (List String)
+export type Tag = Tag(Scope, String)
+
+scopedTag :: Scope -> String -> Tag
+export scopedTag = Tag
+
+export tag = Tag(Nothing)
+
+isScoped :: Tag -> Boolean
+isScoped = where {
+  Tag(Just(_), _) =>
+    true
+
+  _ =>
+    false
+}
+
+getScope :: Tag -> Scope
+getScope = where {
+  Tag(scope, _) =>
+    scope
+}
+
+getId :: Tag -> String
+getId = where {
+  Tag(_, name) =>
+    name
+}
+
+// can we compare Maybes with syntax?
+scopeEqual :: Scope -> Scope -> Boolean
+scopeEqual = (a, b) => where(#[a, b]) {
+  #[Just(scope1), Just(scope2)] =>
+    scope1 == scope2
+
+  _ =>
+    false
+}
+
+hasScope :: Scope -> Tag -> Boolean
+hasScope = (testScope, t) => pipe(
+  getScope,
+  scopeEqual(testScope),
+)(t)
+
+checkScopes :: List Scope -> Tag -> Boolean
+checkScopes = (scopes, t) => List.any(hasScope($, t), scopes)
+
+serializeTag :: Tag -> String
+serializeTag = (t) => {
+  scope = pipe(
+    getScope,
+    map(
+      pipe(
+        String.join(":"),
+        mappend(":"),
+      ),
+    ),
+    fromMaybe(""),
+  )(t)
+  name = getId(t)
+  return scope ++ name
+}
+
+// log :: Show a => List (Maybe String) -> Tag -> a -> {}
+export log = (scopes, t, thing) => if (checkScopes(scopes, t)) do {
+  IO.pTrace(serializeTag(t), thing)
+  return thing
+} else {
+  thing
+}
+
+// parseScopes :: String -> List (Maybe (List String))
+export parseScopes = pipe(
+  String.split(","),
+  map(
+    pipe(
+      String.trim,
+      String.split(":"),
+      (list) => {
+        len = List.length(list)
+        return if (len == 1) {
+          Tag(
+            Nothing,
+            pipe(
+              List.first,
+              fromMaybe(""),
+            )(list),
+          )
+        } else do {
+          lead = List.init(list)
+          name = pipe(
+            List.last,
+            fromMaybe(""),
+          )(list)
+          return Tag(Just(lead), name)
+        }
+      },
+    ),
+  ),
+  List.reject(
+    pipe(
+      getId,
+      equals(""),
+    ),
+  ),
+)

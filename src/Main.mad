@@ -1,0 +1,23 @@
+import IO from "IO"
+import String from "String"
+
+import Billet from "@/Billet"
+
+
+
+main = () => {
+  commaDelimited = String.split(",")
+  IO.pTrace("test 1", commaDelimited("mood:happy,dope:nice"))
+  IO.pTrace("test 2", commaDelimited("mood:happy"))
+  commaColonDelimited = pipe(
+    String.split(","),
+    map(String.split(":")),
+  )
+  IO.pTrace("test 3", commaColonDelimited("mood:happy,dope:nice"))
+  IO.pTrace("test 4", commaColonDelimited("mood:happy"))
+  IO.pTrace("test 5", commaColonDelimited("mood:happy,root"))
+  IO.pTrace("parseScopes", Billet.parseScopes("mood:happy,dope:nice,awesome"))
+  IO.pTrace("parseScopes 2", Billet.parseScopes(""))
+  // scopes = parseScopes("mood:happy,nested:values:are:easy")
+  // IO.pTrace("tele", scopes)
+}

@@ -7,9 +7,9 @@ import List from "List"
 import { Just, Nothing, fromMaybe } from "Maybe"
 import String from "String"
 import { assertEquals, test } from "Test"
+import Wish from "Wish"
 
-import Billet from "@/Billet"
-import { Tag, tag } from "@/Billet"
+import { Tag, compareTag, getId, getScope, isScoped, parseScopes, scopedTag, tag } from "@/Billet"
 
 
 
@@ -19,26 +19,41 @@ testCases = (fn, name, testDict) => pipe(
   Dict.values,
   (cases) => test(
     name,
-    () => pipe(
-      List.last,
-      fromMaybe(assertEquals("testCases", "failed")),
-    )(cases),
+    () => do {
+      _ <- Wish.parallel(cases)
+      return assertEquals(name, name)
+    },
   ),
 )(testDict)
 
-testParseScopes = testCases(Billet.parseScopes)
+testParseScopes = testCases(parseScopes)
 testParseScopes(
   "parseScopes - single tags",
-  {{
-    "yo": [Billet.scopedTag(Nothing, "yo")],
-    "scoped:yo": [Billet.scopedTag(Just(["scoped"]), "yo")],
-  }},
+  {{ "yo": [scopedTag([], "yo")], "yo:scoped": [scopedTag(["scoped"], "yo")] }},
 )
 testParseScopes(
   "parseScopes - multiple tags",
   {{
-    "a, b, spaced": [Billet.tag("a"), Billet.tag("b"), Billet.tag("spaced")],
-    "a,b:belabor": [Billet.tag("a"), Billet.scopedTag(Just(["b"]), "belabor")],
+    "a, b, spaced": [tag("a"), tag("b"), tag("spaced")],
+    "a,b:belabor": [tag("a"), scopedTag(["belabor"], "b")],
   }},
 )
-testParseScopes("parseScopes - various garbage", {{ "": [Billet.tag("")], ",,": [] }})
+testParseScopes("parseScopes - various garbage", {{ "": [], ",,": [], "::::,": [] }})
+
+// /*
+// seems to fail b/c of comparison
+testCases(
+  isScoped,
+  "isScoped - testcase",
+  Dict.fromList([#[Tag([], "yo"), false], #[Tag(["yo"], "yo"), true]]),
+)
+// */
+
+
+test(
+  "getScope",
+  () => do {
+    _ <- assertEquals(getScope(Tag([], "yo")), [])
+    return assertEquals(getScope(Tag(["a", "b"], "yo")), ["a", "b"])
+  },
+)

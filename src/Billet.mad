@@ -1,5 +1,7 @@
+import type { Comparison } from "Compare"
 import type { Maybe } from "Maybe"
 
+import { EQ, GT, LT } from "Compare"
 import { equals, when } from "Function"
 import IO from "IO"
 import List from "List"
@@ -9,65 +11,90 @@ import String from "String"
 
 
 
-export alias Scope = Maybe (List String)
+export ROOT_SCOPE = "*"
+
+export alias Scope = List String
 export type Tag = Tag(Scope, String)
+
+
+instance Eq Tag {
+  __EQ__ = (a, b) => #[getScope(a), getId(a)] == #[getScope(b), getId(b)]
+}
+instance Comparable Tag {
+  compare = compareTag
+}
 
 scopedTag :: Scope -> String -> Tag
 export scopedTag = Tag
 
-export tag = Tag(Nothing)
+export tag = Tag([])
 
 isScoped :: Tag -> Boolean
-isScoped = where {
-  Tag(Just(_), _) =>
-    true
-
-  _ =>
-    false
+export isScoped = where {
+  Tag(scope, _) =>
+    List.length(scope) > 0
 }
 
 getScope :: Tag -> Scope
-getScope = where {
+export getScope = where {
   Tag(scope, _) =>
     scope
 }
 
+getTopScope :: Tag -> String
+getTopScope = pipe(
+  getScope,
+  List.first,
+  fromMaybe(ROOT_SCOPE),
+)
+
 getId :: Tag -> String
-getId = where {
+export getId = where {
   Tag(_, name) =>
     name
+}
+
+scopeLength :: Tag -> Integer
+export scopeLength = pipe(
+  getScope,
+  List.length,
+)
+
+compareTag :: Tag -> Tag -> Comparison
+export compareTag = (a, b) => {
+  aName = getId(a)
+  bName = getId(b)
+
+  return if (bName == aName) do {
+    sA = scopeLength(a)
+    sB = scopeLength(b)
+    return sA == sB ? EQ : sA > sB ? GT : LT
+  } else {
+    EQ
+  }
 }
 
 // can we compare Maybes with syntax?
 scopeEqual :: Scope -> Scope -> Boolean
 scopeEqual = (a, b) => where(#[a, b]) {
-  #[Just(scope1), Just(scope2)] =>
+  #[scope1, scope2] =>
     scope1 == scope2
-
-  _ =>
-    false
 }
 
 hasScope :: Scope -> Tag -> Boolean
-hasScope = (testScope, t) => pipe(
+export hasScope = (testScope, t) => pipe(
   getScope,
   scopeEqual(testScope),
 )(t)
 
 checkScopes :: List Scope -> Tag -> Boolean
-checkScopes = (scopes, t) => List.any(hasScope($, t), scopes)
+export checkScopes = (scopes, t) => List.any(hasScope($, t), scopes)
 
 serializeTag :: Tag -> String
-serializeTag = (t) => {
+export serializeTag = (t) => {
   scope = pipe(
     getScope,
-    map(
-      pipe(
-        String.join(":"),
-        mappend(":"),
-      ),
-    ),
-    fromMaybe(""),
+    String.join(":"),
   )(t)
   name = getId(t)
   return scope ++ name
@@ -81,32 +108,20 @@ export log = (scopes, t, thing) => if (checkScopes(scopes, t)) do {
   thing
 }
 
-// parseScopes :: String -> List (Maybe (List String))
+firstAsString :: List String -> String
+firstAsString = pipe(
+  List.first,
+  fromMaybe(""),
+)
+
+parseScopes :: String -> List Tag
 export parseScopes = pipe(
   String.split(","),
   map(
     pipe(
       String.trim,
       String.split(":"),
-      (list) => {
-        len = List.length(list)
-        return if (len == 1) {
-          Tag(
-            Nothing,
-            pipe(
-              List.first,
-              fromMaybe(""),
-            )(list),
-          )
-        } else do {
-          lead = List.init(list)
-          name = pipe(
-            List.last,
-            fromMaybe(""),
-          )(list)
-          return Tag(Just(lead), name)
-        }
-      },
+      (list) => Tag(List.length(list) == 1 ? [] : List.tail(list), firstAsString(list)),
     ),
   ),
   List.reject(

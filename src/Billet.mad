@@ -10,7 +10,7 @@ import Print from "PrettyPrint"
 import String from "String"
 import Term from "Terminal"
 
-import { colorFromSeededString } from "@/Color"
+import { seededAnsi } from "@/Color"
 
 
 
@@ -199,7 +199,7 @@ export makeCapturingProcessor = (call, tags, t, thing) => (
 )
 
 makeComposableProcessor :: Show a => Trace a -> List Tag -> Tag -> a -> a
-makeComposableProcessor = (call, tags, t, thing) => pipe(
+export makeComposableProcessor = (call, tags, t, thing) => pipe(
   makeCapturingProcessor(call, tags, t),
   fromMaybe(thing),
 )(thing)
@@ -216,7 +216,7 @@ export makeParsedLogger = makeParsedProcessor(IO.pTrace)
 
 export makeStyledParsedLogger = (seedPrefix, raw) => makeParsedProcessor(
   (t, x) => pipe(
-    colorFromSeededString(seedPrefix),
+    seededAnsi(seedPrefix),
     where {
       #[fg, bg] =>
         pipe(

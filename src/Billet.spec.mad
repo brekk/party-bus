@@ -17,10 +17,9 @@ import {
   hasScope,
   isNegated,
   isScoped,
+  makeCapturingProcessor,
+  makeComposableProcessor,
   makeParsedProcessor,
-  makeRawProcessor,
-  // makeParsedLogger,
-  // makeRawLogger,
   parseTags,
   scopeEqual,
   scopeWithinScope,
@@ -132,7 +131,7 @@ SCOPES = [scopedTag(["deep"], "info"), tag("warn"), tag("log"), scopedTag(["a", 
 test(
   "makeRawLogger",
   () => do {
-    alog = makeRawProcessor(processNothing, SCOPES)
+    alog = makeCapturingProcessor(processNothing, SCOPES)
     _ <- assertEquals(alog(Tag(true, ["deep"], "info"), "[deep] info!"), Just("[deep] info!"))
     _ <- assertEquals(alog(Tag(true, [], "info"), "info info!"), Just("info info!"))
     _ <- assertEquals(alog(Tag(true, [], "unmatched"), "info info!"), Nothing)
@@ -152,14 +151,14 @@ test(
   "makeParsedProcessor",
   () => do {
     alog = makeParsedProcessor(processNothing, SCOPES)
-    _ <- assertEquals(alog("info:deep", "[deep] info!"), Just("[deep] info!"))
-    _ <- assertEquals(alog("info", "information"), Just("information"))
-    _ <- assertEquals(alog("unmatched", "unlogged"), Nothing)
-    _ <- assertEquals(alog("issue:whatever", "skip me!"), Nothing)
-    _ <- assertEquals(alog("info:deep:nested", "info deeply nested!"), Just("info deeply nested!"))
-    _ <- assertEquals(alog("*", "k fun star star!"), Just("k fun star star!"))
-    _ <- assertEquals(alog("info:*", "info star"), Just("info star"))
-    return assertEquals(alog("issue:a:b:*", "issue nested star"), Just("issue nested star"))
+    _ <- assertEquals(alog("info:deep", "[deep] info!"), "[deep] info!")
+    _ <- assertEquals(alog("info", "information"), "information")
+    _ <- assertEquals(alog("unmatched", "unlogged"), "unlogged")
+    _ <- assertEquals(alog("issue:whatever", "skip me!"), "skip me!")
+    _ <- assertEquals(alog("info:deep:nested", "info deeply nested!"), "info deeply nested!")
+    _ <- assertEquals(alog("*", "k fun star star!"), "k fun star star!")
+    _ <- assertEquals(alog("info:*", "info star"), "info star")
+    return assertEquals(alog("issue:a:b:*", "issue nested star"), "issue nested star")
   },
 )
 

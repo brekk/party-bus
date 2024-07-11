@@ -16,20 +16,37 @@ test(
 )
 
 test(
-  "seededANSI",
+  "seededAnsi256Bg",
   () => do {
-    _ <- assertEquals(Color.seededANSI("cool"), 133)
-    _ <- assertEquals(Color.seededANSI("cool"), 133)
-    _ <- assertEquals(Color.seededANSI("nice"), 210)
-    _ <- assertEquals(Color.seededANSI("nice"), 210)
-    _ <- assertEquals(Color.seededANSI("cool"), 133)
-    return assertEquals(Color.seededANSI("cool"), 133)
+    _ <- assertEquals(Color.seededAnsi256Fg("cool"), ["38", "2", "149", "50", "143"])
+    _ <- assertEquals(Color.seededAnsi256Bg("cool"), ["48", "2", "149", "50", "143"])
+    _ <- assertEquals(Color.seededAnsi256Bg("cool"), ["48", "2", "149", "50", "143"])
+    return assertEquals(Color.seededAnsi256Bg("nice"), ["48", "2", "240", "101", "83"])
+  },
+)
+
+test(
+  "seededAnsi8",
+  () => do {
+    _ <- assertEquals(Color.seededAnsi8("cool"), 133)
+    _ <- assertEquals(Color.seededAnsi8("nice"), 210)
+    return assertEquals(Color.seededAnsi8("cool"), 133)
   },
 )
 
 test(
   "seededRGB",
   () => do {
-    return assertEquals(Color.seededRGB("cool"), #[148, 50, 142])
+    return assertEquals(Color.seededRGB("cool"), #[149, 50, 143])
+  },
+)
+test(
+  "seededAnsi",
+  () => {
+    check = Color.seededAnsi("test")
+    return assertEquals(
+      check("cool"),
+      #[["38", "2", "46", "214", "1"], ["48", "2", "209", "41", "254"]],
+    )
   },
 )

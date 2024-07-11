@@ -1,9 +1,6 @@
-import type { Random } from "Random"
-
 import { repeatWith } from "List"
 import Math from "Math"
 import R from "Random"
-import String from "String"
 
 
 
@@ -65,7 +62,7 @@ export seededAnsi256 = (before, str) => pipe(
 export seededAnsi256Bg = seededAnsi256(COLOR_BACKGROUND)
 export seededAnsi256Fg = seededAnsi256(COLOR_FOREGROUND)
 
-export colorFromSeededString = (seedPrefix, str) => pipe(
+export seededAnsi = (seedPrefix, str) => pipe(
   mappend(seedPrefix),
   seededRGB,
   where {

@@ -1,22 +1,46 @@
 import IO from "IO"
-import String from "String"
 
-import Billet from "@/Billet"
+import {
+  Tag,
+  makeParsedLogger,
+  makeRawLogger,
+  makeStyledParsedLogger,
+  scopedTag,
+  tag,
+} from "@/Billet"
 
 
 
 main = () => {
-  // a = Billet.scopedTag(["deeply", "nested", "value"], "a")
-  // IO.pTrace("scoped tag!", #[a, Billet.checkScopes([])])
-  SCOPES = [Billet.scopedTag(["deep"], "info"), Billet.tag("warn"), Billet.tag("log")]
-  alog = Billet.makeRawLogger(SCOPES)
-  alog(Billet.Tag(true, ["deep"], "info"), "[deep] info!")
-  alog(Billet.Tag(true, [], "info"), "info info")
-  alog(Billet.Tag(true, ["deeply", "nested"], "info"), "skipping deeply.nested")
-  alog(Billet.Tag(true, [], "log"), "log")
-  alog(Billet.Tag(true, [], "warning"), "this is skipped")
-  blog = Billet.makeParsedLogger(SCOPES)
+  SCOPES = [
+    scopedTag([], "a"),
+    scopedTag(["deep"], "info"),
+    tag("warn"),
+    tag("log"),
+    scopedTag(["a", "b", "c"], "issue"),
+  ]
+  alog = makeRawLogger(SCOPES)
+  // these are inconvenient at call-time unless partially applied
+  alog(Tag(true, ["deep"], "info"), "[deep] info!")
+  alog(Tag(true, [], "info"), "info info")
+  alog(Tag(true, ["deeply", "nested"], "info"), "skipping deeply.nested")
+  alog(Tag(true, [], "log"), "log")
+  alog(Tag(true, [], "warning"), "this is skipped")
+  // these parse a tag:scope string
+  blog = makeParsedLogger(SCOPES)
   blog("*", "k fun star star!")
   blog("info:deep", "info:deep with parsies!")
   blog("info:*", "info star!")
+  // these parse a tag:scope string and colorize it
+  slog = makeStyledParsedLogger("style", SCOPES)
+  slog("*", "colorful starstar!")
+  slog("info:deep", "colorful info:deep")
+  slog("issue:a:b:c", "colorful alpha issue")
+  slog("issue:a:*", "colorful nested issue")
+
+  pipe(
+    slog("a:input"),
+    (a) => a ++ " there",
+    slog("a:output"),
+  )("hey")
 }

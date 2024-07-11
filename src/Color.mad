@@ -1,0 +1,81 @@
+import type { Random } from "Random"
+
+import { repeatWith } from "List"
+import Math from "Math"
+import R from "Random"
+import String from "String"
+
+
+
+rgbToAnsi256 :: Integer -> Integer -> Integer -> Float
+export rgbToAnsi256 = (r, g, b) => {
+  r4 = r >> 4
+  g4 = g >> 4
+  b4 = b >> 4
+  return if (r4 == g4 && g4 == b4) {
+    if (r < 8) {
+      16
+    } else if (r > 248) {
+      231
+    } else {
+      Math.round(((r - 8) / 247) * 24) + 232
+    }
+  } else {
+    16 + (36 * Math.round(r / 255 * 5)) + (6 * Math.round(g / 255 * 5)) + Math.round(b / 255 * 5)
+  }
+}
+
+MAX_OCTET = 255
+COLOR_BACKGROUND = 48
+COLOR_FOREGROUND = 38
+
+export seededRGB = pipe(
+  R.generateFromString,
+  (seed) => {
+    twoFiveSix = R.integer(0, MAX_OCTET)
+    colors = repeatWith((_) => twoFiveSix(seed), 3)
+    return where(colors) {
+      [r, g, b] =>
+        #[r, g, b]
+
+      _ =>
+        #[-1, -1, -1]
+    }
+  },
+)
+
+export seededAnsi8 = pipe(
+  seededRGB,
+  where {
+    #[r, g, b] =>
+      rgbToAnsi256(r, g, b)
+  },
+)
+
+//ESC[38;2;⟨r⟩;⟨g⟩;⟨b⟩ m Select RGB foreground color
+//ESC[48;2;⟨r⟩;⟨g⟩;⟨b⟩ m Select RGB background color
+export seededAnsi256 = (before, str) => pipe(
+  seededRGB,
+  where {
+    #[r, g, b] =>
+      map(show, [before, 2, r, g, b])
+  },
+)(str)
+
+export seededAnsi256Bg = seededAnsi256(COLOR_BACKGROUND)
+export seededAnsi256Fg = seededAnsi256(COLOR_FOREGROUND)
+
+export colorFromSeededString = (seedPrefix, str) => pipe(
+  mappend(seedPrefix),
+  seededRGB,
+  where {
+    #[r, g, b] =>
+      do {
+        convert = map(show)
+        return #[
+          convert([COLOR_FOREGROUND, 2, r, g, b]),
+          convert([COLOR_BACKGROUND, 2, MAX_OCTET - r, MAX_OCTET - g, MAX_OCTET - b]),
+        ]
+      }
+  },
+)(str)

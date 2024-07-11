@@ -5,7 +5,7 @@ import type { Tag } from "@/Tag"
 import { Just, Nothing, fromMaybe } from "Maybe"
 
 import { ansiFgBg, seededAnsi } from "@/Color"
-import Tag from "@/Tag"
+import { parse, serialize, within } from "@/Tag"
 
 
 
@@ -13,9 +13,9 @@ export alias Trace a = String -> a -> a
 
 captured :: Show a => Trace a -> List Tag -> Tag -> a -> Maybe a
 export captured = (call, tags, t, thing) => (
-  Tag.checkTagScopes(tags, t)
+  within(tags, t)
     ? pipe(
-      call(Tag.serializeTag(t)),
+      call(serialize(t)),
       Just,
     )(thing)
     : Nothing
@@ -30,7 +30,7 @@ export composed = (call, tags, t, thing) => pipe(
 // instead of the verbosity of the raw processor, express things as parsable tags
 parsed :: Show a => Trace a -> List Tag -> String -> a -> a
 export parsed = (call, tags, t, thing) => pipe(
-  Tag.parseTag,
+  parse,
   composed(call, tags, $, thing),
 )(t)
 

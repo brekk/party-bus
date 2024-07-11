@@ -5,18 +5,14 @@ import Dict from "Dictionary"
 import IO from "IO"
 import { Just, Nothing, fromMaybe } from "Maybe"
 
+import { awareOf } from "@/Env"
 import _Logger from "@/Log"
-import _Processor from "@/Processor"
+import { captured, composed, parsed, styled } from "@/Processor"
 import _Tag from "@/Tag"
 
 
 
-export loggers = { raw: _Logger.raw, parsed: _Logger.raw, debug: _Logger.raw }
-export processors = {
-  captured: _Processor.captured,
-  composed: _Processor.composed,
-  parsed: _Processor.parsed,
-  styled: _Processor.styled,
-}
+export loggers = { raw: _Logger.raw, parsed: _Logger.raw, debug: _Logger.debug }
+export processors = { captured, composed, parsed, styled, awareOf }
 export type Trace
 export type Tag

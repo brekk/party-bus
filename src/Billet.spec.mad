@@ -10,21 +10,7 @@ import { assertEquals, test } from "Test"
 import Wish from "Wish"
 
 import { captured, parsed } from "@/Processor"
-import {
-  Tag,
-  getScope,
-  hasScope,
-  isNegated,
-  isScoped,
-  parseMany,
-  scopeEqual,
-  scopeWithinScope,
-  scopedTag,
-  serializeTag,
-  tag,
-  tagInScope,
-  untag,
-} from "@/Tag"
+import { Tag, scopedTag, tag } from "@/Tag"
 import { testCases } from "@/Test"
 
 

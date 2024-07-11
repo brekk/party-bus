@@ -1,18 +1,21 @@
 import type { Comparison } from "Compare"
 
+import type { Scope } from "@/Scope"
+
 import { EQ, GT, LT } from "Compare"
 import { always, equals, when } from "Function"
 import List from "List"
 import { fromMaybe } from "Maybe"
 import String from "String"
 
+import { scopeEquals, withinScope } from "@/Scope"
 
 
-export alias Scope = List String
+
 export type Tag = Tag(Boolean, Scope, String)
 
 instance Eq Tag {
-  __EQ__ = (a, b) => serializeTag(a) == serializeTag(b)
+  __EQ__ = (a, b) => serialize(a) == serialize(b)
 }
 instance Comparable Tag {
   compare = compareTag
@@ -44,8 +47,8 @@ export getScope = where {
     scope
 }
 
-getId :: Tag -> String
-export getId = where {
+id :: Tag -> String
+export id = where {
   Tag(_, _, name) =>
     name
 }
@@ -58,8 +61,8 @@ export scopeLength = pipe(
 
 compareTag :: Tag -> Tag -> Comparison
 export compareTag = (a, b) => {
-  aName = getId(a)
-  bName = getId(b)
+  aName = id(a)
+  bName = id(b)
 
   return if (bName == aName) do {
     sA = scopeLength(a)
@@ -76,34 +79,11 @@ export compareTag = (a, b) => {
   }
 }
 
-// can we compare Maybes with syntax?
-scopeEqual :: Scope -> Scope -> Boolean
-export scopeEqual = (a, b) => where(#[a, b]) {
-  #[scope1, scope2] =>
-    scope1 == scope2
-}
-
 hasScope :: Scope -> Tag -> Boolean
 export hasScope = (testScope, t) => pipe(
   getScope,
-  scopeEqual(testScope),
+  scopeEquals(testScope),
 )(t)
-
-scopeWithinScope :: Scope -> Scope -> Boolean
-export scopeWithinScope = (parent, child) => {
-  lenPar = List.length(parent)
-  lenChild = List.length(child)
-  return if (lenChild == 0) {
-    true
-  } else if (lenPar <= lenChild) {
-    pipe(
-      List.zip(parent),
-      List.all(where { #[a, b] => a == b }),
-    )(child)
-  } else {
-    false
-  }
-}
 
 _firstAsString :: List String -> String
 _firstAsString = pipe(
@@ -111,48 +91,48 @@ _firstAsString = pipe(
   fromMaybe(""),
 )
 
-isStarTag :: List String -> Boolean
-isStarTag = List.endsWith(["*"])
+_isStarTag :: List String -> Boolean
+_isStarTag = List.endsWith(["*"])
 
-tagInScope :: Scope -> Tag -> Boolean
-export tagInScope = (testScope, t) => pipe(
+inScope :: Scope -> Tag -> Boolean
+export inScope = (testScope, t) => pipe(
   getScope,
-  when(isStarTag, always([])),
-  scopeWithinScope(testScope),
+  when(_isStarTag, always([])),
+  withinScope(testScope),
 )(t)
 
-checkScopes :: List Scope -> Tag -> Boolean
-export checkScopes = (scopes, t) => List.any(tagInScope($, t), scopes)
+checkScopes :: Tag -> List Scope -> Boolean
+export checkScopes = (t, scopes) => List.any(inScope($, t), scopes)
 
-serializeTag :: Tag -> String
-export serializeTag = (t) => {
+serialize :: Tag -> String
+export serialize = (t) => {
   scope = pipe(
     getScope,
     String.join(":"),
   )(t)
-  name = getId(t)
+  name = id(t)
   return name ++ (equals("", scope) ? "" : ":" ++ scope)
 }
 
 // TODO: support negated tags next
-checkTagScopes :: List Tag -> Tag -> Boolean
-export checkTagScopes = (tags, t) => {
-  tId = getId(t)
+within :: List Tag -> Tag -> Boolean
+export within = (tags, t) => {
+  tId = id(t)
   return pipe(
     List.filter(
       pipe(
-        getId,
+        id,
         (uId) => tId == "*" || uId == tId,
       ),
     ),
     map(getScope),
-    checkScopes($, t),
+    checkScopes(t),
   )(tags)
 }
 
 // eventually we could actually parse stuff
-parseTag :: String -> Tag
-export parseTag = (part) => {
+parse :: String -> Tag
+export parse = (part) => {
   negated = !String.startsWith("-", part)
   return pipe(
     String.trim,
@@ -169,13 +149,13 @@ export parseTag = (part) => {
 
 _isEmptyTag :: Tag -> Boolean
 _isEmptyTag = pipe(
-  getId,
+  id,
   equals(""),
 )
 
 parseMany :: String -> List Tag
 export parseMany = pipe(
   String.split(","),
-  map(parseTag),
+  map(parse),
   List.reject(_isEmptyTag),
 )

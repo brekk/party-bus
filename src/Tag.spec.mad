@@ -5,15 +5,13 @@ import {
   Tag,
   getScope,
   hasScope,
+  inScope,
   isNegated,
   isScoped,
   parseMany,
-  scopeEqual,
-  scopeWithinScope,
   scopedTag,
-  serializeTag,
+  serialize,
   tag,
-  tagInScope,
   untag,
 } from "@/Tag"
 import { testCases } from "@/Test"
@@ -47,12 +45,7 @@ testCases(
   Dict.fromList([#[Tag(true, [], "yo"), []], #[Tag(true, ["a", "b"], "yo"), ["a", "b"]]]),
 )
 
-test(
-  "scopeEqual",
-  () => do {
-    return assertEquals(scopeEqual([], []), true)
-  },
-)
+
 
 test(
   "hasScope",
@@ -61,28 +54,9 @@ test(
     return assertEquals(hasScope([], scopedTag([], "nice")), true)
   },
 )
-
-test(
-  "scopeWithinScope",
-  () => do {
-    _ <- assertEquals(scopeWithinScope(["a", "b", "c"], ["a"]), false)
-    _ <- assertEquals(scopeWithinScope(["a", "b", "c"], []), true)
-    _ <- assertEquals(scopeWithinScope([], []), true)
-    return assertEquals(scopeWithinScope(["a", "b", "c"], ["a", "b", "c", "d"]), true)
-  },
-)
-
 testCases(
-  scopeWithinScope(["a", "b", "c"]),
-  "scopeWithinScope a:b:c",
-  {{ ["a"]: false, []: true, ["a", "b", "c", "d"]: true, ["a", "b", "c", "d", "e"]: true }},
-)
-
-testCases(scopeWithinScope([]), "scopeWithinScope *", {{ []: true }})
-
-testCases(
-  tagInScope(["a", "b", "c"]),
-  "tagInScope b:c",
+  inScope(["a", "b", "c"]),
+  "inScope b:c",
   Dict.fromList([
     #[scopedTag(["a", "b", "c"], "x"), true],
     #[scopedTag(["a", "b", "c", "d"], "x"), true],
@@ -92,8 +66,8 @@ testCases(
 )
 
 testCases(
-  serializeTag,
-  "serializeTag",
+  serialize,
+  "serialize",
   Dict.fromList([
     #[scopedTag(["deeply", "nested", "value"], "a"), "a:deeply:nested:value"],
     #[scopedTag([], "a"), "a"],

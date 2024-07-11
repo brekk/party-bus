@@ -1,0 +1,30 @@
+import { assertEquals, test } from "Test"
+
+import { scopeEquals, withinScope } from "@/Scope"
+import { testCases } from "@/Test"
+
+
+
+test(
+  "scopeEquals",
+  () => do {
+    return assertEquals(scopeEquals([], []), true)
+  },
+)
+test(
+  "withinScope",
+  () => do {
+    _ <- assertEquals(withinScope(["a", "b", "c"], ["a"]), false)
+    _ <- assertEquals(withinScope(["a", "b", "c"], []), true)
+    _ <- assertEquals(withinScope([], []), true)
+    return assertEquals(withinScope(["a", "b", "c"], ["a", "b", "c", "d"]), true)
+  },
+)
+
+testCases(
+  withinScope(["a", "b", "c"]),
+  "withinScope a:b:c",
+  {{ ["a"]: false, []: true, ["a", "b", "c", "d"]: true, ["a", "b", "c", "d", "e"]: true }},
+)
+
+testCases(withinScope([]), "withinScope *", {{ []: true }})

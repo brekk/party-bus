@@ -9,7 +9,21 @@ import String from "String"
 import { assertEquals, test } from "Test"
 import Wish from "Wish"
 
-import { Tag, compareTag, getId, getScope, isScoped, parseScopes, scopedTag, tag } from "@/Billet"
+import {
+  Tag,
+  checkScopes,
+  getId,
+  getScope,
+  hasScope,
+  isScoped,
+  parseTags,
+  scopeEqual,
+  scopeWithinScope,
+  scopedTag,
+  serializeTag,
+  tag,
+  tagInScope,
+} from "@/Billet"
 
 
 
@@ -26,34 +40,82 @@ testCases = (fn, name, testDict) => pipe(
   ),
 )(testDict)
 
-testParseScopes = testCases(parseScopes)
-testParseScopes(
-  "parseScopes - single tags",
+testparseTags = testCases(parseTags)
+testparseTags(
+  "parseTags - single tags",
   {{ "yo": [scopedTag([], "yo")], "yo:scoped": [scopedTag(["scoped"], "yo")] }},
 )
-testParseScopes(
-  "parseScopes - multiple tags",
+testparseTags(
+  "parseTags - multiple tags",
   {{
     "a, b, spaced": [tag("a"), tag("b"), tag("spaced")],
     "a,b:belabor": [tag("a"), scopedTag(["belabor"], "b")],
   }},
 )
-testParseScopes("parseScopes - various garbage", {{ "": [], ",,": [], "::::,": [] }})
+testparseTags("parseTags - various garbage", {{ "": [], ",,": [], "::::,": [] }})
 
-// /*
-// seems to fail b/c of comparison
 testCases(
   isScoped,
   "isScoped - testcase",
-  Dict.fromList([#[Tag([], "yo"), false], #[Tag(["yo"], "yo"), true]]),
+  Dict.fromList([#[Tag(true, [], "yo"), false], #[Tag(true, ["yo"], "yo"), true]]),
 )
-// */
 
+
+testCases(
+  getScope,
+  "getScope",
+  Dict.fromList([#[Tag(true, [], "yo"), []], #[Tag(true, ["a", "b"], "yo"), ["a", "b"]]]),
+)
 
 test(
-  "getScope",
+  "scopeEqual",
   () => do {
-    _ <- assertEquals(getScope(Tag([], "yo")), [])
-    return assertEquals(getScope(Tag(["a", "b"], "yo")), ["a", "b"])
+    return assertEquals(scopeEqual([], []), true)
   },
+)
+
+test(
+  "hasScope",
+  () => do {
+    _ <- assertEquals(hasScope(["a", "b"], scopedTag([], "nice")), false)
+    return assertEquals(hasScope([], scopedTag([], "nice")), true)
+  },
+)
+
+test(
+  "scopeWithinScope",
+  () => do {
+    _ <- assertEquals(scopeWithinScope(["a", "b", "c"], ["a"]), false)
+    _ <- assertEquals(scopeWithinScope(["a", "b", "c"], []), true)
+    _ <- assertEquals(scopeWithinScope([], []), true)
+    return assertEquals(scopeWithinScope(["a", "b", "c"], ["a", "b", "c", "d"]), true)
+  },
+)
+
+testCases(
+  scopeWithinScope(["a", "b", "c"]),
+  "scopeWithinScope a:b:c",
+  {{ ["a"]: false, []: true, ["a", "b", "c", "d"]: true, ["a", "b", "c", "d", "e"]: true }},
+)
+
+testCases(scopeWithinScope([]), "scopeWithinScope *", {{ []: true }})
+
+testCases(
+  tagInScope(["a", "b", "c"]),
+  "tagInScope b:c",
+  Dict.fromList([
+    #[scopedTag(["a", "b", "c"], "x"), true],
+    #[scopedTag(["a", "b", "c", "d"], "x"), true],
+    #[scopedTag(["a", "b"], "x"), false],
+    #[scopedTag([], "x"), true],
+  ]),
+)
+
+testCases(
+  serializeTag,
+  "serializeTag",
+  Dict.fromList([
+    #[scopedTag(["deeply", "nested", "value"], "a"), "a:deeply:nested:value"],
+    #[scopedTag([], "a"), "a"],
+  ]),
 )

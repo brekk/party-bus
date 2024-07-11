@@ -11,46 +11,38 @@ import String from "String"
 
 
 
-export ROOT_SCOPE = "*"
-
 export alias Scope = List String
-export type Tag = Tag(Scope, String)
-
+export type Tag = Tag(Boolean, Scope, String)
 
 instance Eq Tag {
-  __EQ__ = (a, b) => #[getScope(a), getId(a)] == #[getScope(b), getId(b)]
+  __EQ__ = (a, b) => serializeTag(a) == serializeTag(b)
 }
 instance Comparable Tag {
   compare = compareTag
 }
 
 scopedTag :: Scope -> String -> Tag
-export scopedTag = Tag
+export scopedTag = Tag(true)
 
-export tag = Tag([])
+export scopedUnTag = Tag(false)
+
+export tag = scopedTag([])
 
 isScoped :: Tag -> Boolean
 export isScoped = where {
-  Tag(scope, _) =>
+  Tag(_, scope, _) =>
     List.length(scope) > 0
 }
 
 getScope :: Tag -> Scope
 export getScope = where {
-  Tag(scope, _) =>
+  Tag(_, scope, _) =>
     scope
 }
 
-getTopScope :: Tag -> String
-getTopScope = pipe(
-  getScope,
-  List.first,
-  fromMaybe(ROOT_SCOPE),
-)
-
 getId :: Tag -> String
 export getId = where {
-  Tag(_, name) =>
+  Tag(_, _, name) =>
     name
 }
 
@@ -68,7 +60,13 @@ export compareTag = (a, b) => {
   return if (bName == aName) do {
     sA = scopeLength(a)
     sB = scopeLength(b)
-    return sA == sB ? EQ : sA > sB ? GT : LT
+    return if (sA == sB) {
+      EQ
+    } else if (sA > sB) {
+      GT
+    } else {
+      LT
+    }
   } else {
     EQ
   }
@@ -76,7 +74,7 @@ export compareTag = (a, b) => {
 
 // can we compare Maybes with syntax?
 scopeEqual :: Scope -> Scope -> Boolean
-scopeEqual = (a, b) => where(#[a, b]) {
+export scopeEqual = (a, b) => where(#[a, b]) {
   #[scope1, scope2] =>
     scope1 == scope2
 }
@@ -87,26 +85,57 @@ export hasScope = (testScope, t) => pipe(
   scopeEqual(testScope),
 )(t)
 
+scopeWithinScope :: Scope -> Scope -> Boolean
+export scopeWithinScope = (parent, child) => {
+  lenPar = List.length(parent)
+  lenChild = List.length(child)
+  return if (lenChild == 0) {
+    true
+  } else if (lenPar <= lenChild) {
+    pipe(
+      List.zip(parent),
+      List.all(where { #[a, b] => a == b }),
+    )(child)
+  } else {
+    false
+  }
+}
+
+tagInScope :: Scope -> Tag -> Boolean
+export tagInScope = (testScope, t) => pipe(
+  getScope,
+  scopeWithinScope(testScope),
+)(t)
+
 checkScopes :: List Scope -> Tag -> Boolean
-export checkScopes = (scopes, t) => List.any(hasScope($, t), scopes)
+export checkScopes = (scopes, t) => List.any(tagInScope($, t), scopes)
 
 serializeTag :: Tag -> String
 export serializeTag = (t) => {
   scope = pipe(
     getScope,
+    // List.append("*"),
     String.join(":"),
   )(t)
   name = getId(t)
-  return scope ++ name
+  return name ++ (equals("", scope) ? "" : ":" ++ scope)
 }
 
-// log :: Show a => List (Maybe String) -> Tag -> a -> {}
-export log = (scopes, t, thing) => if (checkScopes(scopes, t)) do {
-  IO.pTrace(serializeTag(t), thing)
-  return thing
-} else {
-  thing
-}
+checkTagScopes :: List Tag -> Tag -> Boolean
+export checkTagScopes = (tags, t) => pipe(
+  List.filter(
+    pipe(
+      getId,
+      pipe(
+        getId,
+        equals,
+      )(t),
+    ),
+  ),
+  map(getScope),
+  checkScopes($, t),
+)(tags)
+
 
 firstAsString :: List String -> String
 firstAsString = pipe(
@@ -114,20 +143,48 @@ firstAsString = pipe(
   fromMaybe(""),
 )
 
-parseScopes :: String -> List Tag
-export parseScopes = pipe(
-  String.split(","),
-  map(
-    pipe(
-      String.trim,
-      String.split(":"),
-      (list) => Tag(List.length(list) == 1 ? [] : List.tail(list), firstAsString(list)),
-    ),
-  ),
-  List.reject(
-    pipe(
-      getId,
-      equals(""),
-    ),
-  ),
+parseTag :: String -> Tag
+parseTag = (part) => {
+  negated = !String.startsWith("-", part)
+  return pipe(
+    String.trim,
+    String.split(":"),
+    (list) => {
+      segments = List.length(list) == 1 ? [] : List.tail(list)
+      return pipe(
+        firstAsString,
+        Tag(negated, segments),
+      )(list)
+    },
+  )(part)
+}
+
+isEmptyTag :: Tag -> Boolean
+isEmptyTag = pipe(
+  getId,
+  equals(""),
 )
+
+parseTags :: String -> List Tag
+export parseTags = pipe(
+  String.split(","),
+  map(parseTag),
+  List.reject(isEmptyTag),
+)
+
+
+// log :: Show a => List (Maybe String) -> Tag -> a -> {}
+export makeScopedLogger = (tags, t, thing) => {
+  return if (checkTagScopes(tags, t)) do {
+    IO.pTrace(serializeTag(t), thing)
+    return thing
+  } else do {
+    IO.putLine(`<<<< SKIPPED: ${serializeTag(t)} >>>>`)
+    return thing
+  }
+}
+
+export makeLogger = (tags, t, thing) => pipe(
+  parseTag,
+  makeScopedLogger(tags, $, thing),
+)(t)

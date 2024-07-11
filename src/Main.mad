@@ -6,18 +6,16 @@ import Billet from "@/Billet"
 
 
 main = () => {
-  commaDelimited = String.split(",")
-  IO.pTrace("test 1", commaDelimited("mood:happy,dope:nice"))
-  IO.pTrace("test 2", commaDelimited("mood:happy"))
-  commaColonDelimited = pipe(
-    String.split(","),
-    map(String.split(":")),
-  )
-  IO.pTrace("test 3", commaColonDelimited("mood:happy,dope:nice"))
-  IO.pTrace("test 4", commaColonDelimited("mood:happy"))
-  IO.pTrace("test 5", commaColonDelimited("mood:happy,root"))
-  IO.pTrace("parseScopes", Billet.parseScopes("mood:happy,dope:nice,awesome"))
-  IO.pTrace("parseScopes 2", Billet.parseScopes(""))
-  // scopes = parseScopes("mood:happy,nested:values:are:easy")
-  // IO.pTrace("tele", scopes)
+  // a = Billet.scopedTag(["deeply", "nested", "value"], "a")
+  // IO.pTrace("scoped tag!", #[a, Billet.checkScopes([])])
+  alog = Billet.makeScopedLogger([
+    Billet.scopedTag(["deep"], "info"),
+    Billet.tag("warn"),
+    Billet.tag("log"),
+  ])
+  alog(Billet.Tag(true, ["deep"], "info"), "[deep] info!")
+  alog(Billet.Tag(true, [], "info"), "info info")
+  alog(Billet.Tag(true, ["deeply", "nested"], "info"), "skipping deeply.nested")
+  alog(Billet.Tag(true, [], "log"), "log")
+  alog(Billet.Tag(true, [], "warning"), "this is skipped")
 }

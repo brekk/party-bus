@@ -21,13 +21,13 @@ instance Comparable Tag {
   compare = compareTag
 }
 
-scopedTag :: Scope -> String -> Tag
-export scopedTag = Tag(true)
+scoped :: Scope -> String -> Tag
+export scoped = Tag(true)
 
-export scopedUnTag = Tag(false)
+export negated = Tag(false)
 
-export tag = scopedTag([])
-export untag = scopedUnTag([])
+export tag = scoped([])
+export untag = negated([])
 
 isNegated :: Tag -> Boolean
 export isNegated = where {
@@ -53,8 +53,8 @@ export id = where {
     name
 }
 
-scopeLength :: Tag -> Integer
-export scopeLength = pipe(
+tagScopeLength :: Tag -> Integer
+export tagScopeLength = pipe(
   getScope,
   List.length,
 )
@@ -65,8 +65,8 @@ export compareTag = (a, b) => {
   bName = id(b)
 
   return if (bName == aName) do {
-    sA = scopeLength(a)
-    sB = scopeLength(b)
+    sA = tagScopeLength(a)
+    sB = tagScopeLength(b)
     return if (sA == sB) {
       EQ
     } else if (sA > sB) {
@@ -133,7 +133,7 @@ export within = (tags, t) => {
 // eventually we could actually parse stuff
 parse :: String -> Tag
 export parse = (part) => {
-  negated = !String.startsWith("-", part)
+  neg = !String.startsWith("-", part)
   return pipe(
     String.trim,
     String.split(":"),
@@ -141,7 +141,7 @@ export parse = (part) => {
       segments = List.length(list) == 1 ? [] : List.tail(list)
       return pipe(
         _firstAsString,
-        Tag(negated, segments),
+        Tag(neg, segments),
       )(list)
     },
   )(part)

@@ -1,15 +1,17 @@
+import { EQ, GT, LT } from "Compare"
 import Dict from "Dictionary"
 import { assertEquals, test } from "Test"
 
 import {
   Tag,
+  compareTag,
   getScope,
   hasScope,
   inScope,
   isNegated,
   isScoped,
   parseMany,
-  scopedTag,
+  scoped,
   serialize,
   tag,
   untag,
@@ -21,13 +23,13 @@ import { testCases } from "@/Test"
 testparseMany = testCases(parseMany)
 testparseMany(
   "parseMany - single tags",
-  {{ "yo": [scopedTag([], "yo")], "yo:scoped": [scopedTag(["scoped"], "yo")] }},
+  {{ "yo": [scoped([], "yo")], "yo:scoped": [scoped(["scoped"], "yo")] }},
 )
 testparseMany(
   "parseMany - multiple tags",
   {{
     "a, b, spaced": [tag("a"), tag("b"), tag("spaced")],
-    "a,b:belabor": [tag("a"), scopedTag(["belabor"], "b")],
+    "a,b:belabor": [tag("a"), scoped(["belabor"], "b")],
   }},
 )
 testparseMany("parseMany - various garbage", {{ "": [], ",,": [], "::::,": [] }})
@@ -50,18 +52,18 @@ testCases(
 test(
   "hasScope",
   () => do {
-    _ <- assertEquals(hasScope(["a", "b"], scopedTag([], "nice")), false)
-    return assertEquals(hasScope([], scopedTag([], "nice")), true)
+    _ <- assertEquals(hasScope(["a", "b"], scoped([], "nice")), false)
+    return assertEquals(hasScope([], scoped([], "nice")), true)
   },
 )
 testCases(
   inScope(["a", "b", "c"]),
   "inScope b:c",
   Dict.fromList([
-    #[scopedTag(["a", "b", "c"], "x"), true],
-    #[scopedTag(["a", "b", "c", "d"], "x"), true],
-    #[scopedTag(["a", "b"], "x"), false],
-    #[scopedTag([], "x"), true],
+    #[scoped(["a", "b", "c"], "x"), true],
+    #[scoped(["a", "b", "c", "d"], "x"), true],
+    #[scoped(["a", "b"], "x"), false],
+    #[scoped([], "x"), true],
   ]),
 )
 
@@ -69,8 +71,8 @@ testCases(
   serialize,
   "serialize",
   Dict.fromList([
-    #[scopedTag(["deeply", "nested", "value"], "a"), "a:deeply:nested:value"],
-    #[scopedTag([], "a"), "a"],
+    #[scoped(["deeply", "nested", "value"], "a"), "a:deeply:nested:value"],
+    #[scoped([], "a"), "a"],
   ]),
 )
 
@@ -81,4 +83,10 @@ testCases(
     #[untag("raw"), true],
   // #[tag("raw"), false]
   ]),
+)
+
+testCases(
+  compareTag(tag("*")),
+  "compareTag : *",
+  Dict.fromList([#[tag("*"), EQ], #[tag("hello"), EQ]]),
 )

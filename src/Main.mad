@@ -5,17 +5,17 @@ import Process from "Process"
 
 import { debug, parsed, raw } from "@/Log"
 import { styled } from "@/Processor"
-import { Tag, scopedTag, tag } from "@/Tag"
+import { Tag, scoped, tag } from "@/Tag"
 
 
 
 main = () => {
   SCOPES = [
-    scopedTag([], "a"),
-    scopedTag(["deep"], "info"),
+    scoped([], "a"),
+    scoped(["deep"], "info"),
     tag("warn"),
     tag("log"),
-    scopedTag(["a", "b", "c"], "issue"),
+    scoped(["a", "b", "c"], "issue"),
   ]
   // IO.pTrace("ARGV", Process.Argv)
   // IO.pTrace("ENV", Process.Env)

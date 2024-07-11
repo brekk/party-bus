@@ -1,23 +1,14 @@
-import type { AssertionError } from "Test"
-import type { Wish } from "Wish"
-
-import Dict from "Dictionary"
-import IO from "IO"
-import List from "List"
-import { Just, Nothing, fromMaybe } from "Maybe"
-import String from "String"
+import { Just, Nothing } from "Maybe"
 import { assertEquals, test } from "Test"
-import Wish from "Wish"
 
-import { captured, parsed } from "@/Processor"
-import { Tag, scopedTag, tag } from "@/Tag"
-import { testCases } from "@/Test"
+import { captured, parsed, styled } from "@/Processor"
+import { Tag, scoped, tag } from "@/Tag"
 
 
 
 processNothing = (_, b) => b
 
-SCOPES = [scopedTag(["deep"], "info"), tag("warn"), tag("log"), scopedTag(["a", "b", "c"], "issue")]
+SCOPES = [scoped(["deep"], "info"), tag("warn"), tag("log"), scoped(["a", "b", "c"], "issue")]
 test(
   "makeRawLogger",
   () => do {

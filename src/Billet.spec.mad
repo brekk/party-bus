@@ -9,12 +9,9 @@ import String from "String"
 import { assertEquals, test } from "Test"
 import Wish from "Wish"
 
-import { makeCapturingProcessor, makeComposableProcessor, makeParsedProcessor } from "@/Processor"
+import { captured, parsed } from "@/Processor"
 import {
   Tag,
-  checkScopes,
-  checkTagScopes,
-  getId,
   getScope,
   hasScope,
   isNegated,
@@ -130,7 +127,7 @@ SCOPES = [scopedTag(["deep"], "info"), tag("warn"), tag("log"), scopedTag(["a", 
 test(
   "makeRawLogger",
   () => do {
-    alog = makeCapturingProcessor(processNothing, SCOPES)
+    alog = captured(processNothing, SCOPES)
     _ <- assertEquals(alog(Tag(true, ["deep"], "info"), "[deep] info!"), Just("[deep] info!"))
     _ <- assertEquals(alog(Tag(true, [], "info"), "info info!"), Just("info info!"))
     _ <- assertEquals(alog(Tag(true, [], "unmatched"), "info info!"), Nothing)
@@ -147,9 +144,9 @@ test(
 )
 
 test(
-  "makeParsedProcessor",
+  "parsed",
   () => do {
-    alog = makeParsedProcessor(processNothing, SCOPES)
+    alog = parsed(processNothing, SCOPES)
     _ <- assertEquals(alog("info:deep", "[deep] info!"), "[deep] info!")
     _ <- assertEquals(alog("info", "information"), "information")
     _ <- assertEquals(alog("unmatched", "unlogged"), "unlogged")

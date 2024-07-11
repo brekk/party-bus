@@ -13,8 +13,8 @@ import Tag from "@/Tag"
 
 export alias Trace a = String -> a -> a
 
-makeCapturingProcessor :: Show a => Trace a -> List Tag -> Tag -> a -> Maybe a
-export makeCapturingProcessor = (call, tags, t, thing) => (
+captured :: Show a => Trace a -> List Tag -> Tag -> a -> Maybe a
+export captured = (call, tags, t, thing) => (
   Tag.checkTagScopes(tags, t)
     ? pipe(
       call(Tag.serializeTag(t)),
@@ -23,21 +23,21 @@ export makeCapturingProcessor = (call, tags, t, thing) => (
     : Nothing
 )
 
-makeComposableProcessor :: Show a => Trace a -> List Tag -> Tag -> a -> a
-export makeComposableProcessor = (call, tags, t, thing) => pipe(
-  makeCapturingProcessor(call, tags, t),
+composed :: Show a => Trace a -> List Tag -> Tag -> a -> a
+export composed = (call, tags, t, thing) => pipe(
+  captured(call, tags, t),
   fromMaybe(thing),
 )(thing)
 
 // instead of the verbosity of the raw processor, express things as parsable tags
-makeParsedProcessor :: Show a => Trace a -> List Tag -> String -> a -> a
-export makeParsedProcessor = (call, tags, t, thing) => pipe(
+parsed :: Show a => Trace a -> List Tag -> String -> a -> a
+export parsed = (call, tags, t, thing) => pipe(
   Tag.parseTag,
-  makeComposableProcessor(call, tags, $, thing),
+  composed(call, tags, $, thing),
 )(t)
 
-makeStyledProcessor :: Show a => String -> Trace a -> List Tag -> String -> a -> a
-export makeStyledProcessor = (seedPrefix, call, raw) => makeParsedProcessor(
+makeStyled :: Show a => String -> Trace a -> List Tag -> String -> a -> a
+export makeStyled = (seedPrefix, call, raw) => parsed(
   (t, x) => pipe(
     seededAnsi(seedPrefix),
     ansiFgBg(t),

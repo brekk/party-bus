@@ -2,16 +2,16 @@ import type { Tag } from "@/Tag"
 
 import IO from "IO"
 
-import { makeDebugProcessor } from "@/Debug"
-import { makeComposableProcessor, makeParsedProcessor } from "@/Processor"
+import { debugged } from "@/Debug"
+import P from "@/Processor"
 
 
 
-makeRawLogger :: Show a => List Tag -> Tag -> a -> a
-export makeRawLogger = makeComposableProcessor(IO.pTrace)
+raw :: Show a => List Tag -> Tag -> a -> a
+export raw = P.composed(IO.pTrace)
 
-makeParsedLogger :: Show a => List Tag -> String -> a -> a
-export makeParsedLogger = makeParsedProcessor(IO.pTrace)
+parsed :: Show a => List Tag -> String -> a -> a
+export parsed = P.parsed(IO.pTrace)
 
-makeDebugLogger :: String -> Dictionary String String -> String -> String -> String
-export makeDebugLogger = makeDebugProcessor(IO.pTrace)
+debug :: String -> Dictionary String String -> String -> String -> String
+export debug = debugged(IO.pTrace)

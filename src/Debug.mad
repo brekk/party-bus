@@ -1,5 +1,5 @@
-import { makeAwareProcessor } from "@/Env"
+import { awareOf } from "@/Env"
 
 
 
-export makeDebugProcessor = makeAwareProcessor("DEBUG")
+export debugged = awareOf("DEBUG")

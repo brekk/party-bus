@@ -1,5 +1,3 @@
-import type { Maybe } from "Maybe"
-
 import type { Trace } from "@/Processor"
 import type { Tag } from "@/Tag"
 
@@ -8,9 +6,11 @@ import IO from "IO"
 import { Just, Nothing, fromMaybe } from "Maybe"
 
 import { ansiFgBg, seededAnsi } from "@/Color"
-import { makeParsedLogger, makeRawLogger } from "@/Log"
-import { makeParsedProcessor } from "@/Processor"
+import { parsed, raw } from "@/Log"
+import { makeParsed } from "@/Processor"
 import Tag from "@/Tag"
 
 
 
+export type Trace
+export type Tag

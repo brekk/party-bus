@@ -1,10 +1,11 @@
 import { repeatWith } from "List"
 import Math from "Math"
 import R from "Random"
+import Term from "Terminal"
 
 
 
-export type Color = RGB(Integer, Integer, Integer) | ANSI256(Float)
+// export type Color = RGB(Integer, Integer, Integer) | ANSI256(Float)
 
 rgbToAnsi256 :: Integer -> Integer -> Integer -> Float
 export rgbToAnsi256 = (r, g, b) => {
@@ -78,3 +79,12 @@ export seededAnsi = (seedPrefix, str) => pipe(
       }
   },
 )(str)
+
+ansiFgBg :: String -> #[List String, List String] -> String
+export ansiFgBg = (t, ansiSeq) => where(ansiSeq) {
+  #[fg, bg] =>
+    pipe(
+      Term.ansiColor(fg),
+      Term.ansiColor(bg),
+    )(t)
+}

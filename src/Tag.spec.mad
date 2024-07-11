@@ -1,20 +1,8 @@
-import type { AssertionError } from "Test"
-import type { Wish } from "Wish"
-
 import Dict from "Dictionary"
-import IO from "IO"
-import List from "List"
-import { Just, Nothing, fromMaybe } from "Maybe"
-import String from "String"
 import { assertEquals, test } from "Test"
-import Wish from "Wish"
 
-import { makeCapturingProcessor, makeComposableProcessor, makeParsedProcessor } from "@/Processor"
 import {
   Tag,
-  checkScopes,
-  checkTagScopes,
-  getId,
   getScope,
   hasScope,
   isNegated,
@@ -28,21 +16,9 @@ import {
   tagInScope,
   untag,
 } from "@/Tag"
+import { testCases } from "@/Test"
 
 
-
-// testCases :: (Show b, Eq b) => String -> (a -> b) -> Dictionary a b -> Wish TestResult TestResult
-testCases = (fn, name, testDict) => pipe(
-  Dict.mapWithKey((input, output) => assertEquals(fn(input), output)),
-  Dict.values,
-  (cases) => test(
-    name,
-    () => do {
-      _ <- Wish.parallel(cases)
-      return assertEquals(name, name)
-    },
-  ),
-)(testDict)
 
 testparseTags = testCases(parseTags)
 testparseTags(
@@ -122,43 +98,6 @@ testCases(
     #[scopedTag(["deeply", "nested", "value"], "a"), "a:deeply:nested:value"],
     #[scopedTag([], "a"), "a"],
   ]),
-)
-
-processNothing = (_, b) => b
-
-SCOPES = [scopedTag(["deep"], "info"), tag("warn"), tag("log"), scopedTag(["a", "b", "c"], "issue")]
-test(
-  "makeRawLogger",
-  () => do {
-    alog = makeCapturingProcessor(processNothing, SCOPES)
-    _ <- assertEquals(alog(Tag(true, ["deep"], "info"), "[deep] info!"), Just("[deep] info!"))
-    _ <- assertEquals(alog(Tag(true, [], "info"), "info info!"), Just("info info!"))
-    _ <- assertEquals(alog(Tag(true, [], "unmatched"), "info info!"), Nothing)
-    _ <- assertEquals(alog(Tag(true, ["deeply"], "issue"), "skip me!"), Nothing)
-    _ <- assertEquals(
-      alog(Tag(true, ["a", "b", "*"], "issue"), "don't skip me!"),
-      Just("don't skip me!"),
-    )
-    return assertEquals(
-      alog(Tag(true, ["deep", "nested"], "info"), "info info!"),
-      Just("info info!"),
-    )
-  },
-)
-
-test(
-  "makeParsedProcessor",
-  () => do {
-    alog = makeParsedProcessor(processNothing, SCOPES)
-    _ <- assertEquals(alog("info:deep", "[deep] info!"), "[deep] info!")
-    _ <- assertEquals(alog("info", "information"), "information")
-    _ <- assertEquals(alog("unmatched", "unlogged"), "unlogged")
-    _ <- assertEquals(alog("issue:whatever", "skip me!"), "skip me!")
-    _ <- assertEquals(alog("info:deep:nested", "info deeply nested!"), "info deeply nested!")
-    _ <- assertEquals(alog("*", "k fun star star!"), "k fun star star!")
-    _ <- assertEquals(alog("info:*", "info star"), "info star")
-    return assertEquals(alog("issue:a:b:*", "issue nested star"), "issue nested star")
-  },
 )
 
 testCases(

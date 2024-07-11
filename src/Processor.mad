@@ -1,0 +1,46 @@
+import type { Maybe } from "Maybe"
+
+import type { Tag } from "@/Tag"
+
+import Dict from "Dictionary"
+import IO from "IO"
+import { Just, Nothing, fromMaybe } from "Maybe"
+
+import { ansiFgBg, seededAnsi } from "@/Color"
+import Tag from "@/Tag"
+
+
+
+export alias Trace a = String -> a -> a
+
+makeCapturingProcessor :: Show a => Trace a -> List Tag -> Tag -> a -> Maybe a
+export makeCapturingProcessor = (call, tags, t, thing) => (
+  Tag.checkTagScopes(tags, t)
+    ? pipe(
+      call(Tag.serializeTag(t)),
+      Just,
+    )(thing)
+    : Nothing
+)
+
+makeComposableProcessor :: Show a => Trace a -> List Tag -> Tag -> a -> a
+export makeComposableProcessor = (call, tags, t, thing) => pipe(
+  makeCapturingProcessor(call, tags, t),
+  fromMaybe(thing),
+)(thing)
+
+// instead of the verbosity of the raw processor, express things as parsable tags
+makeParsedProcessor :: Show a => Trace a -> List Tag -> String -> a -> a
+export makeParsedProcessor = (call, tags, t, thing) => pipe(
+  Tag.parseTag,
+  makeComposableProcessor(call, tags, $, thing),
+)(t)
+
+makeStyledProcessor :: Show a => String -> Trace a -> List Tag -> String -> a -> a
+export makeStyledProcessor = (seedPrefix, call, raw) => makeParsedProcessor(
+  (t, x) => pipe(
+    seededAnsi(seedPrefix),
+    ansiFgBg(t),
+    call($, x),
+  )(t),
+)(raw)

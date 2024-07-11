@@ -1,0 +1,8 @@
+import IO from "IO"
+
+import { makeComposableProcessor, makeParsedProcessor } from "@/Processor"
+
+
+
+export makeRawLogger = makeComposableProcessor(IO.pTrace)
+export makeParsedLogger = makeParsedProcessor(IO.pTrace)

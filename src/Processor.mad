@@ -10,22 +10,32 @@ import { parse, serialize, within } from "@/Tag"
 
 
 export alias Trace a = String -> a -> a
-
-captured :: Show a => Trace a -> List Tag -> Tag -> a -> Maybe a
-export captured = (call, tags, t, thing) => (
-  within(tags, t)
-    ? pipe(
-      call(serialize(t)),
-      Just,
-    )(thing)
-    : Nothing
-)
+export type Processor a = Processor(Trace a, List Tag, Tag, a)
 
 composed :: Show a => Trace a -> List Tag -> Tag -> a -> a
-export composed = (call, tags, t, thing) => pipe(
-  captured(call, tags, t),
-  fromMaybe(thing),
-)(thing)
+export composed = (call, tags, t, thing) => (within(tags, t) ? call(serialize(t), thing) : thing)
+
+captured :: Show a => Trace a -> List Tag -> Tag -> a -> Maybe a
+export captured = (call, tags, t, thing) => if (!within(tags, t)) {
+  Nothing
+} else {
+  pipe(
+    call(serialize(t)),
+    Just,
+  )(thing)
+}
+
+// make :: Show a => (Trace a -> List Tag -> Tag -> a -> b) -> Processor a -> Processor b
+export make = (fn, x) => where(x) {
+  Processor(call, tags, t, thing) =>
+    fn(call, tags, t, thing)
+}
+
+composedP :: Show a => Processor a -> a
+export composedP = make(composed)
+
+capturedP :: Show a => Processor a -> Maybe a
+export capturedP = make(captured)
 
 // instead of the verbosity of the raw processor, express things as parsable tags
 parsed :: Show a => Trace a -> List Tag -> String -> a -> a

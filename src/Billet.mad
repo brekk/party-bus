@@ -2,11 +2,13 @@ import type { Comparison } from "Compare"
 import type { Maybe } from "Maybe"
 
 import { EQ, GT, LT } from "Compare"
+import Dict from "Dictionary"
 import { always, equals, unless, when } from "Function"
 import IO from "IO"
 import List from "List"
 import { Just, Nothing, fromMaybe, isJust } from "Maybe"
 import Print from "PrettyPrint"
+import Process from "Process"
 import String from "String"
 import Term from "Terminal"
 
@@ -158,7 +160,7 @@ export checkTagScopes = (tags, t) => {
 
 // eventually we could actually parse stuff
 parseTag :: String -> Tag
-parseTag = (part) => {
+export parseTag = (part) => {
   negated = !String.startsWith("-", part)
   return pipe(
     String.trim,
@@ -173,8 +175,8 @@ parseTag = (part) => {
   )(part)
 }
 
-isEmptyTag :: Tag -> Boolean
-isEmptyTag = pipe(
+_isEmptyTag :: Tag -> Boolean
+_isEmptyTag = pipe(
   getId,
   equals(""),
 )
@@ -183,7 +185,7 @@ parseTags :: String -> List Tag
 export parseTags = pipe(
   String.split(","),
   map(parseTag),
-  List.reject(isEmptyTag),
+  List.reject(_isEmptyTag),
 )
 
 export alias Trace a = String -> a -> a
@@ -227,3 +229,13 @@ export makeStyledParsedLogger = (seedPrefix, raw) => makeParsedProcessor(
     IO.pTrace($, x),
   )(t),
 )(raw)
+
+// makeDebugLogger :: String -> a -> a
+export makeDebugLogger = (seedPrefix, env) => makeStyledParsedLogger(
+  seedPrefix,
+  pipe(
+    Dict.get("DEBUG"),
+    map(parseTags),
+    fromMaybe([]),
+  )(env),
+)

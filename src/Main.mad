@@ -1,7 +1,11 @@
+import Dict from "Dictionary"
 import IO from "IO"
+import { fromMaybe } from "Maybe"
+import Process from "Process"
 
 import {
   Tag,
+  makeDebugLogger,
   makeParsedLogger,
   makeRawLogger,
   makeStyledParsedLogger,
@@ -19,6 +23,8 @@ main = () => {
     tag("log"),
     scopedTag(["a", "b", "c"], "issue"),
   ]
+  // IO.pTrace("ARGV", Process.Argv)
+  // IO.pTrace("ENV", Process.Env)
   alog = makeRawLogger(SCOPES)
   // these are inconvenient at call-time unless partially applied
   alog(Tag(true, ["deep"], "info"), "[deep] info!")
@@ -37,10 +43,15 @@ main = () => {
   slog("info:deep", "colorful info:deep")
   slog("issue:a:b:c", "colorful alpha issue")
   slog("issue:a:*", "colorful nested issue")
-
   pipe(
     slog("a:input"),
     (a) => a ++ " there",
     slog("a:output"),
   )("hey")
+  debug = makeDebugLogger("style", Process.Env)
+
+  debug("*", "debugular starstar!")
+  debug("info:deep", "debugular info:deep")
+  debug("issue:a:b:c", "debuglar alpha issue")
+  debug("issue:a:*", "debarge nested issue")
 }

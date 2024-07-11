@@ -2,7 +2,7 @@ import type { Comparison } from "Compare"
 import type { Maybe } from "Maybe"
 
 import { EQ, GT, LT } from "Compare"
-import { equals, when } from "Function"
+import { always, equals, when } from "Function"
 import IO from "IO"
 import List from "List"
 import { Just, Nothing, fromMaybe, isJust } from "Maybe"
@@ -121,16 +121,15 @@ export serializeTag = (t) => {
   return name ++ (equals("", scope) ? "" : ":" ++ scope)
 }
 
+// TODO: support negated tags next
 checkTagScopes :: List Tag -> Tag -> Boolean
 export checkTagScopes = (tags, t) => pipe(
   List.filter(
-    pipe(
-      getId,
-      pipe(
-        getId,
-        equals,
-      )(t),
-    ),
+    (u) => {
+      uId = getId(u)
+      tId = getId(t)
+      return tId == "*" || uId == tId
+    },
   ),
   map(getScope),
   checkScopes($, t),
@@ -140,7 +139,7 @@ export checkTagScopes = (tags, t) => pipe(
 firstAsString :: List String -> String
 firstAsString = pipe(
   List.first,
-  fromMaybe(""),
+  fromMaybe("*"),
 )
 
 parseTag :: String -> Tag
@@ -153,6 +152,7 @@ parseTag = (part) => {
       segments = List.length(list) == 1 ? [] : List.tail(list)
       return pipe(
         firstAsString,
+        IO.pTrace("parsed tag..."),
         Tag(negated, segments),
       )(list)
     },
@@ -173,18 +173,18 @@ export parseTags = pipe(
 )
 
 
-// log :: Show a => List (Maybe String) -> Tag -> a -> {}
-export makeScopedLogger = (tags, t, thing) => {
+makeRawLogger :: Show a => List Tag -> Tag -> a -> Maybe a
+export makeRawLogger = (tags, t, thing) => {
   return if (checkTagScopes(tags, t)) do {
     IO.pTrace(serializeTag(t), thing)
-    return thing
-  } else do {
-    IO.putLine(`<<<< SKIPPED: ${serializeTag(t)} >>>>`)
-    return thing
+    return Just(thing)
+  } else {
+    Nothing
   }
 }
-
-export makeLogger = (tags, t, thing) => pipe(
+// instead of the verbosity of the raw logger, express things as parsed tags
+makeParsedLogger :: Show a => List Tag -> String -> a -> Maybe a
+export makeParsedLogger = (tags, t, thing) => pipe(
   parseTag,
-  makeScopedLogger(tags, $, thing),
+  makeRawLogger(tags, $, thing),
 )(t)

@@ -8,14 +8,14 @@ import Billet from "@/Billet"
 main = () => {
   // a = Billet.scopedTag(["deeply", "nested", "value"], "a")
   // IO.pTrace("scoped tag!", #[a, Billet.checkScopes([])])
-  alog = Billet.makeScopedLogger([
-    Billet.scopedTag(["deep"], "info"),
-    Billet.tag("warn"),
-    Billet.tag("log"),
-  ])
+  SCOPES = [Billet.scopedTag(["deep"], "info"), Billet.tag("warn"), Billet.tag("log")]
+  alog = Billet.makeRawLogger(SCOPES)
   alog(Billet.Tag(true, ["deep"], "info"), "[deep] info!")
   alog(Billet.Tag(true, [], "info"), "info info")
   alog(Billet.Tag(true, ["deeply", "nested"], "info"), "skipping deeply.nested")
   alog(Billet.Tag(true, [], "log"), "log")
   alog(Billet.Tag(true, [], "warning"), "this is skipped")
+  blog = Billet.makeParsedLogger(SCOPES)
+  blog("*", "k fun star star!")
+  blog("info:deep", "info:deep with parsies!")
 }

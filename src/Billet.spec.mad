@@ -16,6 +16,8 @@ import {
   getScope,
   hasScope,
   isScoped,
+  makeParsedLogger,
+  makeRawLogger,
   parseTags,
   scopeEqual,
   scopeWithinScope,
@@ -118,4 +120,38 @@ testCases(
     #[scopedTag(["deeply", "nested", "value"], "a"), "a:deeply:nested:value"],
     #[scopedTag([], "a"), "a"],
   ]),
+)
+
+SCOPES = [
+  scopedTag(["deep"], "info"),
+  tag("warn"),
+  tag("log"),
+  scopedTag(["deeply", "nested"], "issue"),
+]
+test(
+  "makeRawLogger",
+  () => do {
+    alog = makeRawLogger(SCOPES)
+    _ <- assertEquals(alog(Tag(true, ["deep"], "info"), "[deep] info!"), Just("[deep] info!"))
+    _ <- assertEquals(alog(Tag(true, [], "info"), "info info!"), Just("info info!"))
+    _ <- assertEquals(alog(Tag(true, [], "unmatched"), "info info!"), Nothing)
+    _ <- assertEquals(alog(Tag(true, ["deeply"], "issue"), "skip me!"), Nothing)
+    return assertEquals(
+      alog(Tag(true, ["deep", "nested"], "info"), "info info!"),
+      Just("info info!"),
+    )
+  },
+)
+
+test(
+  "makeParsed",
+  () => do {
+    alog = makeParsedLogger(SCOPES)
+    _ <- assertEquals(alog("info:deep", "[deep] info!"), Just("[deep] info!"))
+    _ <- assertEquals(alog("info", "info info!"), Just("info info!"))
+    _ <- assertEquals(alog("unmatched", "info info!"), Nothing)
+    _ <- assertEquals(alog("issue:deeply", "skip me!"), Nothing)
+    _ <- assertEquals(alog("info:deep:nested", "info info!"), Just("info info!"))
+    return assertEquals(alog("*", "info info!"), Just("info info!"))
+  },
 )

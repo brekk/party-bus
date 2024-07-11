@@ -87,7 +87,6 @@ export hasScope = (testScope, t) => pipe(
 
 scopeWithinScope :: Scope -> Scope -> Boolean
 export scopeWithinScope = (parent, child) => {
-  IO.pTrace("scope 2 scope", { parent, child })
   lenPar = List.length(parent)
   lenChild = List.length(child)
   return if (lenChild == 0) {
@@ -109,17 +108,13 @@ _firstAsString = pipe(
 )
 
 isStarTag :: List String -> Boolean
-isStarTag = pipe(
-  List.last,
-  map(equals("*")),
-  fromMaybe(false),
-)
+isStarTag = List.endsWith(["*"])
 
 tagInScope :: Scope -> Tag -> Boolean
 export tagInScope = (testScope, t) => pipe(
   getScope,
-  IO.pTrace("get scopy"),
-  scopeWithinScope(IO.pTrace("@@@", testScope)),
+  when(isStarTag, always([])),
+  scopeWithinScope(testScope),
 )(t)
 
 checkScopes :: List Scope -> Tag -> Boolean
@@ -129,7 +124,6 @@ serializeTag :: Tag -> String
 export serializeTag = (t) => {
   scope = pipe(
     getScope,
-    // List.append("*"),
     String.join(":"),
   )(t)
   name = getId(t)
@@ -159,7 +153,6 @@ parseTag = (part) => {
     String.trim,
     String.split(":"),
     (list) => {
-      IO.pTrace("~+~+~~+~", list)
       segments = List.length(list) == 1 ? [] : List.tail(list)
       return pipe(
         _firstAsString,
@@ -186,6 +179,7 @@ export parseTags = pipe(
 makeRawLogger :: Show a => List Tag -> Tag -> a -> Maybe a
 export makeRawLogger = (tags, t, thing) => {
   return if (checkTagScopes(tags, t)) do {
+    // madlint-ignore no-comment ;)
     IO.pTrace(serializeTag(t), thing)
     return Just(thing)
   } else {

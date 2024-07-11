@@ -122,12 +122,7 @@ testCases(
   ]),
 )
 
-SCOPES = [
-  scopedTag(["deep"], "info"),
-  tag("warn"),
-  tag("log"),
-  scopedTag(["deeply", "nested"], "issue"),
-]
+SCOPES = [scopedTag(["deep"], "info"), tag("warn"), tag("log"), scopedTag(["a", "b", "c"], "issue")]
 test(
   "makeRawLogger",
   () => do {
@@ -136,6 +131,10 @@ test(
     _ <- assertEquals(alog(Tag(true, [], "info"), "info info!"), Just("info info!"))
     _ <- assertEquals(alog(Tag(true, [], "unmatched"), "info info!"), Nothing)
     _ <- assertEquals(alog(Tag(true, ["deeply"], "issue"), "skip me!"), Nothing)
+    _ <- assertEquals(
+      alog(Tag(true, ["a", "b", "*"], "issue"), "don't skip me!"),
+      Just("don't skip me!"),
+    )
     return assertEquals(
       alog(Tag(true, ["deep", "nested"], "info"), "info info!"),
       Just("info info!"),
@@ -155,7 +154,6 @@ test(
     _ <- assertEquals(alog("*", "k fun star star!"), Just("k fun star star!"))
     return assertEquals(
       pipe(
-        IO.pTrace(">>>>>>>>>>>"),
         alog("info:*"),
       )("info star"),
       Just("info star"),

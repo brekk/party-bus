@@ -87,13 +87,15 @@ export hasScope = (testScope, t) => pipe(
 
 scopeWithinScope :: Scope -> Scope -> Boolean
 export scopeWithinScope = (parent, child) => {
-  lenPar = List.length(parent)
+  // permissive = List.reject(equals("*"), parent)
+  permissive = parent
+  lenPar = List.length(permissive)
   lenChild = List.length(child)
   return if (lenChild == 0) {
     true
   } else if (lenPar <= lenChild) {
     pipe(
-      List.zip(parent),
+      List.zip(permissive),
       List.all(where { #[a, b] => a == b }),
     )(child)
   } else {
@@ -152,7 +154,6 @@ parseTag = (part) => {
       segments = List.length(list) == 1 ? [] : List.tail(list)
       return pipe(
         firstAsString,
-        IO.pTrace("parsed tag..."),
         Tag(negated, segments),
       )(list)
     },

@@ -18,4 +18,5 @@ main = () => {
   blog = Billet.makeParsedLogger(SCOPES)
   blog("*", "k fun star star!")
   blog("info:deep", "info:deep with parsies!")
+  blog("info:*", "info star!")
 }

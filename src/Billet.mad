@@ -5,12 +5,18 @@ import Dict from "Dictionary"
 import IO from "IO"
 import { Just, Nothing, fromMaybe } from "Maybe"
 
-import { ansiFgBg, seededAnsi } from "@/Color"
-import { parsed, raw } from "@/Log"
-import { makeParsed } from "@/Processor"
-import Tag from "@/Tag"
+import _Logger from "@/Log"
+import _Processor from "@/Processor"
+import _Tag from "@/Tag"
 
 
 
+export loggers = { raw: _Logger.raw, parsed: _Logger.raw, debug: _Logger.raw }
+export processors = {
+  captured: _Processor.captured,
+  composed: _Processor.composed,
+  parsed: _Processor.parsed,
+  styled: _Processor.styled,
+}
 export type Trace
 export type Tag

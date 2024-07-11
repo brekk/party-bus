@@ -4,7 +4,7 @@ import { fromMaybe } from "Maybe"
 import Process from "Process"
 
 import { debug, parsed, raw } from "@/Log"
-import { makeStyled } from "@/Processor"
+import { styled } from "@/Processor"
 import { Tag, scopedTag, tag } from "@/Tag"
 
 
@@ -31,9 +31,9 @@ main = () => {
   blog("*", "k fun star star!")
   blog("info:deep", "info:deep with parsies!")
   blog("info:*", "info star!")
-  makeStyledLogger = makeStyled("style", IO.pTrace)
+  styledLogger = styled("style", IO.pTrace)
   // these parse a tag:scope string and colorize it
-  slog = makeStyledLogger(SCOPES)
+  slog = styledLogger(SCOPES)
   slog("*", "colorful starstar!")
   slog("info:deep", "colorful info:deep")
   slog("issue:a:b:c", "colorful alpha issue")

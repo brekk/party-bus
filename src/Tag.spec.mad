@@ -7,7 +7,7 @@ import {
   hasScope,
   isNegated,
   isScoped,
-  parseTags,
+  parseMany,
   scopeEqual,
   scopeWithinScope,
   scopedTag,
@@ -20,19 +20,19 @@ import { testCases } from "@/Test"
 
 
 
-testparseTags = testCases(parseTags)
-testparseTags(
-  "parseTags - single tags",
+testparseMany = testCases(parseMany)
+testparseMany(
+  "parseMany - single tags",
   {{ "yo": [scopedTag([], "yo")], "yo:scoped": [scopedTag(["scoped"], "yo")] }},
 )
-testparseTags(
-  "parseTags - multiple tags",
+testparseMany(
+  "parseMany - multiple tags",
   {{
     "a, b, spaced": [tag("a"), tag("b"), tag("spaced")],
     "a,b:belabor": [tag("a"), scopedTag(["belabor"], "b")],
   }},
 )
-testparseTags("parseTags - various garbage", {{ "": [], ",,": [], "::::,": [] }})
+testparseMany("parseMany - various garbage", {{ "": [], ",,": [], "::::,": [] }})
 
 testCases(
   isScoped,

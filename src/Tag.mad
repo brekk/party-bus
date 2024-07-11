@@ -173,8 +173,8 @@ _isEmptyTag = pipe(
   equals(""),
 )
 
-parseTags :: String -> List Tag
-export parseTags = pipe(
+parseMany :: String -> List Tag
+export parseMany = pipe(
   String.split(","),
   map(parseTag),
   List.reject(_isEmptyTag),

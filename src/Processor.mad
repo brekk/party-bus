@@ -2,8 +2,6 @@ import type { Maybe } from "Maybe"
 
 import type { Tag } from "@/Tag"
 
-import Dict from "Dictionary"
-import IO from "IO"
 import { Just, Nothing, fromMaybe } from "Maybe"
 
 import { ansiFgBg, seededAnsi } from "@/Color"
@@ -36,8 +34,8 @@ export parsed = (call, tags, t, thing) => pipe(
   composed(call, tags, $, thing),
 )(t)
 
-makeStyled :: Show a => String -> Trace a -> List Tag -> String -> a -> a
-export makeStyled = (seedPrefix, call, raw) => parsed(
+styled :: Show a => String -> Trace a -> List Tag -> String -> a -> a
+export styled = (seedPrefix, call, raw) => parsed(
   (t, x) => pipe(
     seededAnsi(seedPrefix),
     ansiFgBg(t),

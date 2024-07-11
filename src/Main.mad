@@ -3,8 +3,8 @@ import IO from "IO"
 import { fromMaybe } from "Maybe"
 import Process from "Process"
 
-import { makeDebugLogger, makeStyledProcessor } from "@/Billet"
-import { makeParsedLogger, makeRawLogger } from "@/Log"
+import { makeDebugLogger, makeParsedLogger, makeRawLogger } from "@/Log"
+import { makeStyledProcessor } from "@/Processor"
 import { Tag, scopedTag, tag } from "@/Tag"
 
 
@@ -31,8 +31,9 @@ main = () => {
   blog("*", "k fun star star!")
   blog("info:deep", "info:deep with parsies!")
   blog("info:*", "info star!")
+  makeStyledLogger = makeStyledProcessor("style", IO.pTrace)
   // these parse a tag:scope string and colorize it
-  slog = makeStyledProcessor("style", IO.pTrace, SCOPES)
+  slog = makeStyledLogger(SCOPES)
   slog("*", "colorful starstar!")
   slog("info:deep", "colorful info:deep")
   slog("issue:a:b:c", "colorful alpha issue")
@@ -42,7 +43,7 @@ main = () => {
     (a) => a ++ " there",
     slog("a:output"),
   )("hey")
-  debug = makeDebugLogger("style", IO.pTrace, Process.Env)
+  debug = makeDebugLogger("style", Process.Env)
 
   debug("*", "debugular starstar!")
   debug("info:deep", "debugular info:deep")

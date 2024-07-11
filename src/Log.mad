@@ -1,8 +1,17 @@
+import type { Tag } from "@/Tag"
+
 import IO from "IO"
 
+import { makeDebugProcessor } from "@/Debug"
 import { makeComposableProcessor, makeParsedProcessor } from "@/Processor"
 
 
 
+makeRawLogger :: Show a => List Tag -> Tag -> a -> a
 export makeRawLogger = makeComposableProcessor(IO.pTrace)
+
+makeParsedLogger :: Show a => List Tag -> String -> a -> a
 export makeParsedLogger = makeParsedProcessor(IO.pTrace)
+
+makeDebugLogger :: String -> Dictionary String String -> String -> String -> String
+export makeDebugLogger = makeDebugProcessor(IO.pTrace)

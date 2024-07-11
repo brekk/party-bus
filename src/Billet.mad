@@ -14,27 +14,3 @@ import Tag from "@/Tag"
 
 
 
-makeStyledProcessor :: Show a => String -> Trace a -> List Tag -> String -> a -> a
-export makeStyledProcessor = (seedPrefix, call, raw) => makeParsedProcessor(
-  (t, x) => pipe(
-    seededAnsi(seedPrefix),
-    ansiFgBg(t),
-    call($, x),
-  )(t),
-)(raw)
-
-getEnvWithKey :: String -> Dictionary String String -> List Tag
-getEnvWithKey = (key, env) => pipe(
-  Dict.get(key),
-  map(Tag.parseTags),
-  fromMaybe([]),
-)(env)
-
-makeAwareLogger :: Show a => String -> String -> Trace a -> Dictionary String String -> Trace a
-export makeAwareLogger = (key, seedPrefix, call, env) => makeStyledProcessor(
-  seedPrefix,
-  call,
-  getEnvWithKey(key, env),
-)
-
-export makeDebugLogger = makeAwareLogger("DEBUG")

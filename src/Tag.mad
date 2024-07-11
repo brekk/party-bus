@@ -8,7 +8,7 @@ import List from "List"
 import { fromMaybe } from "Maybe"
 import String from "String"
 
-import { scopeEquals, withinScope } from "@/Scope"
+import { withinScope } from "@/Scope"
 
 
 
@@ -82,7 +82,7 @@ export compareTag = (a, b) => {
 hasScope :: Scope -> Tag -> Boolean
 export hasScope = (testScope, t) => pipe(
   getScope,
-  scopeEquals(testScope),
+  equals(testScope),
 )(t)
 
 _firstAsString :: List String -> String

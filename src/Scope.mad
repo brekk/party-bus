@@ -5,13 +5,6 @@ import String from "String"
 
 export alias Scope = List String
 
-// can we compare Maybes with syntax?
-scopeEquals :: Scope -> Scope -> Boolean
-export scopeEquals = (a, b) => where(#[a, b]) {
-  #[scope1, scope2] =>
-    scope1 == scope2
-}
-
 withinScope :: Scope -> Scope -> Boolean
 export withinScope = (parent, child) => {
   lenPar = List.length(parent)

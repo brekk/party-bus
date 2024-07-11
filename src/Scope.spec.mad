@@ -1,16 +1,10 @@
 import { assertEquals, test } from "Test"
 
-import { scopeEquals, withinScope } from "@/Scope"
+import { withinScope } from "@/Scope"
 import { testCases } from "@/Test"
 
 
 
-test(
-  "scopeEquals",
-  () => do {
-    return assertEquals(scopeEquals([], []), true)
-  },
-)
 test(
   "withinScope",
   () => do {

@@ -144,14 +144,21 @@ test(
 )
 
 test(
-  "makeParsed",
+  "makeParsedLogger",
   () => do {
     alog = makeParsedLogger(SCOPES)
     _ <- assertEquals(alog("info:deep", "[deep] info!"), Just("[deep] info!"))
-    _ <- assertEquals(alog("info", "info info!"), Just("info info!"))
-    _ <- assertEquals(alog("unmatched", "info info!"), Nothing)
-    _ <- assertEquals(alog("issue:deeply", "skip me!"), Nothing)
-    _ <- assertEquals(alog("info:deep:nested", "info info!"), Just("info info!"))
-    return assertEquals(alog("*", "info info!"), Just("info info!"))
+    _ <- assertEquals(alog("info", "information"), Just("information"))
+    _ <- assertEquals(alog("unmatched", "unlogged"), Nothing)
+    _ <- assertEquals(alog("issue:whatever", "skip me!"), Nothing)
+    _ <- assertEquals(alog("info:deep:nested", "info deeply nested!"), Just("info deeply nested!"))
+    _ <- assertEquals(alog("*", "k fun star star!"), Just("k fun star star!"))
+    return assertEquals(
+      pipe(
+        IO.pTrace(">>>>>>>>>>>"),
+        alog("info:*"),
+      )("info star"),
+      Just("info star"),
+    )
   },
 )

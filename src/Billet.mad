@@ -2,7 +2,7 @@ import type { Comparison } from "Compare"
 import type { Maybe } from "Maybe"
 
 import { EQ, GT, LT } from "Compare"
-import { always, equals, when } from "Function"
+import { always, equals, unless, when } from "Function"
 import IO from "IO"
 import List from "List"
 import { Just, Nothing, fromMaybe, isJust } from "Maybe"
@@ -87,15 +87,14 @@ export hasScope = (testScope, t) => pipe(
 
 scopeWithinScope :: Scope -> Scope -> Boolean
 export scopeWithinScope = (parent, child) => {
-  // permissive = List.reject(equals("*"), parent)
-  permissive = parent
-  lenPar = List.length(permissive)
+  IO.pTrace("scope 2 scope", { parent, child })
+  lenPar = List.length(parent)
   lenChild = List.length(child)
   return if (lenChild == 0) {
     true
   } else if (lenPar <= lenChild) {
     pipe(
-      List.zip(permissive),
+      List.zip(parent),
       List.all(where { #[a, b] => a == b }),
     )(child)
   } else {
@@ -103,10 +102,24 @@ export scopeWithinScope = (parent, child) => {
   }
 }
 
+_firstAsString :: List String -> String
+_firstAsString = pipe(
+  List.first,
+  fromMaybe(""),
+)
+
+isStarTag :: List String -> Boolean
+isStarTag = pipe(
+  List.last,
+  map(equals("*")),
+  fromMaybe(false),
+)
+
 tagInScope :: Scope -> Tag -> Boolean
 export tagInScope = (testScope, t) => pipe(
   getScope,
-  scopeWithinScope(testScope),
+  IO.pTrace("get scopy"),
+  scopeWithinScope(IO.pTrace("@@@", testScope)),
 )(t)
 
 checkScopes :: List Scope -> Tag -> Boolean
@@ -125,24 +138,19 @@ export serializeTag = (t) => {
 
 // TODO: support negated tags next
 checkTagScopes :: List Tag -> Tag -> Boolean
-export checkTagScopes = (tags, t) => pipe(
-  List.filter(
-    (u) => {
-      uId = getId(u)
-      tId = getId(t)
-      return tId == "*" || uId == tId
-    },
-  ),
-  map(getScope),
-  checkScopes($, t),
-)(tags)
-
-
-firstAsString :: List String -> String
-firstAsString = pipe(
-  List.first,
-  fromMaybe("*"),
-)
+export checkTagScopes = (tags, t) => {
+  tId = getId(t)
+  return pipe(
+    List.filter(
+      pipe(
+        getId,
+        (uId) => tId == "*" || uId == tId,
+      ),
+    ),
+    map(getScope),
+    checkScopes($, t),
+  )(tags)
+}
 
 parseTag :: String -> Tag
 parseTag = (part) => {
@@ -151,9 +159,10 @@ parseTag = (part) => {
     String.trim,
     String.split(":"),
     (list) => {
+      IO.pTrace("~+~+~~+~", list)
       segments = List.length(list) == 1 ? [] : List.tail(list)
       return pipe(
-        firstAsString,
+        _firstAsString,
         Tag(negated, segments),
       )(list)
     },

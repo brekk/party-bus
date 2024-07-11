@@ -5,17 +5,18 @@ import type { Tag } from "@/Tag"
 import { Just, Nothing, fromMaybe } from "Maybe"
 
 import { ansiFgBg, seededAnsi } from "@/Color"
-import { parse, serialize, within } from "@/Tag"
+import { TagString, convertTag, parse, serialize, within } from "@/Tag"
 
 
 
-export alias Trace a = String -> a -> a
-export type Processor a = Processor(Trace a, List Tag, Tag, a)
+export alias Trace a b = String -> a -> b
+export alias Transformer a b = Tag -> a -> b
+export type Processor a b = Processor(Trace a b, List Tag, Tag, a)
 
-composed :: Show a => Trace a -> List Tag -> Tag -> a -> a
+composed :: Show a => Trace a a -> List Tag -> Tag -> a -> a
 export composed = (call, tags, t, thing) => (within(tags, t) ? call(serialize(t), thing) : thing)
 
-captured :: Show a => Trace a -> List Tag -> Tag -> a -> Maybe a
+captured :: Trace a a -> List Tag -> Tag -> a -> Maybe a
 export captured = (call, tags, t, thing) => if (!within(tags, t)) {
   Nothing
 } else {
@@ -26,25 +27,50 @@ export captured = (call, tags, t, thing) => if (!within(tags, t)) {
 }
 
 // make :: Show a => (Trace a -> List Tag -> Tag -> a -> b) -> Processor a -> Processor b
-export make = (fn, x) => where(x) {
+export mapProcessor = (fn, pro) => where(pro) {
   Processor(call, tags, t, thing) =>
-    fn(call, tags, t, thing)
+    pipe(
+      fn(call, tags, t),
+      of,
+    )(thing)
 }
 
-composedP :: Show a => Processor a -> a
-export composedP = make(composed)
-
-capturedP :: Show a => Processor a -> Maybe a
-export capturedP = make(captured)
+export preCall = (pre, x) => where(x) {
+  Processor(call, tags, t, thing) =>
+    Processor(
+      pipe(
+        pre,
+        call,
+      ),
+      tags,
+      t,
+      thing,
+    )
+}
+export mapTag = (tagPre, x) => where(x) {
+  Processor(call, tags, t, thing) =>
+    pipe(
+      tagPre,
+      Processor(call, tags, $, thing),
+    )(t)
+}
 
 // instead of the verbosity of the raw processor, express things as parsable tags
-parsed :: Show a => Trace a -> List Tag -> String -> a -> a
+parsed :: Show a => Trace a a -> List Tag -> String -> a -> a
 export parsed = (call, tags, t, thing) => pipe(
   parse,
   composed(call, tags, $, thing),
 )(t)
 
-styled :: Show a => String -> Trace a -> List Tag -> String -> a -> a
+
+export composedP = mapProcessor(composed)
+export capturedP = mapProcessor(captured)
+// export parsedP = mapProcessor(mapTag(parse))
+
+// parsedP :: Show a => Processor a -> a
+// export parsedP = lift(parsed)
+
+styled :: String -> Trace String String -> List Tag -> String -> String -> String
 export styled = (seedPrefix, call, raw) => parsed(
   (t, x) => pipe(
     seededAnsi(seedPrefix),

@@ -1,18 +1,19 @@
 import type { Comparison } from "Compare"
+import type { Maybe } from "Maybe"
 
 import type { Scope } from "@/Scope"
 
 import { EQ, GT, LT } from "Compare"
 import { always, equals, when } from "Function"
 import List from "List"
-import { fromMaybe } from "Maybe"
+import { Just, Nothing, fromMaybe } from "Maybe"
 import String from "String"
 
 import { withinScope } from "@/Scope"
 
 
 
-export type Tag = Tag(Boolean, Scope, String)
+export type Tag = Tag(Boolean, Scope, String) | TagString(String)
 
 instance Eq Tag {
   __EQ__ = (a, b) => serialize(a) == serialize(b)
@@ -33,24 +34,88 @@ isNegated :: Tag -> Boolean
 export isNegated = where {
   Tag(x, _, _) =>
     !x
+
+  TagString(s) =>
+    String.startsWith("-", s)
 }
 
 isScoped :: Tag -> Boolean
 export isScoped = where {
   Tag(_, scope, _) =>
     List.length(scope) > 0
+
+  TagString(s) =>
+    String.includes(':', s)
+}
+
+indexOf :: Char -> String -> Maybe Integer
+indexOf = (needle, haystack) => {
+  i = 0
+  chars = String.toList(haystack)
+  matched = false
+  check = (_i) => pipe(
+    String.charAt(_i),
+    map(equals(needle)),
+    fromMaybe(false),
+  )(haystack)
+  while(i <= List.length(chars) && !matched) do {
+    if (check(i)) do {
+      matched := true
+    }
+    i := i + 1
+  }
+  return matched ? Just(i) : Nothing
 }
 
 getScope :: Tag -> Scope
 export getScope = where {
   Tag(_, scope, _) =>
     scope
+
+  TagString(s) =>
+    pipe(
+      parse,
+      getScope,
+    )(s)
 }
+
+// eventually we could actually Parse stuff
+parse :: String -> Tag
+export parse = (part) => {
+  neg = !String.startsWith("-", part)
+  return pipe(
+    String.trim,
+    String.split(":"),
+    (list) => {
+      segments = List.length(list) == 1 ? [] : List.tail(list)
+      return pipe(
+        _firstAsString,
+        Tag(neg, segments),
+      )(list)
+    },
+  )(part)
+}
+
+convertTag :: Tag -> Tag
+export convertTag = where {
+  Tag(n, s, m) =>
+    Tag(n, s, m)
+
+  TagString(s) =>
+    parse(s)
+}
+
 
 id :: Tag -> String
 export id = where {
   Tag(_, _, name) =>
     name
+
+  TagString(s) =>
+    pipe(
+      parse,
+      id,
+    )(s)
 }
 
 tagScopeLength :: Tag -> Integer
@@ -130,22 +195,6 @@ export within = (tags, t) => {
   )(tags)
 }
 
-// eventually we could actually parse stuff
-parse :: String -> Tag
-export parse = (part) => {
-  neg = !String.startsWith("-", part)
-  return pipe(
-    String.trim,
-    String.split(":"),
-    (list) => {
-      segments = List.length(list) == 1 ? [] : List.tail(list)
-      return pipe(
-        _firstAsString,
-        Tag(neg, segments),
-      )(list)
-    },
-  )(part)
-}
 
 _isEmptyTag :: Tag -> Boolean
 _isEmptyTag = pipe(

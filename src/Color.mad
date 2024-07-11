@@ -4,6 +4,8 @@ import R from "Random"
 
 
 
+export type Color = RGB(Integer, Integer, Integer) | ANSI256(Float)
+
 rgbToAnsi256 :: Integer -> Integer -> Integer -> Float
 export rgbToAnsi256 = (r, g, b) => {
   r4 = r >> 4

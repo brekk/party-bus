@@ -1,6 +1,8 @@
 import type { Comparison } from "Compare"
 import type { Maybe } from "Maybe"
 
+import type { Color } from "@/Color"
+
 import { EQ, GT, LT } from "Compare"
 import Dict from "Dictionary"
 import { always, equals, unless, when } from "Function"
@@ -216,21 +218,26 @@ export makeParsedProcessor = (call, tags, t, thing) => pipe(
 export makeRawLogger = makeComposableProcessor(IO.pTrace)
 export makeParsedLogger = makeParsedProcessor(IO.pTrace)
 
+fgBg :: String -> #[List String, List String] -> String
+export fgBg = (t, x) => (
+  where {
+    #[fg, bg] =>
+      pipe(
+        Term.ansiColor(fg),
+        Term.ansiColor(bg),
+      )(t)
+  }
+)(x)
+
 export makeStyledParsedLogger = (seedPrefix, raw) => makeParsedProcessor(
   (t, x) => pipe(
     seededAnsi(seedPrefix),
-    where {
-      #[fg, bg] =>
-        pipe(
-          Term.ansiColor(fg),
-          Term.ansiColor(bg),
-        )(t)
-    },
+    fgBg(t),
     IO.pTrace($, x),
   )(t),
 )(raw)
 
-// makeDebugLogger :: String -> a -> a
+makeDebugLogger :: Show a => String -> Dictionary String String -> Trace a
 export makeDebugLogger = (seedPrefix, env) => makeStyledParsedLogger(
   seedPrefix,
   pipe(

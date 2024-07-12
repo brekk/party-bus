@@ -50,15 +50,24 @@ main = () => {
   dlog("issue:a:b:c", "debuglar alpha issue")
   dlog("issue:a:*", "debarge nested issue")
   // issue = Pro.invoke(Pro.composed)
-  // call = Pro.Processor(IO.pTrace, [])
-  /*pipe(
-          call(Tag(true, [], "*")),
-          IO.pTrace("ISSUE"),
-          // Pro.prepare(Pro.composed),
-          IO.pTrace("composed!"),
-          Pro.invoke,
-          IO.pTrace("value!"),
-        )("YOYOYO")
-        */
+  call = Pro.Processor(IO.pTrace, [])
+  pipe(
+    call(Tag(true, [], "*")),
+    IO.pTrace("ISSUE"),
+    Pro.prepare(Pro.composed),
+    IO.pTrace("composed!"),
+    Pro.invoke,
+    IO.pTrace("value!"),
+  )("YOYOYO")
+  /*
+      pipe(
+        call(Tag(true, [], "*")),
+        IO.pTrace("ISSUE"),
+        Pro.prepare(Pro.captured),
+        IO.pTrace("captured!"),
+        Pro.invoke,
+        IO.pTrace("captured value!"),
+      )("Captured!")
+      // */
   // issue("issue:a:b:c")
 }

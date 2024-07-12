@@ -9,10 +9,17 @@ import { TagString, convertTag, parse, serialize, within } from "@/Tag"
 
 
 
+export alias Trace a b c = a -> b -> c
+export type Processor a b c = Processor(Trace a b c, List Tag, Tag, c)
+export alias Invocable a b c = Trace a b c -> List Tag -> Tag -> a -> b
+export type ToProcess a b c = ToProcess(Processor a b c, Invocable a b c)
+
+composed :: Invocable String String String
 export composed = (run, tags, t, thing) => (within(tags, t) ? run(serialize(t), thing) : thing)
 
-captured :: (String -> String -> String) -> List Tag -> Tag -> String -> Maybe String
-export captured = (run, tags, t, thing) => if (within(tags, t)) {
+// captured :: Trace String String String -> List Tag -> Tag -> String -> Maybe String
+// captured :: Trace a a -> List Tag -> Tag -> a -> Maybe a
+export captured = (run, tags, t, thing) => if (!within(tags, t)) {
   Nothing
 } else {
   pipe(
@@ -21,11 +28,42 @@ export captured = (run, tags, t, thing) => if (within(tags, t)) {
   )(thing)
 }
 
+prepare :: Invocable a b c -> Processor a b c -> ToProcess a b c
+export prepare = (fn, pro) => ToProcess(pro, fn)
+
+// invoke :: ToProcess a a a -> a
+export invoke = where {
+  ToProcess(process, consumer) =>
+    where(process) {
+      Processor(a, b, c, d) =>
+        consumer(a, b, c, d)
+    }
+}
+
+// instead of the verbosity of the raw processor, express things as parsable tags
+// parsed :: Show a => Trace a b c -> List Tag -> String -> a -> b
+parsed :: Trace String String String -> List Tag -> String -> String -> String
 export parsed = (run, tags, t, thing) => pipe(
   parse,
   composed(run, tags, $, thing),
 )(t)
 
+// export composedP = invoke(composed)
+// export capturedP = invoke(captured)
+/*
+export parsedP = pipe(
+  preTag(parse),
+  invoke(composed),
+)
+*/
+
+
+// export parsedP = mapProcessor(mapTag(parse))
+
+// parsedP :: Show a => Processor a -> a
+// export parsedP = lift(parsed)
+
+styled :: String -> Trace String String String -> List Tag -> String -> String -> String
 export styled = (seedPrefix, run, raw) => parsed(
   (t, x) => pipe(
     seededAnsi(seedPrefix),

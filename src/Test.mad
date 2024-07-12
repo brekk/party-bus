@@ -1,10 +1,17 @@
-import { mapWithKey, values } from "Dictionary"
+import { mapWithKey, toList, values } from "Dictionary"
+import List from "List"
 import { assertEquals, test } from "Test"
 import { parallel } from "Wish"
 
 
 
 // testCases :: (Show b, Eq b) => String -> (a -> b) -> Dictionary a b -> Wish TestResult TestResult
+export demo = (fn, name, testDict) => pipe(
+  mapWithKey((i, o) => test(`${name}\n  ↳ ${show(i)}`, () => assertEquals(fn(i), o))),
+  values,
+)(testDict)
+
+
 export testCases = (fn, name, testDict) => pipe(
   mapWithKey((input, output) => assertEquals(fn(input), output)),
   values,

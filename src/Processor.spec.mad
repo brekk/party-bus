@@ -3,13 +3,19 @@ import String from "String"
 import { assertEquals, test } from "Test"
 
 import { captured, parsed, styled } from "@/Processor"
-import { Tag, scoped, tag } from "@/Tag"
+import { Tag, scoped, tag, untag } from "@/Tag"
 
 
 
 processNothing = (_, b) => b
 
-SCOPES = [scoped("info", ["deep"]), tag("warn"), tag("log"), scoped("issue", ["a", "b", "c"])]
+SCOPES = [
+  scoped("info", ["deep"]),
+  tag("warn"),
+  tag("log"),
+  scoped("issue", ["a", "b", "c"]),
+  untag("ignore"),
+]
 test(
   "makeRawLogger",
   () => do {

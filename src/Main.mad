@@ -10,7 +10,7 @@ import Wish from "Wish"
 import Lazy from "@/LazyProcessor"
 import { debug, parsed, raw } from "@/Log"
 import Pro from "@/Processor"
-import { Tag, parse, scoped, tag, untag } from "@/Tag"
+import { Tag, fromString, scoped, tag, untag } from "@/Tag"
 
 
 
@@ -21,7 +21,7 @@ main = () => {
     tag("warn"),
     tag("log"),
     scoped("issue", ["a", "b", "c"]),
-  // untag("ignore"),
+    untag("ignore"),
   ]
   // IO.pTrace("ARGV", Process.Argv)
   // IO.pTrace("ENV", Process.Env)
@@ -43,8 +43,9 @@ main = () => {
   slog = styledLogger(SCOPES)
   slog("*", "colorful starstar!")
   slog("info:deep", "colorful info:deep")
-  slog("issue:a:b:c", "colorful alpha issue")
+  slog("issue:a:b", "colorful alpha issue")
   slog("issue:a:*", "colorful nested issue")
+  slog("ignore", "ignored message!")
   pipe(
     slog("a:input"),
     (a) => a ++ " there",

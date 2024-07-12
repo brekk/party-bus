@@ -1,61 +1,109 @@
 import type { Comparison } from "Compare"
 import type { Maybe } from "Maybe"
 
-import type { Scope } from "@/Scope"
-
 import { EQ, GT, LT } from "Compare"
 import { always, equals, when } from "Function"
 import List from "List"
 import { Just, Nothing, fromMaybe } from "Maybe"
 import String from "String"
 
-import { withinScope } from "@/Scope"
 
 
+// export alias TagRecord = { negated :: Boolean, name :: String, scopes :: Scope }
+// export type Tag2 = Tag2(TagRecord)
 
-export type Tag = Tag(Boolean, String, Scope)
+export alias Scope = List String
+
+/**
+ * A tag is a human identifiable way of segmenting data:
+ * - it has an `id` which is a String
+ * - it can be negated, which allows for exclusion
+ * - it can be scoped, which allows for filtering
+ */
+export type Tag = Tag(Boolean, String, Scope) | Wildcard
 
 instance Eq Tag {
-  __EQ__ = (a, b) => serialize(a) == serialize(b)
+  __EQ__ = tagEqualsTag
 }
 instance Comparable Tag {
   compare = compareTag
 }
 
-scoped :: String -> Scope -> Tag
-export scoped = Tag(true)
+tagEqualsTag = (a, b) => {
+  iA = id(a)
+  iB = id(b)
+  return if (isWild(a) || isWild(b)) {
+    true
+  } else if ((isNegated(a) || isNegated(b)) && iA == iB) {
+    false
+  } else {
+    id(a) == id(b)
+  }
+}
 
-inverted :: String -> Scope -> Tag
-export inverted = Tag(false)
+// CONSTRUCTOR SUGAR
+
+scoped :: String -> Scope -> Tag
+export scoped = Tag(false)
+
+negated :: String -> Scope -> Tag
+export negated = Tag(true)
 
 tag :: String -> Tag
 export tag = scoped($, [])
 untag :: String -> Tag
-export untag = inverted($, [])
+export untag = negated($, [])
 
-isInverted :: Tag -> Boolean
-export isInverted = where {
+// CHECKS
+
+isWild :: Tag -> Boolean
+export isWild = where {
+  Wildcard =>
+    true
+
+  Tag(_, x, _) =>
+    x == "*"
+}
+
+isNegated :: Tag -> Boolean
+export isNegated = where {
   Tag(x, _, _) =>
-    !x
+    x
+
+  Wildcard =>
+    false
 }
 
 isScoped :: Tag -> Boolean
 export isScoped = where {
   Tag(_, _, scope) =>
     List.length(scope) > 0
+
+  Wildcard =>
+    false
 }
+
+// ACCESSOR
 
 
 getScope :: Tag -> Scope
 export getScope = where {
   Tag(_, _, scope) =>
     scope
+
+  Wildcard =>
+    []
 }
 
 // eventually we could actually Parse stuff
-parse :: String -> Tag
-export parse = (part) => {
-  pos = !String.startsWith("-", part)
+fromString :: String -> Tag
+export fromString = (_part) => {
+  pos = String.startsWith("-", _part)
+  part = if (pos) {
+    String.drop(1, _part)
+  } else {
+    _part
+  }
   return pipe(
     String.trim,
     String.split(":"),
@@ -74,6 +122,9 @@ id :: Tag -> String
 export id = where {
   Tag(_, name, _) =>
     name
+
+  Wildcard =>
+    "*"
 }
 
 tagScopeLength :: Tag -> Integer
@@ -83,23 +134,36 @@ export tagScopeLength = pipe(
 )
 
 compareTag :: Tag -> Tag -> Comparison
-export compareTag = (a, b) => {
-  aName = id(a)
-  bName = id(b)
-
-  return if (bName == aName) do {
-    sA = tagScopeLength(a)
-    sB = tagScopeLength(b)
-    return if (sA == sB) {
-      EQ
-    } else if (sA > sB) {
-      GT
+export compareTag = (a, b) => where(#[a, b]) {
+  #[Tag(aNeg, aName, aScope), Tag(bNeg, bName, bScope)] =>
+    if (bName == aName) {
+      if (aNeg || bNeg) {
+        aNeg ? LT : GT
+      } else do {
+        sA = List.length(aScope)
+        sB = List.length(bScope)
+        return if (sA == sB) {
+          EQ
+        } else if (sA > sB) {
+          GT
+        } else {
+          LT
+        }
+      }
+    } else if (aNeg || bNeg) {
+      aNeg ? GT : LT
     } else {
-      LT
+      EQ
     }
-  } else {
+
+  #[Wildcard, Wildcard] =>
     EQ
-  }
+
+  #[Wildcard, _] =>
+    LT
+
+  #[_, Wildcard] =>
+    GT
 }
 
 hasScope :: Scope -> Tag -> Boolean
@@ -117,16 +181,32 @@ _firstAsString = pipe(
 _isStarTag :: List String -> Boolean
 _isStarTag = List.endsWith(["*"])
 
-inScope :: Boolean -> Scope -> Tag -> Boolean
-export inScope = (neg, testScope, t) => pipe(
+withinScope :: Scope -> Scope -> Boolean
+export withinScope = (parent, child) => {
+  lenPar = List.length(parent)
+  lenChild = List.length(child)
+  return if (lenChild == 0) {
+    true
+  } else if (lenPar <= lenChild) {
+    pipe(
+      List.zip(parent),
+      List.all(where { #[a, b] => a == b }),
+    )(child)
+  } else {
+    false
+  }
+}
+
+inScope :: Scope -> Tag -> Boolean
+export inScope = (testScope, t) => pipe(
   getScope,
   when(_isStarTag, always([])),
-  withinScope(neg, testScope),
+  withinScope(testScope),
 )(t)
 
-checkScopes :: Boolean -> Tag -> List Scope -> Boolean
-export checkScopes = (neg, t, scopes) => pipe(
-  List.any(inScope(neg, $, t)),
+checkScopes :: List Scope -> Tag -> Boolean
+export checkScopes = (scopes, t) => pipe(
+  List.any(inScope($, t)),
 )(scopes)
 
 serialize :: Tag -> String
@@ -143,11 +223,12 @@ import IO from "IO"
 
 
 
-// TODO: support inverted tags next
+// TODO: support negated tags next
+/*
 within :: List Tag -> Tag -> Boolean
 export within = (tags, t) => {
   tId = id(t)
-  neg = isInverted(t)
+  neg = isNegated(t)
   return pipe(
     List.filter(
       pipe(
@@ -156,8 +237,19 @@ export within = (tags, t) => {
       ),
     ),
     map(getScope),
-    checkScopes(neg, t),
+    // map((raw) => #[isNegated(raw), getScope(raw)]),
+    checkScopes($, t),
   )(tags)
+}
+*/
+
+matches :: List Tag -> Tag -> Boolean
+export matches = (xs, t) => {
+  return pipe(
+    List.filter((x) => isWild(x) || isWild(t) || (tagEqualsTag(x, t) && x > t)),
+    List.length,
+    equals(0),
+  )(xs)
 }
 
 
@@ -167,9 +259,9 @@ _isEmptyTag = pipe(
   equals(""),
 )
 
-parseMany :: String -> List Tag
-export parseMany = pipe(
+manyFromString :: String -> List Tag
+export manyFromString = pipe(
   String.split(","),
-  map(parse),
+  map(fromString),
   List.reject(_isEmptyTag),
 )

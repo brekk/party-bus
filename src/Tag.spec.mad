@@ -8,19 +8,20 @@ import {
   getScope,
   hasScope,
   inScope,
-  isInverted,
+  isNegated,
   isScoped,
-  parseMany,
+  manyFromString,
+  matches,
   scoped,
   serialize,
   tag,
   untag,
 } from "@/Tag"
-import { testCases } from "@/Test"
+import { demo, testCases } from "@/Test"
 
 
 
-testparseMany = testCases(parseMany)
+testparseMany = testCases(manyFromString)
 testparseMany(
   "parseMany - single tags",
   {{ "yo": [scoped("yo", [])], "yo:scoped": [scoped("yo", ["scoped"])] }},
@@ -57,7 +58,7 @@ test(
   },
 )
 testCases(
-  inScope(true, ["a", "b", "c"]),
+  inScope(["a", "b", "c"]),
   "inScope b:c",
   Dict.fromList([
     #[scoped("x", ["a", "b", "c"]), true],
@@ -76,10 +77,35 @@ testCases(
   ]),
 )
 
-testCases(isInverted, "isInverted", Dict.fromList([#[untag("raw"), false], #[tag("raw"), true]]))
+testCases(isNegated, "isNegated", Dict.fromList([#[untag("raw"), true], #[tag("raw"), false]]))
 
 testCases(
   compareTag(tag("*")),
   "compareTag : *",
   Dict.fromList([#[tag("*"), EQ], #[tag("hello"), EQ]]),
+)
+
+demo(
+  matches([
+    scoped("a", []),
+    scoped("info", ["deep"]),
+    tag("warn"),
+    tag("log"),
+    scoped("issue", ["a", "b", "c"]),
+    untag("ignore"),
+  ]),
+  "matches callable scope?",
+  Dict.fromList([
+    #[scoped("issue", ["a"]), true],
+    #[scoped("issue", []), true],
+    #[scoped("warn", ["a"]), true],
+    #[scoped("warn", ["*"]), true],
+    #[scoped("warn", ["x"]), true],
+    #[scoped("issue", ["j"]), false],
+    #[scoped("issue", ["a", "j"]), false],
+    #[scoped("issue", ["a", "b", "j"]), false],
+    #[scoped("issue", ["a", "b", "c"]), true],
+    #[scoped("issue", ["a", "b", "c", "x"]), true],
+    #[scoped("issue", ["a", "b", "c", "x", "*"]), true],
+  ]),
 )

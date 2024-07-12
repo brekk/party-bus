@@ -97,7 +97,7 @@ demo(
   "matches callable scope?",
   Dict.fromList([
     #[scoped("issue", ["a"]), true],
-    #[scoped("issue", []), true],
+    #[scoped("issue", []), false],
     #[scoped("warn", ["a"]), true],
     #[scoped("warn", ["*"]), true],
     #[scoped("warn", ["x"]), true],

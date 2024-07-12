@@ -4,6 +4,7 @@ import { assertEquals, test } from "Test"
 
 import { captured, parsed, styled } from "@/Processor"
 import { Tag, scoped, tag, untag } from "@/Tag"
+import { demo } from "@/Test"
 
 
 
@@ -21,16 +22,16 @@ test(
   () => do {
     alog = captured(processNothing, SCOPES)
     _ <- assertEquals(alog(Tag(true, "info", ["deep"]), "[deep] info!"), Just("[deep] info!"))
-    _ <- assertEquals(alog(Tag(true, "info", []), "info info!"), Just("info info!"))
-    _ <- assertEquals(alog(Tag(true, "unmatched", []), "info info!"), Nothing)
-    _ <- assertEquals(alog(Tag(true, "issue", ["deeply"]), "skip me!"), Nothing)
+    _ <- assertEquals(alog(Tag(true, "info", []), "infoinfoinfo"), Nothing)
+    _ <- assertEquals(alog(Tag(true, "unmatched", []), "nothing"), Nothing)
+    _ <- assertEquals(alog(Tag(true, "issue", ["deeply"]), "[deeply] issue!"), Nothing)
     _ <- assertEquals(
-      alog(Tag(true, "issue", ["a", "b", "*"]), "don't skip me!"),
-      Just("don't skip me!"),
+      alog(Tag(true, "issue", ["a", "b", "*"]), "a:b:* -- issue"),
+      Just("a:b:* -- issue"),
     )
     return assertEquals(
-      alog(Tag(true, "info", ["deep", "nested"]), "info info!"),
-      Just("info info!"),
+      alog(Tag(true, "info", ["deep", "nested"]), "deep:nested info!"),
+      Just("deep:nested info!"),
     )
   },
 )

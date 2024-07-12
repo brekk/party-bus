@@ -7,7 +7,7 @@ import { Just, fromMaybe } from "Maybe"
 import Process from "Process"
 import Wish from "Wish"
 
-import { Lazy, lazy, mapLazy } from "@/LazyProcessor"
+import { Lazy, lazy, transform } from "@/LazyProcessor"
 import { debug, parsed, raw } from "@/Log"
 import Pro from "@/Processor"
 import { Tag, TagString, parse, scoped, tag } from "@/Tag"
@@ -57,20 +57,11 @@ main = () => {
   sloth = lazy(slog)
   // sloth(IO.pTrace, [], Tag([], ""))
   IO.pTrace("SLOTH", sloth)
-  moss = sloth([], TagString("info:deep"), "debugular info")
+  moss = sloth(SCOPES, scoped("*", []), "debugular info")
   IO.pTrace("MOSS", moss)
   pipe(
-    // map(IO.pTrace("...")),
-    chain(mapLazy(Pro.composed)),
-    // chain(
-    //   (caller) => map(
-    //     pipe(
-    //       invoke,
-    //       caller,
-    //     ),
-    //   )(Pro.composed),
-    // ),
-
+    // transform(Pro.composed),
+    transform(Pro.captured),
     Wish.fulfill((x) => { IO.pTrace("FAIL", x) }, (x) => { IO.pTrace("SUCCESS", x) }),
   )(moss)
 }

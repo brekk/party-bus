@@ -1,12 +1,20 @@
 import type { Wish } from "Wish"
 
+import type { Invocable, Trace } from "@/Processor"
+import type { Tag } from "@/Tag"
+
+import Wish from "Wish"
+
 import { captured, composed, parsed, styled } from "@/Processor"
 
 
 
-export alias LazyProcessor a b = a -> b -> b
+export type Invocation a b c = Invocation(Trace a b c, List Tag, Tag, a, b)
 
-// lazy :: LazyProcessor a b -> a -> b
-export lazy = (fn, x, y) => pipe(
-  fn(x),
-)(y)
+export type Lazy a b c = LazyProcessor(Invocable a b c)
+
+// lazy :: Invocable a b c -> Lazy a b c
+export lazy = (fn, x, y, z) => pipe(
+  fn(x, y),
+  Wish.good,
+)(z)

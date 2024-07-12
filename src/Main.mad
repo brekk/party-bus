@@ -1,8 +1,12 @@
+import type { Invocation, Lazy } from "@/LazyProcessor"
+import type { Invocable } from "@/Processor"
+
 import Dict from "Dictionary"
 import IO from "IO"
 import { Just, fromMaybe } from "Maybe"
 import Process from "Process"
 
+import { Invocation, LazyProcessor, lazy } from "@/LazyProcessor"
 import { debug, parsed, raw } from "@/Log"
 import Pro from "@/Processor"
 import { Tag, parse, scoped, tag } from "@/Tag"
@@ -49,25 +53,7 @@ main = () => {
   dlog("info:deep", "debugular info:deep")
   dlog("issue:a:b:c", "debuglar alpha issue")
   dlog("issue:a:*", "debarge nested issue")
-  // issue = Pro.invoke(Pro.composed)
-  call = Pro.Processor(IO.pTrace, [])
-  pipe(
-    call(Tag(true, [], "*")),
-    IO.pTrace("ISSUE"),
-    Pro.prepare(Pro.composed),
-    IO.pTrace("composed!"),
-    Pro.invoke,
-    IO.pTrace("value!"),
-  )("YOYOYO")
-  /*
-      pipe(
-        call(Tag(true, [], "*")),
-        IO.pTrace("ISSUE"),
-        Pro.prepare(Pro.captured),
-        IO.pTrace("captured!"),
-        Pro.invoke,
-        IO.pTrace("captured value!"),
-      )("Captured!")
-      // */
-  // issue("issue:a:b:c")
+
+  sloth = lazy(Invocation)
+  // sloth(IO.pTrace, [], Tag([], ""))
 }

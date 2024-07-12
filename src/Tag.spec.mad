@@ -8,7 +8,7 @@ import {
   getScope,
   hasScope,
   inScope,
-  isNegated,
+  isInverted,
   isScoped,
   parseMany,
   scoped,
@@ -57,7 +57,7 @@ test(
   },
 )
 testCases(
-  inScope(["a", "b", "c"]),
+  inScope(true, ["a", "b", "c"]),
   "inScope b:c",
   Dict.fromList([
     #[scoped("x", ["a", "b", "c"]), true],
@@ -76,14 +76,7 @@ testCases(
   ]),
 )
 
-testCases(
-  isNegated,
-  "isNegated",
-  Dict.fromList([
-    #[untag("raw"), true],
-  // #[tag("raw"), false]
-  ]),
-)
+testCases(isInverted, "isInverted", Dict.fromList([#[untag("raw"), false], #[tag("raw"), true]]))
 
 testCases(
   compareTag(tag("*")),

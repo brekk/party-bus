@@ -5,8 +5,8 @@ import String from "String"
 
 export alias Scope = List String
 
-withinScope :: Scope -> Scope -> Boolean
-export withinScope = (parent, child) => {
+withinScope :: Boolean -> Scope -> Scope -> Boolean
+export withinScope = (pos, parent, child) => {
   lenPar = List.length(parent)
   lenChild = List.length(child)
   return if (lenChild == 0) {

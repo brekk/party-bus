@@ -13,7 +13,7 @@ import { withinScope } from "@/Scope"
 
 
 
-export type Tag = Tag(Boolean, String, Scope) | TagString(String)
+export type Tag = Tag(Boolean, String, Scope)
 
 instance Eq Tag {
   __EQ__ = (a, b) => serialize(a) == serialize(b)
@@ -25,67 +25,37 @@ instance Comparable Tag {
 scoped :: String -> Scope -> Tag
 export scoped = Tag(true)
 
-negated :: String -> Scope -> Tag
-export negated = Tag(false)
+inverted :: String -> Scope -> Tag
+export inverted = Tag(false)
 
 tag :: String -> Tag
 export tag = scoped($, [])
 untag :: String -> Tag
-export untag = negated($, [])
+export untag = inverted($, [])
 
-isNegated :: Tag -> Boolean
-export isNegated = where {
+isInverted :: Tag -> Boolean
+export isInverted = where {
   Tag(x, _, _) =>
     !x
-
-  TagString(s) =>
-    String.startsWith("-", s)
 }
 
 isScoped :: Tag -> Boolean
 export isScoped = where {
   Tag(_, _, scope) =>
     List.length(scope) > 0
-
-  TagString(s) =>
-    String.includes(':', s)
 }
 
-indexOf :: Char -> String -> Maybe Integer
-indexOf = (needle, haystack) => {
-  i = 0
-  chars = String.toList(haystack)
-  matched = false
-  check = (_i) => pipe(
-    String.charAt(_i),
-    map(equals(needle)),
-    fromMaybe(false),
-  )(haystack)
-  while(i <= List.length(chars) && !matched) do {
-    if (check(i)) do {
-      matched := true
-    }
-    i := i + 1
-  }
-  return matched ? Just(i) : Nothing
-}
 
 getScope :: Tag -> Scope
 export getScope = where {
   Tag(_, _, scope) =>
     scope
-
-  TagString(s) =>
-    pipe(
-      parse,
-      getScope,
-    )(s)
 }
 
 // eventually we could actually Parse stuff
 parse :: String -> Tag
 export parse = (part) => {
-  neg = !String.startsWith("-", part)
+  pos = !String.startsWith("-", part)
   return pipe(
     String.trim,
     String.split(":"),
@@ -93,19 +63,10 @@ export parse = (part) => {
       seg = List.length(list) == 1 ? [] : List.tail(list)
       return pipe(
         _firstAsString,
-        Tag(neg, $, seg),
+        Tag(pos, $, seg),
       )(list)
     },
   )(part)
-}
-
-convertTag :: Tag -> Tag
-export convertTag = where {
-  Tag(n, s, m) =>
-    Tag(n, s, m)
-
-  TagString(s) =>
-    parse(s)
 }
 
 
@@ -113,12 +74,6 @@ id :: Tag -> String
 export id = where {
   Tag(_, name, _) =>
     name
-
-  TagString(s) =>
-    pipe(
-      parse,
-      id,
-    )(s)
 }
 
 tagScopeLength :: Tag -> Integer
@@ -162,15 +117,15 @@ _firstAsString = pipe(
 _isStarTag :: List String -> Boolean
 _isStarTag = List.endsWith(["*"])
 
-inScope :: Scope -> Tag -> Boolean
-export inScope = (testScope, t) => pipe(
+inScope :: Boolean -> Scope -> Tag -> Boolean
+export inScope = (neg, testScope, t) => pipe(
   getScope,
   when(_isStarTag, always([])),
-  withinScope(testScope),
+  withinScope(neg, testScope),
 )(t)
 
-checkScopes :: Tag -> List Scope -> Boolean
-export checkScopes = (t, scopes) => List.any(inScope($, t), scopes)
+checkScopes :: Boolean -> Tag -> List Scope -> Boolean
+export checkScopes = (neg, t, scopes) => List.any(inScope(neg, $, t), scopes)
 
 serialize :: Tag -> String
 export serialize = (t) => {
@@ -182,10 +137,11 @@ export serialize = (t) => {
   return name ++ (equals("", scope) ? "" : ":" ++ scope)
 }
 
-// TODO: support negated tags next
+// TODO: support inverted tags next
 within :: List Tag -> Tag -> Boolean
 export within = (tags, t) => {
   tId = id(t)
+  neg = isInverted(t)
   return pipe(
     List.filter(
       pipe(
@@ -194,7 +150,7 @@ export within = (tags, t) => {
       ),
     ),
     map(getScope),
-    checkScopes(t),
+    checkScopes(neg, t),
   )(tags)
 }
 

@@ -10,7 +10,7 @@ import Wish from "Wish"
 import Lazy from "@/LazyProcessor"
 import { debug, parsed, raw } from "@/Log"
 import Pro from "@/Processor"
-import { Tag, parse, scoped, tag } from "@/Tag"
+import { Tag, parse, scoped, tag, untag } from "@/Tag"
 
 
 
@@ -21,6 +21,7 @@ main = () => {
     tag("warn"),
     tag("log"),
     scoped("issue", ["a", "b", "c"]),
+  // untag("ignore"),
   ]
   // IO.pTrace("ARGV", Process.Argv)
   // IO.pTrace("ENV", Process.Env)
@@ -31,6 +32,7 @@ main = () => {
   alog(Tag(true, "info", ["deeply", "nested"]), "skipping deeply.nested")
   alog(Tag(true, "log", []), "log")
   alog(Tag(true, "warning", []), "this is skipped")
+  alog(Tag(true, "ignore", []), "this is skipped?")
   // these parse a tag:scope string
   blog = parsed(SCOPES)
   blog("*", "k fun star star!")
@@ -54,6 +56,7 @@ main = () => {
   dlog("info:deep", "debugular info:deep")
   dlog("issue:a:b:c", "debuglar alpha issue")
   dlog("issue:a:*", "debarge nested issue")
+  dlog("warning", "exclude warning")
   sloth = Lazy.lazy(slog)
   // sloth(IO.pTrace, [], Tag([], ""))
   IO.pTrace("SLOTH", sloth)

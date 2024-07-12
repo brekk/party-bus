@@ -125,7 +125,9 @@ export inScope = (neg, testScope, t) => pipe(
 )(t)
 
 checkScopes :: Boolean -> Tag -> List Scope -> Boolean
-export checkScopes = (neg, t, scopes) => List.any(inScope(neg, $, t), scopes)
+export checkScopes = (neg, t, scopes) => pipe(
+  List.any(inScope(neg, $, t)),
+)(scopes)
 
 serialize :: Tag -> String
 export serialize = (t) => {
@@ -136,6 +138,10 @@ export serialize = (t) => {
   name = id(t)
   return name ++ (equals("", scope) ? "" : ":" ++ scope)
 }
+
+import IO from "IO"
+
+
 
 // TODO: support inverted tags next
 within :: List Tag -> Tag -> Boolean

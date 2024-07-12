@@ -10,15 +10,15 @@ import { TagString, convertTag, parse, serialize, within } from "@/Tag"
 
 
 export alias Trace a b c = a -> b -> c
-export type Processor a b c = Processor(Trace a b c, List Tag, Tag, b)
+export type Processor a b c = Processor(Trace a b c, List Tag, Tag, c)
 export alias Invocable a b c = Trace a b c -> List Tag -> Tag -> a -> b
 export type ToProcess a b c = ToProcess(Processor a b c, Invocable a b c)
 
 composed :: Invocable String String String
 export composed = (run, tags, t, thing) => (within(tags, t) ? run(serialize(t), thing) : thing)
 
+// captured :: Trace String String String -> List Tag -> Tag -> String -> Maybe String
 // captured :: Trace a a -> List Tag -> Tag -> a -> Maybe a
-captured :: Trace String String String -> List Tag -> Tag -> String -> Maybe String
 export captured = (run, tags, t, thing) => if (!within(tags, t)) {
   Nothing
 } else {
@@ -28,10 +28,10 @@ export captured = (run, tags, t, thing) => if (!within(tags, t)) {
   )(thing)
 }
 
-// prepare :: Processor a b c -> Invocable a a a -> ToProcess a b c
+prepare :: Invocable a b c -> Processor a b c -> ToProcess a b c
 export prepare = (fn, pro) => ToProcess(pro, fn)
 
-invoke :: ToProcess a a b -> a
+// invoke :: ToProcess a a a -> a
 export invoke = where {
   ToProcess(process, consumer) =>
     where(process) {

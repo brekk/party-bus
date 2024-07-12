@@ -60,14 +60,14 @@ main = () => {
     IO.pTrace("value!"),
   )("YOYOYO")
   /*
-        pipe(
-          call(Tag(true, [], "*")),
-          IO.pTrace("ISSUE"),
-          Pro.prepare(Pro.captured),
-          IO.pTrace("captured!"),
-          Pro.invoke,
-          IO.pTrace("captured value!"),
-        )("Captured!")
-        */
+      pipe(
+        call(Tag(true, [], "*")),
+        IO.pTrace("ISSUE"),
+        Pro.prepare(Pro.captured),
+        IO.pTrace("captured!"),
+        Pro.invoke,
+        IO.pTrace("captured value!"),
+      )("Captured!")
+      // */
   // issue("issue:a:b:c")
 }

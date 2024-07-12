@@ -7,11 +7,11 @@ import P from "@/Processor"
 
 
 
-raw :: List Tag -> Tag -> String -> String
+// raw :: List Tag -> String -> String -> String
 export raw = P.composed(IO.pTrace)
 
-parsed :: List Tag -> String -> String -> String
+// parsed :: List Tag -> String -> String -> String
 export parsed = P.parsed(IO.pTrace)
 
-debug :: String -> Dictionary String String -> String -> String -> String
+// debug :: String -> Dictionary String String -> String -> String -> String
 export debug = debugged(IO.pTrace)

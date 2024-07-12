@@ -1,0 +1,12 @@
+import type { Wish } from "Wish"
+
+import { captured, composed, parsed, styled } from "@/Processor"
+
+
+
+export alias LazyProcessor a b = a -> b -> b
+
+// lazy :: LazyProcessor a b -> a -> b
+export lazy = (fn, x, y) => pipe(
+  fn(x),
+)(y)

@@ -1,7 +1,4 @@
-import type { Maybe } from "Maybe"
-import type { Wish } from "Wish"
-
-import type { Invocable, Trace } from "@/Processor"
+import type { Trace } from "@/Processor"
 import type { Tag } from "@/Tag"
 
 import Wish from "Wish"
@@ -10,19 +7,41 @@ import Wish from "Wish"
 
 export type Lazy a b = Lazy(Trace a b, List Tag, Tag, a)
 
+export setTrace = (change, x) => where(x) {
+  Lazy(_, tags, t, thing) =>
+    Lazy(change, tags, t, thing)
+}
+
+export setTags = (tags, x) => where(x) {
+  Lazy(change, _, t, thing) =>
+    Lazy(change, tags, t, thing)
+}
+
+export setTag = (t, x) => where(x) {
+  Lazy(change, tags, _, thing) =>
+    Lazy(change, tags, t, thing)
+}
+
+export setValue = (thing, x) => where(x) {
+  Lazy(change, tags, t, _) =>
+    Lazy(change, tags, t, thing)
+}
+
+
 export lazy = (run, tags, t, thing) => pipe(
   Lazy(run, tags, t),
   Wish.good,
 )(thing)
 
+export call = (fn, x) => where(x) {
+  Lazy(run, tags, t, thing) =>
+    fn(run, tags, t, thing)
+}
 
 export transform = (fn, x) => chain(
-  where {
-    Lazy(run, tags, t, thing) =>
-      pipe(
-        fn(run, tags, t),
-        of,
-      )(thing)
-  },
+  pipe(
+    call(fn),
+    of,
+  ),
   x,
 )

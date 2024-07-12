@@ -1,11 +1,11 @@
 import Dict from "Dictionary"
 import IO from "IO"
-import { fromMaybe } from "Maybe"
+import { Just, fromMaybe } from "Maybe"
 import Process from "Process"
 
 import { debug, parsed, raw } from "@/Log"
-import { styled } from "@/Processor"
-import { Tag, scoped, tag } from "@/Tag"
+import Pro from "@/Processor"
+import { Tag, parse, scoped, tag } from "@/Tag"
 
 
 
@@ -31,7 +31,7 @@ main = () => {
   blog("*", "k fun star star!")
   blog("info:deep", "info:deep with parsies!")
   blog("info:*", "info star!")
-  styledLogger = styled("style", IO.pTrace)
+  styledLogger = Pro.styled("style", IO.pTrace)
   // these parse a tag:scope string and colorize it
   slog = styledLogger(SCOPES)
   slog("*", "colorful starstar!")
@@ -49,4 +49,25 @@ main = () => {
   dlog("info:deep", "debugular info:deep")
   dlog("issue:a:b:c", "debuglar alpha issue")
   dlog("issue:a:*", "debarge nested issue")
+  // issue = Pro.invoke(Pro.composed)
+  call = Pro.Processor(IO.pTrace, [])
+  pipe(
+    call(Tag(true, [], "*")),
+    IO.pTrace("ISSUE"),
+    Pro.prepare(Pro.composed),
+    IO.pTrace("composed!"),
+    Pro.invoke,
+    IO.pTrace("value!"),
+  )("YOYOYO")
+  /*
+        pipe(
+          call(Tag(true, [], "*")),
+          IO.pTrace("ISSUE"),
+          Pro.prepare(Pro.captured),
+          IO.pTrace("captured!"),
+          Pro.invoke,
+          IO.pTrace("captured value!"),
+        )("Captured!")
+        */
+  // issue("issue:a:b:c")
 }

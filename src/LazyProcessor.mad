@@ -1,3 +1,4 @@
+import type { Maybe } from "Maybe"
 import type { Wish } from "Wish"
 
 import type { Invocable, Trace } from "@/Processor"
@@ -9,12 +10,31 @@ import { captured, composed, parsed, styled } from "@/Processor"
 
 
 
-export type Invocation a b c = Invocation(Trace a b c, List Tag, Tag, a, b)
-
-export type Lazy a b c = LazyProcessor(Invocable a b c)
+export type Lazy a b = Lazy(Trace a b, List Tag, Tag, a)
 
 // lazy :: Invocable a b c -> Lazy a b c
-export lazy = (fn, x, y, z) => pipe(
-  fn(x, y),
+// export lazy = (fn, x, y, z) => pipe(
+//   fn(x, y),
+//   Wish.good,
+// )(z)
+
+// lazy :: Invocable a b c -> Lazy a b c
+export lazy = (run, tags, t, thing) => pipe(
+  Lazy(run, tags, t),
   Wish.good,
-)(z)
+)(thing)
+
+// invoke :: Invocable a b c -> Lazy a b c
+// invoke :: Invocable a b c -> Lazy a b c -> c
+// export invoke = (processable, l) => where(l) {
+// Lazy(run, tags, t, thing) =>
+// processable(run, tags, t, thing)
+// }
+
+export mapLazy = (fn, x) => where(x) {
+  Lazy(run, tags, t, thing) =>
+    pipe(
+      fn(run, tags, t),
+      of,
+    )(thing)
+}

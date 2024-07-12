@@ -1,4 +1,5 @@
 import { Just, Nothing } from "Maybe"
+import String from "String"
 import { assertEquals, test } from "Test"
 
 import { captured, parsed, styled } from "@/Processor"
@@ -40,5 +41,23 @@ test(
     _ <- assertEquals(alog("*", "k fun star star!"), "k fun star star!")
     _ <- assertEquals(alog("info:*", "info star"), "info star")
     return assertEquals(alog("issue:a:b:*", "issue nested star"), "issue nested star")
+  },
+)
+
+test(
+  "styled",
+  () => do {
+    STYLED_SCOPES = [
+      scoped("a", []),
+      scoped("info", ["deep"]),
+      tag("warn"),
+      tag("log"),
+      scoped("issue", ["a", "b", "c"]),
+    ]
+    return pipe(
+      styled("test", (_, b) => b),
+      (slog) => slog("issue:a", "cool"),
+      assertEquals("cool"),
+    )(STYLED_SCOPES)
   },
 )

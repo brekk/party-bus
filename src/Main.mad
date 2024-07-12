@@ -1,15 +1,16 @@
-import type { Invocation, Lazy } from "@/LazyProcessor"
+import type { Lazy } from "@/LazyProcessor"
 import type { Invocable } from "@/Processor"
 
 import Dict from "Dictionary"
 import IO from "IO"
 import { Just, fromMaybe } from "Maybe"
 import Process from "Process"
+import Wish from "Wish"
 
-import { Invocation, LazyProcessor, lazy } from "@/LazyProcessor"
+import { Lazy, lazy, mapLazy } from "@/LazyProcessor"
 import { debug, parsed, raw } from "@/Log"
 import Pro from "@/Processor"
-import { Tag, parse, scoped, tag } from "@/Tag"
+import { Tag, TagString, parse, scoped, tag } from "@/Tag"
 
 
 
@@ -53,7 +54,23 @@ main = () => {
   dlog("info:deep", "debugular info:deep")
   dlog("issue:a:b:c", "debuglar alpha issue")
   dlog("issue:a:*", "debarge nested issue")
-
-  sloth = lazy(Invocation)
+  sloth = lazy(slog)
   // sloth(IO.pTrace, [], Tag([], ""))
+  IO.pTrace("SLOTH", sloth)
+  moss = sloth([], TagString("info:deep"), "debugular info")
+  IO.pTrace("MOSS", moss)
+  pipe(
+    // map(IO.pTrace("...")),
+    chain(mapLazy(Pro.composed)),
+    // chain(
+    //   (caller) => map(
+    //     pipe(
+    //       invoke,
+    //       caller,
+    //     ),
+    //   )(Pro.composed),
+    // ),
+
+    Wish.fulfill((x) => { IO.pTrace("FAIL", x) }, (x) => { IO.pTrace("SUCCESS", x) }),
+  )(moss)
 }

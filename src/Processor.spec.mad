@@ -8,21 +8,21 @@ import { Tag, scoped, tag } from "@/Tag"
 
 processNothing = (_, b) => b
 
-SCOPES = [scoped(["deep"], "info"), tag("warn"), tag("log"), scoped(["a", "b", "c"], "issue")]
+SCOPES = [scoped("info", ["deep"]), tag("warn"), tag("log"), scoped("issue", ["a", "b", "c"])]
 test(
   "makeRawLogger",
   () => do {
     alog = captured(processNothing, SCOPES)
-    _ <- assertEquals(alog(Tag(true, ["deep"], "info"), "[deep] info!"), Just("[deep] info!"))
-    _ <- assertEquals(alog(Tag(true, [], "info"), "info info!"), Just("info info!"))
-    _ <- assertEquals(alog(Tag(true, [], "unmatched"), "info info!"), Nothing)
-    _ <- assertEquals(alog(Tag(true, ["deeply"], "issue"), "skip me!"), Nothing)
+    _ <- assertEquals(alog(Tag(true, "info", ["deep"]), "[deep] info!"), Just("[deep] info!"))
+    _ <- assertEquals(alog(Tag(true, "info", []), "info info!"), Just("info info!"))
+    _ <- assertEquals(alog(Tag(true, "unmatched", []), "info info!"), Nothing)
+    _ <- assertEquals(alog(Tag(true, "issue", ["deeply"]), "skip me!"), Nothing)
     _ <- assertEquals(
-      alog(Tag(true, ["a", "b", "*"], "issue"), "don't skip me!"),
+      alog(Tag(true, "issue", ["a", "b", "*"]), "don't skip me!"),
       Just("don't skip me!"),
     )
     return assertEquals(
-      alog(Tag(true, ["deep", "nested"], "info"), "info info!"),
+      alog(Tag(true, "info", ["deep", "nested"]), "info info!"),
       Just("info info!"),
     )
   },

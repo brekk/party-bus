@@ -23,13 +23,13 @@ import { testCases } from "@/Test"
 testparseMany = testCases(parseMany)
 testparseMany(
   "parseMany - single tags",
-  {{ "yo": [scoped([], "yo")], "yo:scoped": [scoped(["scoped"], "yo")] }},
+  {{ "yo": [scoped("yo", [])], "yo:scoped": [scoped("yo", ["scoped"])] }},
 )
 testparseMany(
   "parseMany - multiple tags",
   {{
     "a, b, spaced": [tag("a"), tag("b"), tag("spaced")],
-    "a,b:belabor": [tag("a"), scoped(["belabor"], "b")],
+    "a,b:belabor": [tag("a"), scoped("b", ["belabor"])],
   }},
 )
 testparseMany("parseMany - various garbage", {{ "": [], ",,": [], "::::,": [] }})
@@ -37,14 +37,14 @@ testparseMany("parseMany - various garbage", {{ "": [], ",,": [], "::::,": [] }}
 testCases(
   isScoped,
   "isScoped - testcase",
-  Dict.fromList([#[Tag(true, [], "yo"), false], #[Tag(true, ["yo"], "yo"), true]]),
+  Dict.fromList([#[Tag(true, "yo", []), false], #[Tag(true, "yo", ["yo"]), true]]),
 )
 
 
 testCases(
   getScope,
   "getScope",
-  Dict.fromList([#[Tag(true, [], "yo"), []], #[Tag(true, ["a", "b"], "yo"), ["a", "b"]]]),
+  Dict.fromList([#[Tag(true, "yo", []), []], #[Tag(true, "yo", ["a", "b"]), ["a", "b"]]]),
 )
 
 
@@ -52,18 +52,18 @@ testCases(
 test(
   "hasScope",
   () => do {
-    _ <- assertEquals(hasScope(["a", "b"], scoped([], "nice")), false)
-    return assertEquals(hasScope([], scoped([], "nice")), true)
+    _ <- assertEquals(hasScope(["a", "b"], scoped("nice", [])), false)
+    return assertEquals(hasScope([], scoped("nice", [])), true)
   },
 )
 testCases(
   inScope(["a", "b", "c"]),
   "inScope b:c",
   Dict.fromList([
-    #[scoped(["a", "b", "c"], "x"), true],
-    #[scoped(["a", "b", "c", "d"], "x"), true],
-    #[scoped(["a", "b"], "x"), false],
-    #[scoped([], "x"), true],
+    #[scoped("x", ["a", "b", "c"]), true],
+    #[scoped("x", ["a", "b", "c", "d"]), true],
+    #[scoped("x", ["a", "b"]), false],
+    #[scoped("x", []), true],
   ]),
 )
 
@@ -71,8 +71,8 @@ testCases(
   serialize,
   "serialize",
   Dict.fromList([
-    #[scoped(["deeply", "nested", "value"], "a"), "a:deeply:nested:value"],
-    #[scoped([], "a"), "a"],
+    #[scoped("a", ["deeply", "nested", "value"]), "a:deeply:nested:value"],
+    #[scoped("a", []), "a"],
   ]),
 )
 

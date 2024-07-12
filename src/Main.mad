@@ -15,21 +15,21 @@ import { Tag, parse, scoped, tag } from "@/Tag"
 
 main = () => {
   SCOPES = [
-    scoped([], "a"),
-    scoped(["deep"], "info"),
+    scoped("a", []),
+    scoped("info", ["deep"]),
     tag("warn"),
     tag("log"),
-    scoped(["a", "b", "c"], "issue"),
+    scoped("issue", ["a", "b", "c"]),
   ]
   // IO.pTrace("ARGV", Process.Argv)
   // IO.pTrace("ENV", Process.Env)
   alog = raw(SCOPES)
   // these are inconvenient at call-time unless partially applied
-  alog(Tag(true, ["deep"], "info"), "[deep] info!")
-  alog(Tag(true, [], "info"), "info info")
-  alog(Tag(true, ["deeply", "nested"], "info"), "skipping deeply.nested")
-  alog(Tag(true, [], "log"), "log")
-  alog(Tag(true, [], "warning"), "this is skipped")
+  alog(Tag(true, "info", ["deep"]), "[deep] info!")
+  alog(Tag(true, "info", []), "info info")
+  alog(Tag(true, "info", ["deeply", "nested"]), "skipping deeply.nested")
+  alog(Tag(true, "log", []), "log")
+  alog(Tag(true, "warning", []), "this is skipped")
   // these parse a tag:scope string
   blog = parsed(SCOPES)
   blog("*", "k fun star star!")

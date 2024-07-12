@@ -13,7 +13,7 @@ import { withinScope } from "@/Scope"
 
 
 
-export type Tag = Tag(Boolean, Scope, String) | TagString(String)
+export type Tag = Tag(Boolean, String, Scope) | TagString(String)
 
 instance Eq Tag {
   __EQ__ = (a, b) => serialize(a) == serialize(b)
@@ -22,13 +22,16 @@ instance Comparable Tag {
   compare = compareTag
 }
 
-scoped :: Scope -> String -> Tag
+scoped :: String -> Scope -> Tag
 export scoped = Tag(true)
 
+negated :: String -> Scope -> Tag
 export negated = Tag(false)
 
-export tag = scoped([])
-export untag = negated([])
+tag :: String -> Tag
+export tag = scoped($, [])
+untag :: String -> Tag
+export untag = negated($, [])
 
 isNegated :: Tag -> Boolean
 export isNegated = where {
@@ -41,7 +44,7 @@ export isNegated = where {
 
 isScoped :: Tag -> Boolean
 export isScoped = where {
-  Tag(_, scope, _) =>
+  Tag(_, _, scope) =>
     List.length(scope) > 0
 
   TagString(s) =>
@@ -69,7 +72,7 @@ indexOf = (needle, haystack) => {
 
 getScope :: Tag -> Scope
 export getScope = where {
-  Tag(_, scope, _) =>
+  Tag(_, _, scope) =>
     scope
 
   TagString(s) =>
@@ -87,10 +90,10 @@ export parse = (part) => {
     String.trim,
     String.split(":"),
     (list) => {
-      segments = List.length(list) == 1 ? [] : List.tail(list)
+      seg = List.length(list) == 1 ? [] : List.tail(list)
       return pipe(
         _firstAsString,
-        Tag(neg, segments),
+        Tag(neg, $, seg),
       )(list)
     },
   )(part)
@@ -108,7 +111,7 @@ export convertTag = where {
 
 id :: Tag -> String
 export id = where {
-  Tag(_, _, name) =>
+  Tag(_, name, _) =>
     name
 
   TagString(s) =>

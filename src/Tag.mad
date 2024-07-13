@@ -20,9 +20,9 @@ export type Tag = Tag(Boolean, String, Scope) | Wildcard
 
 export alias TagList = List Tag
 
-instance Eq Tag {
-  __EQ__ = tagEqualsTag
-}
+// instance Eq Tag {
+//   __EQ__ = tagEqualsTag
+// }
 instance Comparable Tag {
   compare = compareTag
 }
@@ -199,7 +199,7 @@ export serialize = (t) => {
 matches :: List Tag -> Tag -> Boolean
 export matches = (xs, t) => {
   return pipe(
-    List.filter((x) => isWild(t) || (tagEqualsTag(x, t) && x < t)),
+    List.filter((x) => isWild(t) || (tagEqualsTag(x, t) && x > t)),
     List.length,
     equals(0),
   )(xs)

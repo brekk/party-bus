@@ -28,28 +28,16 @@ test(
 )
 
 test(
-  "seededAnsi8",
-  () => do {
-    _ <- assertEquals(Color.seededAnsi8("cool"), 133)
-    _ <- assertEquals(Color.seededAnsi8("nice"), 210)
-    return assertEquals(Color.seededAnsi8("cool"), 133)
-  },
-)
-
-test(
   "seededRGB",
   () => do {
     return assertEquals(Color.seededRGB("cool"), #[149, 50, 143])
   },
 )
 test(
-  "seededAnsi",
+  "seeded",
   () => {
-    check = Color.seededAnsi("test")
-    return assertEquals(
-      check("cool"),
-      #[["38", "2", "46", "214", "1"], ["48", "2", "209", "41", "254"]],
-    )
+    check = Color.seeded("test")
+    return assertEquals(check("cool"), ["38", "2", "0", "0", "0", "48", "2", "46", "214", "1"])
   },
 )
 
@@ -62,12 +50,12 @@ test(
       chain(String.split(";")),
       map(String.toList),
       (raw) => do {
-        _ <- assertEquals(
-          List.slice(1, 4, raw),
+        _ <- assertEquals(List.slice(1, 4, raw), [['2'], ['4', '6'], ['2', '1', '4'], ['1']])
+        return assertEquals(
+          List.slice(6, 9, raw),
           [['2'], ['2', '0', '9'], ['4', '1'], ['2', '5', '4']],
         )
-        return assertEquals(List.slice(6, 9, raw), [['2'], ['4', '6'], ['2', '1', '4'], ['1']])
       },
-    )(#[["38", "2", "46", "214", "1"], ["48", "2", "209", "41", "254"]])
+    )(["38", "2", "46", "214", "1", "48", "2", "209", "41", "254"])
   },
 )

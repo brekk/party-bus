@@ -1,3 +1,5 @@
+import type { Random } from "Random"
+
 import { ge } from "Compare"
 import Float from "Float"
 import Integer from "Integer"
@@ -39,8 +41,8 @@ export toRGB = (v) => {
   return #[r, g, b]
 }
 
-rgbToAnsi256 :: (Bits a, Comparable a, Number a) => a -> a -> a -> Float
-export rgbToAnsi256 = (r, g, b) => {
+toAnsi256 :: (Bits a, Comparable a, Number a) => a -> a -> a -> Float
+export toAnsi256 = (r, g, b) => {
   r4 = r >> 4
   g4 = g >> 4
   b4 = b >> 4
@@ -59,29 +61,37 @@ export rgbToAnsi256 = (r, g, b) => {
 
 MAX_OCTET = 255
 
+colorFromSeed :: Random -> Color Integer
+colorFromSeed = (seed) => {
+  pull = R.integer(0, MAX_OCTET)
+  r = pull(seed)
+  g = pull(seed)
+  b = pull(seed)
+  return #[r, g, b]
+}
+
+export genRGB = pipe(
+  R.generateFromString,
+  colorFromSeed,
+)
 
 //ESC[48;2;⟨r⟩;⟨g⟩;⟨b⟩ m Select RGB background color
 COLOR_BACKGROUND = 48
 //ESC[38;2;⟨r⟩;⟨g⟩;⟨b⟩ m Select RGB foreground color
 COLOR_FOREGROUND = 38
 
-export seededRGB = pipe(
-  R.generateFromString,
-  (seed) => {
-    twoFiveSix = R.integer(0, MAX_OCTET)
-    r = twoFiveSix(seed)
-    g = twoFiveSix(seed)
-    b = twoFiveSix(seed)
-    return #[r, g, b]
-  },
-)
+toList :: Color a -> List a
+export toList = where {
+  #[r, g, b] =>
+    [r, g, b]
+}
 
-export seededAnsi256 = (before, str) => pipe(
-  seededRGB,
-  where {
-    #[r, g, b] =>
-      map(show, [before, 2, r, g, b])
-  },
+
+export seededSeq = (before, str) => pipe(
+  genRGB,
+  toList,
+  mappend([before, 2]),
+  map(show),
 )(str)
 
 export rgbInvert = where {
@@ -89,8 +99,8 @@ export rgbInvert = where {
     #[MAX_OCTET - r, MAX_OCTET - g, MAX_OCTET - b]
 }
 
-export seededAnsi256Bg = seededAnsi256(COLOR_BACKGROUND)
-export seededAnsi256Fg = seededAnsi256(COLOR_FOREGROUND)
+export seededSeqBg = seededSeq(COLOR_BACKGROUND)
+export seededSeqFg = seededSeq(COLOR_FOREGROUND)
 
 
 HALF_OCTET = 0x7f
@@ -100,7 +110,7 @@ isMid = ge($, HALF_OCTET)
 seeded :: String -> String -> List String
 export seeded = (seedPrefix, str) => pipe(
   mappend(seedPrefix),
-  seededRGB,
+  genRGB,
   (color) => {
     black = pipe(
       toTupleFloat,

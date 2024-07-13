@@ -1,10 +1,10 @@
+import Dict from "Dictionary"
 import { Just, Nothing } from "Maybe"
-import String from "String"
 import { assertEquals, test } from "Test"
 
 import { captured, parsed, styled } from "@/Processor"
 import { Tag, scoped, tag, untag } from "@/Tag"
-import { demo } from "@/Test"
+import { caseN2, ledger, receipt } from "@/Test"
 
 
 
@@ -17,38 +17,32 @@ SCOPES = [
   scoped("issue", ["a", "b", "c"]),
   untag("ignore"),
 ]
-test(
-  "makeRawLogger",
-  () => do {
-    alog = captured(processNothing, SCOPES)
-    _ <- assertEquals(alog(Tag(true, "info", ["deep"]), "[deep] info!"), Just("[deep] info!"))
-    _ <- assertEquals(alog(Tag(true, "info", []), "infoinfoinfo"), Nothing)
-    _ <- assertEquals(alog(Tag(true, "unmatched", []), "nothing"), Nothing)
-    _ <- assertEquals(alog(Tag(true, "issue", ["deeply"]), "[deeply] issue!"), Nothing)
-    _ <- assertEquals(
-      alog(Tag(true, "issue", ["a", "b", "*"]), "a:b:* -- issue"),
-      Just("a:b:* -- issue"),
-    )
-    return assertEquals(
-      alog(Tag(true, "info", ["deep", "nested"]), "deep:nested info!"),
-      Just("deep:nested info!"),
-    )
-  },
+receipt(
+  caseN2(captured(processNothing, SCOPES)),
+  "captured",
+  [
+    #[#[Tag(true, "info", ["deep"]), "[deep] info!"], Just("[deep] info!")],
+    #[#[Tag(true, "info", []), "nomatchmomatch"], Nothing],
+    #[#[Tag(true, "unmatched", []), "unmatched"], Nothing],
+    #[#[Tag(true, "issue", ["path"]), "[path] issue!"], Nothing],
+    #[#[Tag(true, "issue", ["a", "b", "*"]), "a,b,* -- issue"], Just("a,b,* -- issue")],
+    #[#[Tag(true, "info", ["deep", "nested"]), "deep,nested info!"], Just("deep,nested info!")],
+  ],
 )
 
-test(
+receipt(
+  caseN2(parsed(processNothing, SCOPES)),
   "parsed",
-  () => do {
-    alog = parsed(processNothing, SCOPES)
-    _ <- assertEquals(alog("info:deep", "[deep] info!"), "[deep] info!")
-    _ <- assertEquals(alog("info", "information"), "information")
-    _ <- assertEquals(alog("unmatched", "unlogged"), "unlogged")
-    _ <- assertEquals(alog("issue:whatever", "skip me!"), "skip me!")
-    _ <- assertEquals(alog("info:deep:nested", "info deeply nested!"), "info deeply nested!")
-    _ <- assertEquals(alog("*", "k fun star star!"), "k fun star star!")
-    _ <- assertEquals(alog("info:*", "info star"), "info star")
-    return assertEquals(alog("issue:a:b:*", "issue nested star"), "issue nested star")
-  },
+  [
+    #[#["info:deep", "[deep] info!"], "[deep] info!"],
+    #[#["info", "information"], "information"],
+    #[#["unmatched", "unlogged"], "unlogged"],
+    #[#["issue:whatever", "skip me!"], "skip me!"],
+    #[#["info:deep:nested", "info deeply nested!"], "info deeply nested!"],
+    #[#["*", "k fun star star!"], "k fun star star!"],
+    #[#["info:*", "info star"], "info star"],
+    #[#["issue:a:b:*", "issue nested star"], "issue nested star"],
+  ],
 )
 
 test(

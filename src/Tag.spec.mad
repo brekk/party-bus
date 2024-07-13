@@ -7,7 +7,7 @@ import {
   compareTag,
   getScope,
   hasScope,
-  inScope,
+  // inScope,
   isNegated,
   isScoped,
   manyFromString,
@@ -17,11 +17,11 @@ import {
   tag,
   untag,
 } from "@/Tag"
-import { demo, testCases } from "@/Test"
+import { ledger, receipt } from "@/Test"
 
 
 
-testparseMany = testCases(manyFromString)
+testparseMany = ledger(manyFromString)
 testparseMany(
   "parseMany - single tags",
   {{ "yo": [scoped("yo", [])], "yo:scoped": [scoped("yo", ["scoped"])] }},
@@ -35,14 +35,14 @@ testparseMany(
 )
 testparseMany("parseMany - various garbage", {{ "": [], ",,": [], "::::,": [] }})
 
-testCases(
+ledger(
   isScoped,
   "isScoped - testcase",
   Dict.fromList([#[Tag(true, "yo", []), false], #[Tag(true, "yo", ["yo"]), true]]),
 )
 
 
-testCases(
+ledger(
   getScope,
   "getScope",
   Dict.fromList([#[Tag(true, "yo", []), []], #[Tag(true, "yo", ["a", "b"]), ["a", "b"]]]),
@@ -57,18 +57,8 @@ test(
     return assertEquals(hasScope([], scoped("nice", [])), true)
   },
 )
-testCases(
-  inScope(["a", "b", "c"]),
-  "inScope b:c",
-  Dict.fromList([
-    #[scoped("x", ["a", "b", "c"]), true],
-    #[scoped("x", ["a", "b", "c", "d"]), true],
-    #[scoped("x", ["a", "b"]), false],
-    #[scoped("x", []), true],
-  ]),
-)
 
-testCases(
+ledger(
   serialize,
   "serialize",
   Dict.fromList([
@@ -77,15 +67,15 @@ testCases(
   ]),
 )
 
-testCases(isNegated, "isNegated", Dict.fromList([#[untag("raw"), true], #[tag("raw"), false]]))
+ledger(isNegated, "isNegated", Dict.fromList([#[untag("raw"), true], #[tag("raw"), false]]))
 
-testCases(
+ledger(
   compareTag(tag("*")),
   "compareTag : *",
   Dict.fromList([#[tag("*"), EQ], #[tag("hello"), EQ]]),
 )
 
-demo(
+receipt(
   matches([
     scoped("a", []),
     scoped("info", ["deep"]),
@@ -94,18 +84,19 @@ demo(
     scoped("issue", ["a", "b", "c"]),
     untag("ignore"),
   ]),
-  "matches callable scope?",
-  Dict.fromList([
-    #[scoped("issue", ["a"]), true],
+  "matches :: List Tag -> Tag -> Boolean",
+  [
     #[scoped("issue", []), false],
     #[scoped("warn", ["a"]), true],
     #[scoped("warn", ["*"]), true],
     #[scoped("warn", ["x"]), true],
-    #[scoped("issue", ["j"]), false],
-    #[scoped("issue", ["a", "j"]), false],
+    #[scoped("issue", ["j"]), true],
+    #[scoped("issue", ["a"]), true],
+    #[tag("warn"), false],
+    #[scoped("issue", ["a", "j"]), true],
     #[scoped("issue", ["a", "b", "j"]), false],
     #[scoped("issue", ["a", "b", "c"]), true],
-    #[scoped("issue", ["a", "b", "c", "x"]), true],
-    #[scoped("issue", ["a", "b", "c", "x", "*"]), true],
-  ]),
+    #[scoped("issue", ["a", "b", "c", "x"]), false],
+    #[scoped("issue", ["a", "b", "c", "x", "*"]), false],
+  ],
 )

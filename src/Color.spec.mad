@@ -3,7 +3,7 @@ import String from "String"
 import { assertEquals, test } from "Test"
 
 import Color from "@/Color"
-import { toAnsi256 } from "@/Color/Math"
+import { channelR, toAnsi256 } from "@/Color/Math"
 import { seededSeqBg, seededSeqFg } from "@/Color/Random"
 import { report } from "@/Test"
 
@@ -48,3 +48,5 @@ report(
     #[0x123456, #[18, 52, 86]],
   ],
 )
+
+report(channelR, "channelR", [#[0xff0000, 0xff]])

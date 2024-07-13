@@ -1,0 +1,33 @@
+import Math from "Math"
+
+import { FULL_CHANNEL } from "@/Color/Constants"
+
+
+
+toAnsi256 :: (Bits a, Comparable a, Number a) => a -> a -> a -> Float
+export toAnsi256 = (r, g, b) => {
+  r4 = r >> 4
+  g4 = g >> 4
+  b4 = b >> 4
+  return if (r4 == g4 && g4 == b4) {
+    if (r < 8) {
+      16
+    } else if (r > 248) {
+      231
+    } else {
+      Math.round(((r - 8) / 247) * 24) + 232
+    }
+  } else {
+    16 + (36 * Math.round(r / 255 * 5)) + (6 * Math.round(g / 255 * 5)) + Math.round(b / 255 * 5)
+  }
+}
+
+
+channelR :: Integer -> Integer
+export channelR = (raw) => (raw >> 16) & 0xff
+
+channelG :: Integer -> Integer
+export channelG = (raw) => (raw >> 8) & 0xff
+
+channelB :: Integer -> Integer
+export channelB = (raw) => raw & 0xff

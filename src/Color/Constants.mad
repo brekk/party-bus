@@ -1,0 +1,8 @@
+export FULL_CHANNEL = 0xff
+//ESC[48;2;⟨r⟩;⟨g⟩;⟨b⟩ m Select RGB background color
+export ANSI_BACKGROUND = 48
+//ESC[38;2;⟨r⟩;⟨g⟩;⟨b⟩ m Select RGB foreground color
+export ANSI_FOREGROUND = 38
+
+
+export HALF_CHANNEL = 0x7f

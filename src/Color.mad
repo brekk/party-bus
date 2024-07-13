@@ -1,16 +1,18 @@
-import type { Random } from "Random"
-
 import { ge } from "Compare"
 import Float from "Float"
 import Integer from "Integer"
-import { repeatWith } from "List"
-import Math from "Math"
-import R from "Random"
+import Random from "Random"
 import Term from "Terminal"
+
+import { ANSI_BACKGROUND, ANSI_FOREGROUND, FULL_CHANNEL, HALF_CHANNEL } from "@/Color/Constants"
+import { channelB, channelG, channelR } from "@/Color/Math"
+import { colorFromSeed } from "@/Color/Random"
 
 
 
 export alias Color a = #[a, a, a]
+export BLACK = #[0, 0, 0]
+export WHITE = #[FULL_CHANNEL, FULL_CHANNEL, FULL_CHANNEL]
 
 // derive Comparable Color a
 
@@ -35,50 +37,12 @@ export toTupleInt = where {
 }
 
 export toRGB = (v) => {
-  r = hexR(v)
-  g = hexG(v)
-  b = hexB(v)
+  r = channelR(v)
+  g = channelG(v)
+  b = channelB(v)
   return #[r, g, b]
 }
 
-toAnsi256 :: (Bits a, Comparable a, Number a) => a -> a -> a -> Float
-export toAnsi256 = (r, g, b) => {
-  r4 = r >> 4
-  g4 = g >> 4
-  b4 = b >> 4
-  return if (r4 == g4 && g4 == b4) {
-    if (r < 8) {
-      16
-    } else if (r > 248) {
-      231
-    } else {
-      Math.round(((r - 8) / 247) * 24) + 232
-    }
-  } else {
-    16 + (36 * Math.round(r / 255 * 5)) + (6 * Math.round(g / 255 * 5)) + Math.round(b / 255 * 5)
-  }
-}
-
-MAX_OCTET = 255
-
-colorFromSeed :: Random -> Color Integer
-colorFromSeed = (seed) => {
-  pull = R.integer(0, MAX_OCTET)
-  r = pull(seed)
-  g = pull(seed)
-  b = pull(seed)
-  return #[r, g, b]
-}
-
-export genRGB = pipe(
-  R.generateFromString,
-  colorFromSeed,
-)
-
-//ESC[48;2;⟨r⟩;⟨g⟩;⟨b⟩ m Select RGB background color
-COLOR_BACKGROUND = 48
-//ESC[38;2;⟨r⟩;⟨g⟩;⟨b⟩ m Select RGB foreground color
-COLOR_FOREGROUND = 38
 
 toList :: Color a -> List a
 export toList = where {
@@ -87,30 +51,16 @@ export toList = where {
 }
 
 
-export seededSeq = (before, str) => pipe(
-  genRGB,
-  toList,
-  mappend([before, 2]),
-  map(show),
-)(str)
+isMid = ge($, HALF_CHANNEL)
 
-export rgbInvert = where {
-  #[r, g, b] =>
-    #[MAX_OCTET - r, MAX_OCTET - g, MAX_OCTET - b]
-}
-
-export seededSeqBg = seededSeq(COLOR_BACKGROUND)
-export seededSeqFg = seededSeq(COLOR_FOREGROUND)
-
-
-HALF_OCTET = 0x7f
-
-isMid = ge($, HALF_OCTET)
+mixer :: (Color a -> Color a -> Color b) -> Color a -> Color a -> Color b
+export mixer = (mix, a, b) => mix(a, b)
 
 seeded :: String -> String -> List String
 export seeded = (seedPrefix, str) => pipe(
   mappend(seedPrefix),
-  genRGB,
+  Random.generateFromString,
+  colorFromSeed,
   (color) => {
     black = pipe(
       toTupleFloat,
@@ -118,35 +68,25 @@ export seeded = (seedPrefix, str) => pipe(
     )(color)
     return where(color) {
       #[r, g, b] =>
-        map(show)([
-          COLOR_FOREGROUND,
-          2,
-          black ? 0 : MAX_OCTET,
-          black ? 0 : MAX_OCTET,
-          black ? 0 : MAX_OCTET,
-          COLOR_BACKGROUND,
-          2,
-          r,
-          g,
-          b,
-        ])
+        do {
+          blackChannel = black ? 0 : FULL_CHANNEL
+          return map(show)([
+            ANSI_FOREGROUND,
+            2,
+            blackChannel,
+            blackChannel,
+            blackChannel,
+            ANSI_BACKGROUND,
+            2,
+            r,
+            g,
+            b,
+          ])
+        }
     }
   },
 )(str)
 
-ansiFgBg :: String -> List String -> String
-export ansiFgBg = (t, ansiSeq) => Term.ansiColor(ansiSeq, t)
-
-
-
-hexR :: Integer -> Integer
-hexR = (raw) => raw >> 16 & 0xff
-
-hexG :: Integer -> Integer
-hexG = (raw) => raw >> 8 & 0xff
-
-hexB :: Integer -> Integer
-hexB = (raw) => raw & 0xff
 
 luminance :: Color Float -> Color Float
 export luminance = where {
@@ -170,5 +110,5 @@ export contrastL = pipe(
 contrastColor :: Color Float -> Color Float
 export contrastColor = pipe(
   contrastL,
-  (x) => x >= 0x7f ? #[0, 0, 0] : #[MAX_OCTET, MAX_OCTET, MAX_OCTET],
+  (x) => x >= HALF_CHANNEL ? WHITE : BLACK,
 )

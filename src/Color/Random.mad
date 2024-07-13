@@ -1,0 +1,37 @@
+import type { Random } from "Random"
+
+import { generateFromSeed } from "Random"
+import Random from "Random"
+
+import { ANSI_BACKGROUND, ANSI_FOREGROUND, FULL_CHANNEL } from "@/Color/Constants"
+
+
+
+colorFromSeed :: Random -> #[Integer, Integer, Integer]
+export colorFromSeed = (seed) => {
+  pull = Random.integer(0, FULL_CHANNEL)
+  r = pull(seed)
+  g = pull(seed)
+  b = pull(seed)
+  return #[r, g, b]
+}
+
+export seededSeq = (before, str) => pipe(
+  Random.generateFromString,
+  colorFromSeed,
+  where {
+    #[r, g, b] =>
+      pipe(
+        mappend([before, 2]),
+        map(show),
+      )([r, g, b])
+  },
+)(str)
+
+export rgbInvert = where {
+  #[r, g, b] =>
+    #[FULL_CHANNEL - r, FULL_CHANNEL - g, FULL_CHANNEL - b]
+}
+
+export seededSeqBg = seededSeq(ANSI_BACKGROUND)
+export seededSeqFg = seededSeq(ANSI_FOREGROUND)

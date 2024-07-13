@@ -1,70 +1,95 @@
-import type { Lazy } from "@/LazyProcessor"
-import type { Invocable } from "@/Processor"
-
 import Dict from "Dictionary"
 import IO from "IO"
-import { Just, fromMaybe } from "Maybe"
-import Process from "Process"
+import List from "List"
+// import { Just, fromMaybe } from "Maybe"
+// import Process from "Process"
+// import String from "String"
+import Term from "Terminal"
 import Wish from "Wish"
 
 import Lazy from "@/LazyProcessor"
-import { debug, parsed, raw } from "@/Log"
+import { parsed, raw } from "@/Log"
 import Pro from "@/Processor"
-import { Tag, fromString, scoped, tag, untag } from "@/Tag"
+import { Tag, scoped, tag, untag } from "@/Tag"
 
 
+
+SCOPES = [
+  scoped("a", []),
+  scoped("info", ["deep"]),
+  tag("warn"),
+  tag("log"),
+  scoped("issue", ["a", "b", "c"]),
+  untag("ignore"),
+]
 
 main = () => {
-  SCOPES = [
-    scoped("a", []),
-    scoped("info", ["deep"]),
-    tag("warn"),
-    tag("log"),
-    scoped("issue", ["a", "b", "c"]),
-    untag("ignore"),
-  ]
   // IO.pTrace("ARGV", Process.Argv)
   // IO.pTrace("ENV", Process.Env)
+  PASS = mappend("✅ ")
+  FAIL = mappend("⛔️ ")
+
+  HEADER = (msg) => pipe(
+    List.repeatWith((_) => "▀▄"),
+    List.reduce(mappend, ""),
+    (bar) => "\n▕"
+        ++ bar
+        ++ "▏"
+        ++ Term.ansiColor([Term.ansi.FGBrightBlack], " " ++ msg ++ " ")
+        ++ "▕"
+        ++ bar
+        ++ "▏\n",
+    IO.putLine,
+  )(10)
   alog = raw(SCOPES)
+  HEADER("Log.raw")
   // these are inconvenient at call-time unless partially applied
-  alog(Tag(true, "info", ["deep"]), "[deep] info!")
-  alog(Tag(true, "info", []), "info info")
-  alog(Tag(true, "info", ["deeply", "nested"]), "skipping deeply.nested")
-  alog(Tag(true, "log", []), "log")
-  alog(Tag(true, "warning", []), "this is skipped")
-  alog(Tag(true, "ignore", []), "this is skipped?")
+  alog(Tag(true, "info", ["deep"]), PASS("[deep] info!"))
+  alog(Tag(true, "info", []), PASS("info info"))
+  alog(Tag(true, "info", ["deeply", "nested"]), FAIL("skipping deeply.nested"))
+  alog(Tag(true, "log", []), PASS("log"))
+  alog(Tag(true, "warning", []), FAIL("this is skipped"))
+  alog(Tag(true, "ignore", []), FAIL("this is skipped?"))
   // these parse a tag:scope string
   blog = parsed(SCOPES)
-  blog("*", "k fun star star!")
-  blog("info:deep", "info:deep with parsies!")
-  blog("info:*", "info star!")
+  HEADER("Log.parsed")
+  blog("*", PASS("k fun star star!"))
+  blog("info:deep", PASS("info:deep with parsies!"))
+  blog("info", PASS("info:star"))
+  blog("issue:a:b", FAIL("issue:a:b is less than issue:a:b:c"))
+  blog("issue:a:b:c", PASS("issue:a:b:c"))
+  blog("issue:a:b:c:j", PASS("issue:a:b:c:j"))
+
+  HEADER("Processor.styled")
   // styledLogger = Pro.styled("style", IO.pTrace)
   styledLogger = Pro.styled("style", IO.pTrace)
   // these parse a tag:scope string and colorize it
   slog = styledLogger(SCOPES)
-  slog("*", "colorful starstar!")
-  slog("info:deep", "colorful info:deep")
-  slog("issue:a:b", "colorful alpha issue")
-  slog("issue:a:*", "colorful nested issue")
-  slog("ignore", "ignored message!")
+  slog("*", PASS("colorful starstar!"))
+  slog("info:deep", PASS("colorful info:deep"))
+  slog("issue:a:b", PASS("colorful alpha issue"))
+  slog("issue:a:*", PASS("colorful nested issue"))
+  slog("ignore", FAIL("ignored message!"))
   pipe(
     slog("a:input"),
     (a) => a ++ " there",
     slog("a:output"),
-  )("hey")
-  dlog = debug("style", Process.Env)
+  )(PASS("hey"))
+  // skipping these for now because we can't guarantee shape
+  // dlog = debug("style", Process.Env)
+  // HEADER("Process.debug")
 
-  dlog("*", "debugular starstar!")
-  dlog("info:deep", "debugular info:deep")
-  dlog("issue:a:b:c", "debuglar alpha issue")
-  dlog("issue:a:*", "debarge nested issue")
-  dlog("warning", "exclude warning")
-  dlog("info:deep", "debugular info:deep round 2")
+  // dlog("*", "debugular starstar!")
+  // dlog("info:deep", "debugular info:deep")
+  // dlog("issue:a:b:c", "debuglar alpha issue")
+  // dlog("issue:a", "debarge nested issue")
+  // dlog("warning", "exclude warning")
+  // dlog("info:deep", "debugular info:deep round 2")
+
+  HEADER("Lazy")
   sloth = Lazy.lazy(slog)
   // sloth(IO.pTrace, [], Tag([], ""))
-  IO.pTrace("SLOTH", sloth)
-  moss = sloth(SCOPES, scoped("*", []), "debugular info")
-  IO.pTrace("MOSS", moss)
+  moss = sloth(SCOPES, scoped("*", []), PASS("lazy message info"))
   pipe(
     Lazy.transform(Pro.composed),
     // Lazy.transform(Pro.captured),

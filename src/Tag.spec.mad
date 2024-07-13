@@ -1,4 +1,4 @@
-import { EQ, GT, LT } from "Compare"
+import { EQ } from "Compare"
 import Dict from "Dictionary"
 import { assertEquals, test } from "Test"
 

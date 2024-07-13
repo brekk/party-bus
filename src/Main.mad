@@ -64,8 +64,8 @@ main = () => {
   moss = sloth(SCOPES, scoped("*", []), "debugular info")
   IO.pTrace("MOSS", moss)
   pipe(
-    // Lazy.transform(Pro.composed),
-    Lazy.transform(Pro.captured),
+    Lazy.transform(Pro.composed),
+    // Lazy.transform(Pro.captured),
     Wish.fulfill((x) => { IO.pTrace("FAIL", x) }, (x) => { IO.pTrace("SUCCESS", x) }),
   )(moss)
 }

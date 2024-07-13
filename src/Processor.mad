@@ -35,7 +35,8 @@ styled :: String -> Trace String String -> List Tag -> String -> String -> Strin
 export styled = (seedPrefix, run, raw) => parsed(
   (t, x) => pipe(
     seededAnsi(seedPrefix),
-    ansiFgBg(t),
+    ansiFgBg(" " ++ t ++ " "),
+    (s) => `✦ ` ++ s,
     run($, x),
   )(t),
 )(raw)

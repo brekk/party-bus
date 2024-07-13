@@ -18,12 +18,22 @@ export alias Scope = List String
  */
 export type Tag = Tag(Boolean, String, Scope) | Wildcard
 
+export alias TagList = List Tag
+
 instance Eq Tag {
   __EQ__ = tagEqualsTag
 }
 instance Comparable Tag {
   compare = compareTag
 }
+
+/*
+normalizeTagList :: TagList -> TagList
+normalizeTagList = (tags) => map(
+  (t) => 
+  tags
+)
+*/
 
 tagEqualsTag = (a, b) => {
   iA = id(a)
@@ -91,6 +101,17 @@ export getScope = where {
     []
 }
 
+id :: Tag -> String
+export id = where {
+  Tag(_, name, _) =>
+    name
+
+  Wildcard =>
+    "*"
+}
+
+// TRANSFORMS
+
 // eventually we could actually Parse stuff
 fromString :: String -> Tag
 export fromString = (_part) => {
@@ -113,15 +134,6 @@ export fromString = (_part) => {
   )(part)
 }
 
-
-id :: Tag -> String
-export id = where {
-  Tag(_, name, _) =>
-    name
-
-  Wildcard =>
-    "*"
-}
 
 tagScopeLength :: Tag -> Integer
 export tagScopeLength = pipe(
@@ -184,8 +196,6 @@ export serialize = (t) => {
   return name ++ (equals("", scope) ? "" : ":" ++ scope)
 }
 
-// TODO: support negated tags next
-
 matches :: List Tag -> Tag -> Boolean
 export matches = (xs, t) => {
   return pipe(
@@ -194,7 +204,6 @@ export matches = (xs, t) => {
     equals(0),
   )(xs)
 }
-
 
 _isEmptyTag :: Tag -> Boolean
 _isEmptyTag = pipe(

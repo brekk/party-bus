@@ -7,26 +7,25 @@ import Wish from "Wish"
 
 export type Lazy a b = Lazy(Trace a b, List Tag, Tag, a)
 
-export setTrace = (change, x) => where(x) {
-  Lazy(_, tags, t, thing) =>
-    Lazy(change, tags, t, thing)
+export setTrace = (mod, x) => where(x) {
+  Lazy(change, tags, t, thing) =>
+    Lazy(mod(change), tags, t, thing)
 }
 
-export setTags = (tags, x) => where(x) {
-  Lazy(change, _, t, thing) =>
-    Lazy(change, tags, t, thing)
+export setTags = (mod, x) => where(x) {
+  Lazy(change, tags, t, thing) =>
+    Lazy(change, mod(tags), t, thing)
 }
 
-export setTag = (t, x) => where(x) {
-  Lazy(change, tags, _, thing) =>
-    Lazy(change, tags, t, thing)
+export setTag = (mod, x) => where(x) {
+  Lazy(change, tags, t, thing) =>
+    Lazy(change, tags, mod(t), thing)
 }
 
-export setValue = (thing, x) => where(x) {
-  Lazy(change, tags, t, _) =>
-    Lazy(change, tags, t, thing)
+export setValue = (mod, x) => where(x) {
+  Lazy(change, tags, t, thing) =>
+    Lazy(change, tags, t, mod(thing))
 }
-
 
 export lazy = (run, tags, t, thing) => pipe(
   Lazy(run, tags, t),

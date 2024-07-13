@@ -17,11 +17,11 @@ import {
   tag,
   untag,
 } from "@/Tag"
-import { ledger, receipt } from "@/Test"
+import { report, reportBook } from "@/Test"
 
 
 
-testparseMany = ledger(manyFromString)
+testparseMany = reportBook(manyFromString)
 testparseMany(
   "parseMany - single tags",
   {{ "yo": [scoped("yo", [])], "yo:scoped": [scoped("yo", ["scoped"])] }},
@@ -35,17 +35,17 @@ testparseMany(
 )
 testparseMany("parseMany - various garbage", {{ "": [], ",,": [], "::::,": [] }})
 
-ledger(
+report(
   isScoped,
   "isScoped - testcase",
-  Dict.fromList([#[Tag(true, "yo", []), false], #[Tag(true, "yo", ["yo"]), true]]),
+  [#[Tag(true, "yo", []), false], #[Tag(true, "yo", ["yo"]), true]],
 )
 
 
-ledger(
+report(
   getScope,
   "getScope",
-  Dict.fromList([#[Tag(true, "yo", []), []], #[Tag(true, "yo", ["a", "b"]), ["a", "b"]]]),
+  [#[Tag(true, "yo", []), []], #[Tag(true, "yo", ["a", "b"]), ["a", "b"]]],
 )
 
 
@@ -58,24 +58,17 @@ test(
   },
 )
 
-ledger(
+report(
   serialize,
   "serialize",
-  Dict.fromList([
-    #[scoped("a", ["deeply", "nested", "value"]), "a:deeply:nested:value"],
-    #[scoped("a", []), "a"],
-  ]),
+  [#[scoped("a", ["deeply", "nested", "value"]), "a:deeply:nested:value"], #[scoped("a", []), "a"]],
 )
 
-ledger(isNegated, "isNegated", Dict.fromList([#[untag("raw"), true], #[tag("raw"), false]]))
+report(isNegated, "isNegated", [#[untag("raw"), true], #[tag("raw"), false]])
 
-ledger(
-  compareTag(tag("*")),
-  "compareTag : *",
-  Dict.fromList([#[tag("*"), EQ], #[tag("hello"), EQ]]),
-)
+report(compareTag(tag("*")), "compareTag : *", [#[tag("*"), EQ], #[tag("hello"), EQ]])
 
-receipt(
+report(
   matches([
     scoped("a", []),
     scoped("info", ["deep"]),
@@ -86,17 +79,18 @@ receipt(
   ]),
   "matches :: List Tag -> Tag -> Boolean",
   [
-    #[scoped("issue", []), false],
+    #[tag("warn"), true],
     #[scoped("warn", ["a"]), true],
-    #[scoped("warn", ["*"]), true],
+    #[scoped("warn", ["b"]), true],
     #[scoped("warn", ["x"]), true],
-    #[scoped("issue", ["j"]), true],
-    #[scoped("issue", ["a"]), true],
-    #[tag("warn"), false],
-    #[scoped("issue", ["a", "j"]), true],
+    #[scoped("issue", ["j"]), false],
+    #[scoped("issue", ["a"]), false],
+    #[scoped("issue", []), false],
+    #[scoped("issue", ["a", "j"]), false],
     #[scoped("issue", ["a", "b", "j"]), false],
     #[scoped("issue", ["a", "b", "c"]), true],
-    #[scoped("issue", ["a", "b", "c", "x"]), false],
-    #[scoped("issue", ["a", "b", "c", "x", "*"]), false],
+    #[scoped("issue", ["a", "b", "c", "d"]), true],
+    #[scoped("issue", ["a", "b", "c", "d", "x"]), true],
+    #[tag("ignore"), false],
   ],
 )

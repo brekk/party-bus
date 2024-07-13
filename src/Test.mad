@@ -1,8 +1,6 @@
-import { mapWithKey, toList, values } from "Dictionary"
-import List from "List"
+import { mapWithKey, values } from "Dictionary"
 import Term from "Terminal"
 import { assertEquals, test } from "Test"
-import { parallel } from "Wish"
 
 
 
@@ -13,18 +11,13 @@ printReport = (name, i) => `${name}\n  ↳ ${
   )(i)
 }`
 
-// createTest :: String -> (a -> b) -> a -> b -> Wish TestResult TestResult
 createTest = (name, fn, i, o) => test(printReport(name, i), () => assertEquals(fn(i), o))
 
-export receipt = (fn, name, listInOut) => pipe(
+export report = (fn, name, listInOut) => pipe(
   map(where { #[i, o] => createTest(name, fn, i, o) }),
 )(listInOut)
 
-// ledger :: (a -> Wish TestResult TestResult)
-//   -> String
-//   -> Dictionary a (Wish TestResult TestResult)
-// -> List (Wish TestResult TestResult)
-export ledger = (fn, name, testDict) => pipe(
+export reportBook = (fn, name, testDict) => pipe(
   mapWithKey(createTest(name, fn)),
   values,
 )(testDict)

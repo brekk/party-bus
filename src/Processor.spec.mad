@@ -4,7 +4,7 @@ import { assertEquals, test } from "Test"
 
 import { captured, parsed, styled } from "@/Processor"
 import { Tag, scoped, tag, untag } from "@/Tag"
-import { caseN2, ledger, receipt } from "@/Test"
+import { caseN2, report, reportBook } from "@/Test"
 
 
 
@@ -17,7 +17,7 @@ SCOPES = [
   scoped("issue", ["a", "b", "c"]),
   untag("ignore"),
 ]
-receipt(
+report(
   caseN2(captured(processNothing, SCOPES)),
   "captured",
   [
@@ -30,7 +30,7 @@ receipt(
   ],
 )
 
-receipt(
+report(
   caseN2(parsed(processNothing, SCOPES)),
   "parsed",
   [

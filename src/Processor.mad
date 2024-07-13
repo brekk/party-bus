@@ -4,7 +4,7 @@ import type { Tag } from "@/Tag"
 
 import { Just, Nothing } from "Maybe"
 
-import { ansiFgBg, seededAnsi } from "@/Color"
+import { ansiFgBg, seeded } from "@/Color"
 import { fromString, matches, serialize } from "@/Tag"
 
 
@@ -34,9 +34,9 @@ export parsed = (run, tags, t, thing) => pipe(
 styled :: String -> Trace String String -> List Tag -> String -> String -> String
 export styled = (seedPrefix, run, raw) => parsed(
   (t, x) => pipe(
-    seededAnsi(seedPrefix),
+    seeded(seedPrefix),
     ansiFgBg(" " ++ t ++ " "),
-    (s) => `✦ ` ++ s,
+    (s) => ` ✿  ` ++ s ++ "\n   ",
     run($, x),
   )(t),
 )(raw)

@@ -8,23 +8,23 @@ import Wish from "Wish"
 export type Lazy a b = Lazy(Trace a b, List Tag, Tag, a)
 
 export setTrace = (mod, x) => where(x) {
-  Lazy(change, tags, t, thing) =>
-    Lazy(mod(change), tags, t, thing)
+  Lazy(trace, tags, t, thing) =>
+    Lazy(mod(trace), tags, t, thing)
 }
 
 export setTags = (mod, x) => where(x) {
-  Lazy(change, tags, t, thing) =>
-    Lazy(change, mod(tags), t, thing)
+  Lazy(trace, tags, t, thing) =>
+    Lazy(trace, mod(tags), t, thing)
 }
 
 export setTag = (mod, x) => where(x) {
-  Lazy(change, tags, t, thing) =>
-    Lazy(change, tags, mod(t), thing)
+  Lazy(trace, tags, t, thing) =>
+    Lazy(trace, tags, mod(t), thing)
 }
 
 export setValue = (mod, x) => where(x) {
-  Lazy(change, tags, t, thing) =>
-    Lazy(change, tags, t, mod(thing))
+  Lazy(trace, tags, t, thing) =>
+    Lazy(trace, tags, t, mod(thing))
 }
 
 export lazy = (run, tags, t, thing) => pipe(

@@ -1,3 +1,6 @@
+import { ge } from "Compare"
+import Float from "Float"
+import Integer from "Integer"
 import { repeatWith } from "List"
 import Math from "Math"
 import R from "Random"
@@ -5,9 +8,38 @@ import Term from "Terminal"
 
 
 
-// export type Color = RGB(Integer, Integer, Integer) | ANSI256(Float)
+export alias Color a = #[a, a, a]
 
-rgbToAnsi256 :: Integer -> Integer -> Integer -> Float
+// derive Comparable Color a
+
+export toInteger = where {
+  #[r, g, b] =>
+    r + g + b
+}
+
+export toFloat = where {
+  #[r, g, b] =>
+    16 + (36 * (r / 255 * 5)) + (6 * (g / 255 * 5)) + (b / 255 * 5)
+}
+
+export toTupleFloat = where {
+  #[r, g, b] =>
+    #[Integer.toFloat(r), Integer.toFloat(g), Integer.toFloat(b)]
+}
+
+export toTupleInt = where {
+  #[r, g, b] =>
+    #[Float.toInteger(r), Float.toInteger(g), Float.toInteger(b)]
+}
+
+export toRGB = (v) => {
+  r = hexR(v)
+  g = hexG(v)
+  b = hexB(v)
+  return #[r, g, b]
+}
+
+rgbToAnsi256 :: (Bits a, Comparable a, Number a) => a -> a -> a -> Float
 export rgbToAnsi256 = (r, g, b) => {
   r4 = r >> 4
   g4 = g >> 4
@@ -26,34 +58,24 @@ export rgbToAnsi256 = (r, g, b) => {
 }
 
 MAX_OCTET = 255
+
+
+//ESC[48;2;⟨r⟩;⟨g⟩;⟨b⟩ m Select RGB background color
 COLOR_BACKGROUND = 48
+//ESC[38;2;⟨r⟩;⟨g⟩;⟨b⟩ m Select RGB foreground color
 COLOR_FOREGROUND = 38
 
 export seededRGB = pipe(
   R.generateFromString,
   (seed) => {
     twoFiveSix = R.integer(0, MAX_OCTET)
-    colors = repeatWith((_) => twoFiveSix(seed), 3)
-    return where(colors) {
-      [r, g, b] =>
-        #[r, g, b]
-
-      _ =>
-        #[-1, -1, -1]
-    }
+    r = twoFiveSix(seed)
+    g = twoFiveSix(seed)
+    b = twoFiveSix(seed)
+    return #[r, g, b]
   },
 )
 
-export seededAnsi8 = pipe(
-  seededRGB,
-  where {
-    #[r, g, b] =>
-      rgbToAnsi256(r, g, b)
-  },
-)
-
-//ESC[38;2;⟨r⟩;⟨g⟩;⟨b⟩ m Select RGB foreground color
-//ESC[48;2;⟨r⟩;⟨g⟩;⟨b⟩ m Select RGB background color
 export seededAnsi256 = (before, str) => pipe(
   seededRGB,
   where {
@@ -62,29 +84,81 @@ export seededAnsi256 = (before, str) => pipe(
   },
 )(str)
 
+export rgbInvert = where {
+  #[r, g, b] =>
+    #[MAX_OCTET - r, MAX_OCTET - g, MAX_OCTET - b]
+}
+
 export seededAnsi256Bg = seededAnsi256(COLOR_BACKGROUND)
 export seededAnsi256Fg = seededAnsi256(COLOR_FOREGROUND)
 
-export seededAnsi = (seedPrefix, str) => pipe(
+
+HALF_OCTET = 0x7f
+
+isMid = ge($, HALF_OCTET)
+
+seeded :: String -> String -> List String
+export seeded = (seedPrefix, str) => pipe(
   mappend(seedPrefix),
   seededRGB,
-  where {
-    #[r, g, b] =>
-      do {
-        convert = map(show)
-        return #[
-          convert([COLOR_FOREGROUND, 2, r, g, b]),
-          convert([COLOR_BACKGROUND, 2, MAX_OCTET - r, MAX_OCTET - g, MAX_OCTET - b]),
-        ]
-      }
+  (color) => {
+    black = pipe(
+      toTupleFloat,
+      isLuminous,
+    )(color)
+    return where(color) {
+      #[r, g, b] =>
+        map(show)([
+          COLOR_FOREGROUND,
+          2,
+          black ? 0 : MAX_OCTET,
+          black ? 0 : MAX_OCTET,
+          black ? 0 : MAX_OCTET,
+          COLOR_BACKGROUND,
+          2,
+          r,
+          g,
+          b,
+        ])
+    }
   },
 )(str)
 
-ansiFgBg :: String -> #[List String, List String] -> String
-export ansiFgBg = (t, ansiSeq) => where(ansiSeq) {
-  #[fg, bg] =>
-    pipe(
-      Term.ansiColor(fg),
-      Term.ansiColor(bg),
-    )(t)
+ansiFgBg :: String -> List String -> String
+export ansiFgBg = (t, ansiSeq) => Term.ansiColor(ansiSeq, t)
+
+
+
+hexR :: Integer -> Integer
+hexR = (raw) => raw >> 16 & 0xff
+
+hexG :: Integer -> Integer
+hexG = (raw) => raw >> 8 & 0xff
+
+hexB :: Integer -> Integer
+hexB = (raw) => raw & 0xff
+
+luminance :: Color Float -> Color Float
+export luminance = where {
+  #[r, g, b] =>
+    #[(r * 0.2126), (g * 0.7152), (b * 0.0722)]
 }
+
+isLuminous :: Color Float -> Boolean
+isLuminous = pipe(
+  luminance,
+  toInteger,
+  isMid,
+)
+
+contrastL :: Color Float -> Integer
+export contrastL = pipe(
+  luminance,
+  toFloat,
+  (x) => isMid(x) ? 0x000000 : 0xffffff,
+)
+contrastColor :: Color Float -> Color Float
+export contrastColor = pipe(
+  contrastL,
+  (x) => x >= 0x7f ? #[0, 0, 0] : #[MAX_OCTET, MAX_OCTET, MAX_OCTET],
+)

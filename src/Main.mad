@@ -38,6 +38,7 @@ main = () => {
   blog("*", "k fun star star!")
   blog("info:deep", "info:deep with parsies!")
   blog("info:*", "info star!")
+  // styledLogger = Pro.styled("style", IO.pTrace)
   styledLogger = Pro.styled("style", IO.pTrace)
   // these parse a tag:scope string and colorize it
   slog = styledLogger(SCOPES)
@@ -58,6 +59,7 @@ main = () => {
   dlog("issue:a:b:c", "debuglar alpha issue")
   dlog("issue:a:*", "debarge nested issue")
   dlog("warning", "exclude warning")
+  dlog("info:deep", "debugular info:deep round 2")
   sloth = Lazy.lazy(slog)
   // sloth(IO.pTrace, [], Tag([], ""))
   IO.pTrace("SLOTH", sloth)

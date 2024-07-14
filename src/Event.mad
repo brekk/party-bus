@@ -1,0 +1,22 @@
+import type { Wish } from "Wish"
+
+import type { Tag } from "@/Tag"
+
+import { Tag } from "@/Tag"
+
+
+
+// map these to Stream semantics
+
+export type Event a b = Event(a, Tag, b)
+export alias Predicate a = a -> Boolean
+export type ConditionalEvent a b
+  = Skipped(Event a b)
+  | Evented(Event a b)
+  | ConditionalEvent(Predicate a, Event a b)
+
+export type EventDrain a b = EventDrain(List (Event a b))
+export alias Produce a b = Event a b -> b
+export alias Consume e a b = Event a b -> Wish e (Event a b)
+export alias Transform a b = a -> b
+export type EventPump e a b = EventPump(Produce a b, Consume e a b, Transform a b)

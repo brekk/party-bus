@@ -1,0 +1,4 @@
+export type Application = Tracked | Untracked
+
+// Instrument
+// Application

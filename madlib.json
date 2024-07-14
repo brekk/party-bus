@@ -1,7 +1,7 @@
 {
-  "name": "billet",
+  "name": "PartyBus",
   "version": "0.0.1",
-  "main": "src/Billet.mad",
+  "main": "src/PartyBus.mad",
   "importAliases": {
     ".": "src"
   }

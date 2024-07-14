@@ -1,6 +1,6 @@
-# billet
+# party-bus
 
-    log -> billet
+events with signals and processes
 
 - toggleable
 - tagged

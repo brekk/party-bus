@@ -3,13 +3,13 @@ import type { Random } from "Random"
 import { generateFromSeed } from "Random"
 import Random from "Random"
 
-import { ANSI_BACKGROUND, ANSI_FOREGROUND, FULL_CHANNEL } from "@/Color/Constants"
+import { ANSI_BACKGROUND, ANSI_FOREGROUND, FULL_COLOR_CHANNEL } from "@/Color/Constants"
 
 
 
 colorFromSeed :: Random -> #[Integer, Integer, Integer]
 export colorFromSeed = (seed) => {
-  pull = Random.integer(0, FULL_CHANNEL)
+  pull = Random.integer(0, FULL_COLOR_CHANNEL)
   r = pull(seed)
   g = pull(seed)
   b = pull(seed)
@@ -30,7 +30,7 @@ export seededSeq = (before, str) => pipe(
 
 export rgbInvert = where {
   #[r, g, b] =>
-    #[FULL_CHANNEL - r, FULL_CHANNEL - g, FULL_CHANNEL - b]
+    #[FULL_COLOR_CHANNEL - r, FULL_COLOR_CHANNEL - g, FULL_COLOR_CHANNEL - b]
 }
 
 export seededSeqBg = seededSeq(ANSI_BACKGROUND)

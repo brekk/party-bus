@@ -1,23 +1,30 @@
 import { EQ } from "Compare"
 import Dict from "Dictionary"
+import List from "List"
 import { assertEquals, test } from "Test"
 
+import { IN_SCOPE, OUT_OF_SCOPE, PARALLEL_SCOPE } from "@/Tag"
 import {
+  NoTag,
   Tag,
+  Wildcard,
   compareTag,
+  fromString,
+  getConcreteScope,
   getScope,
-  hasScope,
   // inScope,
   isNegated,
   isScoped,
   manyFromString,
   matches,
+  negated,
   scoped,
   serialize,
   tag,
   untag,
 } from "@/Tag"
-import { report, reportBook } from "@/Test"
+import { scopeFromList, scopeWithinScope } from "@/Tag/Scope"
+import { analyze, report, reportBook } from "@/Test"
 
 
 
@@ -35,27 +42,13 @@ testparseMany(
 )
 testparseMany("parseMany - various garbage", {{ "": [], ",,": [], "::::,": [] }})
 
-report(
-  isScoped,
-  "isScoped - testcase",
-  [#[Tag(true, "yo", []), false], #[Tag(true, "yo", ["yo"]), true]],
-)
+report(isScoped, "isScoped - testcase", [#[scoped("yo", []), false], #[scoped("yo", ["yo"]), true]])
 
 
 report(
-  getScope,
-  "getScope",
-  [#[Tag(true, "yo", []), []], #[Tag(true, "yo", ["a", "b"]), ["a", "b"]]],
-)
-
-
-
-test(
-  "hasScope",
-  () => do {
-    _ <- assertEquals(hasScope(["a", "b"], scoped("nice", [])), false)
-    return assertEquals(hasScope([], scoped("nice", [])), true)
-  },
+  getConcreteScope,
+  "getConcreteScope",
+  [#[scoped("yo", []), []], #[scoped("yo", ["a", "b"]), ["a", "b"]]],
 )
 
 report(
@@ -65,8 +58,6 @@ report(
 )
 
 report(isNegated, "isNegated", [#[untag("raw"), true], #[tag("raw"), false]])
-
-report(compareTag(tag("*")), "compareTag : *", [#[tag("*"), EQ], #[tag("hello"), EQ]])
 
 report(
   matches([
@@ -92,5 +83,52 @@ report(
     #[scoped("issue", ["a", "b", "c", "d"]), true],
     #[scoped("issue", ["a", "b", "c", "d", "x"]), true],
     #[tag("ignore"), false],
+  ],
+)
+
+// let's pretend!
+TAGS = {
+  noDetail: untag("detail"),
+  warn: tag("warn"),
+  info: tag("info"),
+  machine: tag("machine"),
+  machineRun: scoped("machine", ["run"]),
+  state: tag("state"),
+  stateEvent: scoped("state", ["event"]),
+}
+
+
+
+
+report(
+  compareTag(TAGS.noDetail),
+  "compareTag - -detail",
+  [#[TAGS.warn, PARALLEL_SCOPE], #[tag("detail"), OUT_OF_SCOPE], #[Wildcard, IN_SCOPE]],
+)
+
+report(
+  fromString,
+  "Tag.fromString",
+  [
+    #["a", tag("a")],
+    #["a:b", scoped("a", ["b"])],
+    #["a:b:c", scoped("a", ["b", "c"])],
+    #["-a:b:c", negated("a", ["b", "c"])],
+    #["-a:b", negated("a", ["b"])],
+    #["-a", untag("a")],
+    #["*", Wildcard],
+    #["", NoTag],
+  ],
+)
+
+report(
+  scopeWithinScope(scopeFromList(["a", "b", "c"])),
+  "scopeWithinScope -- a:b:c ↓",
+  [
+    #[scopeFromList(["a", "b", "c", "d"]), true],
+    #[scopeFromList(["a", "b", "c", "d", "e"]), true],
+    #[scopeFromList(["a", "b"]), false],
+    #[scopeFromList(["a", "c"]), false],
+    #[scopeFromList(["a"]), false],
   ],
 )

@@ -1,8 +1,21 @@
 import { mapWithKey, values } from "Dictionary"
 import Term from "Terminal"
 import { assertEquals, test } from "Test"
+import { parallel } from "Wish"
 
 
+
+// analyze :: (Show b, Eq b) => String -> (a -> b) -> Dictionary a b -> Wish TestResult TestResult
+export analyze = (fn, name, testDict) => pipe(
+  map(where { #[input, output] => assertEquals(fn(input), output) }),
+  (cases) => test(
+    name,
+    () => do {
+      _ <- parallel(cases)
+      return assertEquals(true, true)
+    },
+  ),
+)(testDict)
 
 printReport = (name, i) => `${name}\n  ↳ ${
   pipe(

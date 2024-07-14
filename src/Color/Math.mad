@@ -1,6 +1,6 @@
 import Math from "Math"
 
-import { FULL_CHANNEL } from "@/Color/Constants"
+import { FULL_COLOR_CHANNEL } from "@/Color/Constants"
 
 
 

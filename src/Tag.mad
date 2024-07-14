@@ -1,25 +1,26 @@
 import type { Comparison } from "Compare"
 
+import type { Scope } from "@/Tag/Scope"
+
 import { EQ, GT, LT, gt } from "Compare"
 import { complement, equals } from "Function"
+import IO from "IO"
 import List from "List"
 import { Just, Nothing, fromMaybe } from "Maybe"
+import Set from "Set"
 import String from "String"
 import Term from "Terminal"
 
+import { NoScope, Scope, scopeFromList, scopeLength, scopeWithinScope } from "@/Tag/Scope"
 
 
-export alias Scope = List String
 
-/**
- * A tag is a human identifiable way of segmenting data:
- * - it has an `id` which is a String
- * - it can be negated, which allows for exclusion
- * - it can be scoped, which allows for filtering
- */
-export type Tag = Tag(Boolean, String, Scope) | Wildcard
+// A Tag lets us segment data
+export type Tag = Tag(String, Scope) | NegatedTag(String, Scope) | Wildcard | NoTag
 
 export alias TagList = List Tag
+
+export type TagRange = TagRange(Boolean, TagList) | WildRange
 
 // instance Eq Tag {
 //   __EQ__ = tagEqualsTag
@@ -28,42 +29,71 @@ instance Comparable Tag {
   compare = compareTag
 }
 
-/*
-normalizeTagList :: TagList -> TagList
-normalizeTagList = (tags) => map(
-  (t) => 
-  tags
-)
-*/
-import IO from "IO"
 
 
-
-equalsTag = (a, b) => {
-  iA = id(a)
-  iB = id(b)
-  sameId = iA == iB
-  return if (isWild(a) || isWild(b)) {
-    true
-  } else if (isNegated(a) && sameId) do {
-    return false
-  } else {
-    sameId
-  }
-}
 
 // CONSTRUCTOR SUGAR
 
-scoped :: String -> Scope -> Tag
-export scoped = Tag(false)
+scoped :: String -> List String -> Tag
+export scoped = (n, xs) => Tag(n, scopeFromList(xs))
 
-negated :: String -> Scope -> Tag
-export negated = Tag(true)
+negated :: String -> List String -> Tag
+export negated = (n, xs) => NegatedTag(n, scopeFromList(xs))
 
 tag :: String -> Tag
-export tag = scoped($, [])
+export tag = Tag($, NoScope)
 untag :: String -> Tag
-export untag = negated($, [])
+export untag = NegatedTag($, NoScope)
+
+// COMPARISONS
+
+// && id(a) == id(b)
+equalsTag = (a, b) => a >= b
+
+export PARALLEL_SCOPE = EQ
+export OUT_OF_SCOPE = LT
+export IN_SCOPE = GT
+
+
+compareTag :: Tag -> Tag -> Comparison
+export compareTag = (a, b) => where(#[a, b]) {
+  #[Tag(aName, NoScope), Tag(bName, NoScope)] =>
+    aName == bName ? IN_SCOPE : PARALLEL_SCOPE
+
+  // comparing two scoped Tags
+  #[Tag(aName, aScope), Tag(bName, bScope)] =>
+    if (bName == aName) do {
+      return if (scopeWithinScope(aScope, bScope)) {
+        IN_SCOPE
+      } else {
+        OUT_OF_SCOPE
+      }
+    } else {
+      OUT_OF_SCOPE
+    }
+
+  // we only care if the names match and one is negated
+  // #[NegatedTag(_, _), NegatedTag(_, _)] =>
+  //   IN_SCOPE
+
+  #[Tag(aName, _), NegatedTag(bName, _)] =>
+    aName == bName ? OUT_OF_SCOPE : PARALLEL_SCOPE
+
+  #[NegatedTag(aName, _), Tag(bName, _)] =>
+    aName == bName ? OUT_OF_SCOPE : PARALLEL_SCOPE
+
+  #[Wildcard, Wildcard] =>
+    IN_SCOPE
+
+  #[Wildcard, _] =>
+    IN_SCOPE
+
+  #[_, Wildcard] =>
+    IN_SCOPE
+
+  _ =>
+    PARALLEL_SCOPE
+}
 
 // CHECKS
 
@@ -72,25 +102,31 @@ export isWild = where {
   Wildcard =>
     true
 
-  Tag(_, x, _) =>
+  Tag(x, _) =>
     x == "*"
+
+  _ =>
+    false
 }
 
 isNegated :: Tag -> Boolean
 export isNegated = where {
-  Tag(x, _, _) =>
-    x
+  NegatedTag(_, _) =>
+    true
 
-  Wildcard =>
+  _ =>
     false
 }
 
 isScoped :: Tag -> Boolean
 export isScoped = where {
-  Tag(_, _, scope) =>
-    List.length(scope) > 0
+  Tag(_, Scope(_)) =>
+    true
 
-  Wildcard =>
+  NegatedTag(_, Scope(_)) =>
+    true
+
+  _ =>
     false
 }
 
@@ -99,27 +135,52 @@ export isScoped = where {
 
 getScope :: Tag -> Scope
 export getScope = where {
-  Tag(_, _, scope) =>
+  Tag(_, scope) =>
     scope
 
-  Wildcard =>
-    []
+  NegatedTag(_, scope) =>
+    scope
+
+  _ =>
+    NoScope
 }
+
+getConcreteScope :: Tag -> List String
+export getConcreteScope = pipe(
+  getScope,
+  where {
+    Scope(raw) =>
+      Set.toList(raw)
+
+    _ =>
+      []
+  },
+)
 
 id :: Tag -> String
 export id = where {
-  Tag(_, name, _) =>
+  Tag(name, _) =>
+    name
+
+  NegatedTag(name, _) =>
     name
 
   Wildcard =>
     "*"
+
+  NoTag =>
+    "!"
 }
 
 // TRANSFORMS
 
 // eventually we could actually Parse stuff
 fromString :: String -> Tag
-export fromString = (_part) => {
+export fromString = (_part) => if (_part == "*") {
+  Wildcard
+} else if (_part == "") {
+  NoTag
+} else do {
   pos = String.startsWith("-", _part)
   part = if (pos) {
     String.drop(1, _part)
@@ -133,7 +194,7 @@ export fromString = (_part) => {
       seg = List.length(list) == 1 ? [] : List.tail(list)
       return pipe(
         _firstAsString,
-        Tag(pos, $, seg),
+        (pos ? NegatedTag : Tag)($, scopeFromList(seg)),
       )(list)
     },
   )(part)
@@ -143,48 +204,9 @@ export fromString = (_part) => {
 tagScopeLength :: Tag -> Integer
 export tagScopeLength = pipe(
   getScope,
-  List.length,
+  scopeLength,
 )
 
-compareTag :: Tag -> Tag -> Comparison
-export compareTag = (a, b) => where(#[a, b]) {
-  #[Tag(aNeg, aName, aScope), Tag(bNeg, bName, bScope)] =>
-    if (bName == aName) {
-      if (aNeg) {
-        // aNeg ? LT : GT
-        LT
-      } else do {
-        sA = List.length(aScope)
-        sB = List.length(bScope)
-        return if (sA == sB) {
-          EQ
-        } else if (sA > sB) {
-          GT
-        } else {
-          LT
-        }
-      }
-    } else if (aNeg) {
-      aNeg ? GT : LT
-    } else {
-      EQ
-    }
-
-  #[Wildcard, Wildcard] =>
-    EQ
-
-  #[Wildcard, _] =>
-    LT
-
-  #[_, Wildcard] =>
-    GT
-}
-
-hasScope :: Scope -> Tag -> Boolean
-export hasScope = (testScope, t) => pipe(
-  getScope,
-  equals(testScope),
-)(t)
 
 _firstAsString :: List String -> String
 _firstAsString = pipe(
@@ -195,12 +217,23 @@ _firstAsString = pipe(
 serialize :: Tag -> String
 export serialize = (t) => {
   scope = pipe(
-    getScope,
+    getConcreteScope,
     String.join(":"),
   )(t)
   name = id(t)
   return name ++ (equals("", scope) ? "" : ":" ++ scope)
 }
+
+/*
+IO.pTrace(
+  "\t"
+    ++ Term.ansiColor(
+      [check ? Term.ansi.FGBrightRed : Term.ansi.FGBrightYellow],
+      (neg ? "-" : "") ++ id(x) ++ " vs. " ++ name,
+    ),
+  { check, wild: w, eq: e, above: o },
+)
+*/
 
 matches :: List Tag -> Tag -> Boolean
 export matches = (xs, t) => {
@@ -215,14 +248,7 @@ export matches = (xs, t) => {
         o = x > t
         neg = isNegated(x)
         check = e && (neg || o)
-        IO.pTrace(
-          "\t"
-            ++ Term.ansiColor(
-              [check ? Term.ansi.FGBrightRed : Term.ansi.FGBrightYellow],
-              (neg ? "-" : "") ++ id(x) ++ " vs. " ++ name,
-            ),
-          { check, wild: w, eq: e, above: o },
-        )
+
         return check
       },
     ),
@@ -239,15 +265,11 @@ export matches = (xs, t) => {
   // return true
 }
 
-_isEmptyTag :: Tag -> Boolean
-_isEmptyTag = pipe(
-  id,
-  equals(""),
-)
+isNoTag = (x) => x == NoTag
 
 manyFromString :: String -> List Tag
 export manyFromString = pipe(
   String.split(","),
   map(fromString),
-  List.reject(_isEmptyTag),
+  List.reject(isNoTag),
 )

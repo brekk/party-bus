@@ -39,8 +39,8 @@ test(
 )
 
 report(
-  Color.toRGB,
-  "toRGB",
+  Color.fromFloat,
+  "fromFloat",
   [
     #[0xffffff, Color.WHITE],
     #[0x000000, Color.BLACK],
@@ -49,4 +49,9 @@ report(
   ],
 )
 
-report(channelR, "channelR", [#[0xff0000, 0xff]])
+report(channelR, "channelR", [#[0xff0000, 0xff], #[0x120000, 0x12]])
+report(
+  Color.contrastByLuminance,
+  "contrastByLuminance",
+  [#[#[255, 100, 30], Color.WHITE], #[#[30, 120, 255], Color.WHITE], #[Color.BLACK, Color.WHITE]],
+)

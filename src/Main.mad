@@ -44,12 +44,12 @@ main = () => {
   alog = raw(SCOPES)
   HEADER("Log.raw")
   // these are inconvenient at call-time unless partially applied
-  alog(Tag(true, "info", ["deep"]), PASS("[deep] info!"))
-  alog(Tag(true, "info", []), PASS("info info"))
-  alog(Tag(true, "info", ["deeply", "nested"]), FAIL("skipping deeply.nested"))
-  alog(Tag(true, "log", []), PASS("log"))
-  alog(Tag(true, "warning", []), FAIL("this is skipped"))
-  alog(Tag(true, "ignore", []), FAIL("this is skipped?"))
+  alog(scoped("info", ["deep"]), PASS("[deep] info!"))
+  alog(scoped("info", []), PASS("info info"))
+  alog(scoped("info", ["deeply", "nested"]), FAIL("skipping deeply.nested"))
+  alog(scoped("log", []), PASS("log"))
+  alog(scoped("warning", []), FAIL("this is skipped"))
+  alog(scoped("ignore", []), FAIL("this is skipped?"))
   // these parse a tag:scope string
   blog = parsed(SCOPES)
   HEADER("Log.parsed")

@@ -1,10 +1,16 @@
 import { ge } from "Compare"
 import Float from "Float"
+import { identity } from "Function"
 import Integer from "Integer"
 import Random from "Random"
 import Term from "Terminal"
 
-import { ANSI_BACKGROUND, ANSI_FOREGROUND, FULL_CHANNEL, HALF_CHANNEL } from "@/Color/Constants"
+import {
+  ANSI_BACKGROUND,
+  ANSI_FOREGROUND,
+  FULL_COLOR_CHANNEL,
+  HALF_COLOR_CHANNEL,
+} from "@/Color/Constants"
 import { channelB, channelG, channelR } from "@/Color/Math"
 import { colorFromSeed } from "@/Color/Random"
 
@@ -12,9 +18,14 @@ import { colorFromSeed } from "@/Color/Random"
 
 export alias Color a = #[a, a, a]
 export BLACK = #[0, 0, 0]
-export WHITE = #[FULL_CHANNEL, FULL_CHANNEL, FULL_CHANNEL]
+export WHITE = #[FULL_COLOR_CHANNEL, FULL_COLOR_CHANNEL, FULL_COLOR_CHANNEL]
 
 // derive Comparable Color a
+
+export toChannel = where {
+  #[r, g, b] =>
+    r | g | b
+}
 
 export toInteger = where {
   #[r, g, b] =>
@@ -26,17 +37,7 @@ export toFloat = where {
     16 + (36 * (r / 255 * 5)) + (6 * (g / 255 * 5)) + (b / 255 * 5)
 }
 
-export toTupleFloat = where {
-  #[r, g, b] =>
-    #[Integer.toFloat(r), Integer.toFloat(g), Integer.toFloat(b)]
-}
-
-export toTupleInt = where {
-  #[r, g, b] =>
-    #[Float.toInteger(r), Float.toInteger(g), Float.toInteger(b)]
-}
-
-export toRGB = (v) => {
+export fromFloat = (v) => {
   r = channelR(v)
   g = channelG(v)
   b = channelB(v)
@@ -50,11 +51,39 @@ export toList = where {
     [r, g, b]
 }
 
-
-isMid = ge($, HALF_CHANNEL)
-
 mixer :: (Color a -> Color a -> Color b) -> Color a -> Color a -> Color b
 export mixer = (mix, a, b) => mix(a, b)
+
+mapRGB :: (a -> b) -> (a -> b) -> (a -> b) -> Color a -> Color b
+export mapRGB = (fnR, fnG, fnB, a) => where(a) {
+  #[r, g, b] =>
+    #[fnR(r), fnG(g), fnB(b)]
+}
+
+export mapR = mapRGB($, identity, identity)
+export mapG = mapRGB(identity, $, identity)
+export mapB = mapRGB(identity, identity, $)
+
+change :: (a -> b) -> Color a -> Color b
+export change = (fn, a) => mapRGB(fn, fn, fn)(a)
+
+export toTupleFloat = change(Integer.toFloat)
+
+export toTupleInt = change(Float.toInteger)
+
+
+
+isMid = ge($, HALF_COLOR_CHANNEL)
+
+luminance :: Color Float -> Color Float
+export luminance = mapRGB((r) => r * 0.2126, (g) => g * 0.7152, (b) => b * 0.0722)
+
+isLuminous :: Color Float -> Boolean
+isLuminous = pipe(
+  luminance,
+  toInteger,
+  isMid,
+)
 
 seeded :: String -> String -> List String
 export seeded = (seedPrefix, str) => pipe(
@@ -69,7 +98,7 @@ export seeded = (seedPrefix, str) => pipe(
     return where(color) {
       #[r, g, b] =>
         do {
-          blackChannel = black ? 0 : FULL_CHANNEL
+          blackChannel = black ? 0 : FULL_COLOR_CHANNEL
           return map(show)([
             ANSI_FOREGROUND,
             2,
@@ -87,28 +116,9 @@ export seeded = (seedPrefix, str) => pipe(
   },
 )(str)
 
-
-luminance :: Color Float -> Color Float
-export luminance = where {
-  #[r, g, b] =>
-    #[(r * 0.2126), (g * 0.7152), (b * 0.0722)]
-}
-
-isLuminous :: Color Float -> Boolean
-isLuminous = pipe(
-  luminance,
-  toInteger,
-  isMid,
-)
-
-contrastL :: Color Float -> Integer
-export contrastL = pipe(
+contrastByLuminance :: Color Float -> Color Float
+export contrastByLuminance = pipe(
   luminance,
   toFloat,
-  (x) => isMid(x) ? 0x000000 : 0xffffff,
-)
-contrastColor :: Color Float -> Color Float
-export contrastColor = pipe(
-  contrastL,
-  (x) => x >= HALF_CHANNEL ? WHITE : BLACK,
+  (x) => !isMid(x) ? WHITE : BLACK,
 )

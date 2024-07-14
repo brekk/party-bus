@@ -1,0 +1,40 @@
+import IO from "IO"
+import { isEmpty, length } from "List"
+import Set from "Set"
+
+
+
+export type Scope = Scope(Set String) | NoScope
+
+scopeFromList :: List String -> Scope
+export scopeFromList = (strs) => isEmpty(strs)
+  ? NoScope
+  : pipe(
+    Set.fromList,
+    Scope,
+  )(strs)
+
+scopeLength :: Scope -> Integer
+export scopeLength = where {
+  Scope(l) =>
+    Set.length(l)
+
+  NoScope =>
+    0
+}
+
+
+
+
+scopeWithinScope :: Scope -> Scope -> Boolean
+export scopeWithinScope = (a, z) => where(#[a, z]) {
+  #[Scope(outer), Scope(inner)] =>
+    pipe(
+      Set.diff(outer),
+      IO.pTrace("seltzer"),
+      (d) => d == Set.empty,
+    )(inner)
+
+  #[_, _] =>
+    false
+}

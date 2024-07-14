@@ -10,13 +10,10 @@ import { Tag } from "@/Tag"
 
 export type Event a b = Event(a, Tag, b)
 export alias Predicate a = a -> Boolean
-export type ConditionalEvent a b
-  = Skipped(Event a b)
-  | Evented(Event a b)
-  | ConditionalEvent(Predicate a, Event a b)
+export type Signal a b = Skipped(Event a b) | Called(Event a b) | ToCall(Predicate a, Event a b)
 
-export type EventDrain a b = EventDrain(List (Event a b))
+export type EventDrain a b = EventDrain(List (Signal a b))
 export alias Produce a b = Event a b -> b
-export alias Consume e a b = Event a b -> Wish e (Event a b)
+export alias Consume e a b = Event a b -> Wish e (Signal a b)
 export alias Transform a b = a -> b
 export type EventPump e a b = EventPump(Produce a b, Consume e a b, Transform a b)

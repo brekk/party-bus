@@ -3,7 +3,7 @@ import type { Comparison } from "Compare"
 import type { Scope } from "@/Tag/Scope"
 
 import { EQ, GT, LT, gt } from "Compare"
-import { complement, equals } from "Function"
+import { always, complement, equals, ifElse, when } from "Function"
 import IO from "IO"
 import List from "List"
 import { Just, Nothing, fromMaybe } from "Maybe"
@@ -47,7 +47,6 @@ export untag = NegatedTag($, NoScope)
 
 // COMPARISONS
 
-// && id(a) == id(b)
 equalsTag = (a, b) => a >= b
 
 export PARALLEL_SCOPE = EQ
@@ -73,8 +72,6 @@ export compareTag = (a, b) => where(#[a, b]) {
     }
 
   // we only care if the names match and one is negated
-  // #[NegatedTag(_, _), NegatedTag(_, _)] =>
-  //   IN_SCOPE
 
   #[Tag(aName, _), NegatedTag(bName, _)] =>
     aName == bName ? OUT_OF_SCOPE : PARALLEL_SCOPE
@@ -190,12 +187,18 @@ export fromString = (_part) => if (_part == "*") {
   return pipe(
     String.trim,
     String.split(":"),
+    List.reject(equals("")),
     (list) => {
-      seg = List.length(list) == 1 ? [] : List.tail(list)
-      return pipe(
-        _firstAsString,
-        (pos ? NegatedTag : Tag)($, scopeFromList(seg)),
-      )(list)
+      listLen = List.length(list)
+      return if (listLen == 0) {
+        NoTag
+      } else do {
+        seg = listLen == 1 ? [] : List.tail(list)
+        return pipe(
+          _firstAsString,
+          (pos ? NegatedTag : Tag)($, scopeFromList(seg)),
+        )(list)
+      }
     },
   )(part)
 }
@@ -238,31 +241,28 @@ IO.pTrace(
 matches :: List Tag -> Tag -> Boolean
 export matches = (xs, t) => {
   name = id(t)
-  IO.pTrace("\ttesting " ++ name ++ " match tag ...", t)
   w = isWild(t)
-  // w = true
-  checked = pipe(
-    List.filter(
-      (x) => {
-        e = equalsTag(x, t)
-        o = x > t
-        neg = isNegated(x)
-        check = e && (neg || o)
+  return w
+    || pipe(
+      List.filter(
+        (x) => {
+          e = equalsTag(x, t)
+          o = x > t
+          neg = isNegated(x)
+          check = e && (neg || o)
 
-        return check
+          return check
+        },
+      ),
+      (e) => {
+        return if (!w && !List.isEmpty(e)) {
+          true
+        } else do {
+          IO.pTrace("\tskipped", { name: id(t), t, e })
+          return false
+        }
       },
-    ),
-    (e) => {
-      return if (!w && !List.isEmpty(e)) {
-        true
-      } else do {
-        IO.pTrace("\tskipped", { name: id(t), t, e })
-        return false
-      }
-    },
-  )(xs)
-  return w || checked
-  // return true
+    )(xs)
 }
 
 isNoTag = (x) => x == NoTag
@@ -270,6 +270,7 @@ isNoTag = (x) => x == NoTag
 manyFromString :: String -> List Tag
 export manyFromString = pipe(
   String.split(","),
+  List.reject(equals("")),
   map(fromString),
   List.reject(isNoTag),
 )

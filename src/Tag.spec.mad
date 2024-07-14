@@ -28,19 +28,19 @@ import { analyze, report, reportBook } from "@/Test"
 
 
 
-testparseMany = reportBook(manyFromString)
-testparseMany(
-  "parseMany - single tags",
+test__manyFromString = reportBook(manyFromString)
+test__manyFromString(
+  "manyFromString - single tags",
   {{ "yo": [scoped("yo", [])], "yo:scoped": [scoped("yo", ["scoped"])] }},
 )
-testparseMany(
-  "parseMany - multiple tags",
+test__manyFromString(
+  "manyFromString - multiple tags",
   {{
     "a, b, spaced": [tag("a"), tag("b"), tag("spaced")],
     "a,b:belabor": [tag("a"), scoped("b", ["belabor"])],
   }},
 )
-testparseMany("parseMany - various garbage", {{ "": [], ",,": [], "::::,": [] }})
+test__manyFromString("manyFromString - various garbage", {{ "": [], ",,": [], "::::,": [] }})
 
 report(isScoped, "isScoped - testcase", [#[scoped("yo", []), false], #[scoped("yo", ["yo"]), true]])
 
@@ -127,6 +127,7 @@ report(
   [
     #[scopeFromList(["a", "b", "c", "d"]), true],
     #[scopeFromList(["a", "b", "c", "d", "e"]), true],
+    #[scopeFromList(["a", "b", "c"]), true],
     #[scopeFromList(["a", "b"]), false],
     #[scopeFromList(["a", "c"]), false],
     #[scopeFromList(["a"]), false],

@@ -1,8 +1,3 @@
-import { EQ } from "Compare"
-import Dict from "Dictionary"
-import List from "List"
-import { assertEquals, test } from "Test"
-
 import Party from "@/PartyBus"
 import { IN_SCOPE, OUT_OF_SCOPE, PARALLEL_SCOPE } from "@/Tag"
 import {
@@ -13,9 +8,10 @@ import {
   fromString,
   getConcreteScope,
   getScope,
-  // inScope,
+  id,
   isNegated,
   isScoped,
+  isWild,
   manyFromString,
   matches,
   negated,
@@ -24,8 +20,8 @@ import {
   tag,
   untag,
 } from "@/Tag"
-import { scopeFromList, scopeWithinScope } from "@/Tag/Scope"
-import { analyze, report, reportBook } from "@/Test"
+import { NoScope, Scope, scopeFromList, scopeLength, scopeWithinScope } from "@/Tag/Scope"
+import { report, reportBook } from "@/Test"
 
 
 
@@ -43,7 +39,16 @@ test__manyFromString(
 )
 test__manyFromString("manyFromString - various garbage", {{ "": [], ",,": [], "::::,": [] }})
 
-report(isScoped, "isScoped - testcase", [#[scoped("yo", []), false], #[scoped("yo", ["yo"]), true]])
+report(
+  isScoped,
+  "isScoped - testcase",
+  [
+    #[scoped("yo", []), false],
+    #[scoped("yo", ["yo"]), true],
+    #[untag("hey"), false],
+    #[negated("hey", ["a", "b"]), true],
+  ],
+)
 
 
 report(
@@ -149,12 +154,57 @@ report(
 )
 
 report(
+  compareTag(Wildcard),
+  "compareTag - *",
+  [
+    #[NAMED_RULES.eating, IN_SCOPE],
+    #[scoped("eating", ["outside"]), IN_SCOPE],
+    #[scoped("eating", ["rooms"]), IN_SCOPE],
+    #[NAMED_RULES.noEatingInTheKitchen, IN_SCOPE],
+    #[Wildcard, IN_SCOPE],
+    #[NoTag, IN_SCOPE],
+  ],
+)
+
+report(
   compareTag(NAMED_RULES.eating),
   "compareTag - eating",
   [
     #[NAMED_RULES.eating, IN_SCOPE],
     #[scoped("eating", ["outside"]), IN_SCOPE],
-  // #[Wildcard, IN_SCOPE],
-  // #[NoTag, OUT_OF_SCOPE],
+    #[NAMED_RULES.noEatingInTheKitchen, OUT_OF_SCOPE],
+    #[Wildcard, IN_SCOPE],
+    #[NoTag, OUT_OF_SCOPE],
   ],
+)
+
+report(
+  id,
+  "id",
+  [
+    #[tag("hey"), "hey"],
+    #[scoped("hey", ["there"]), "hey"],
+    #[untag("hey"), "hey"],
+    #[NoTag, ""],
+    #[Wildcard, "*"],
+  ],
+)
+
+report(
+  getScope,
+  "getScope",
+  [
+    #[tag("hey"), NoScope],
+    #[scoped("hey", ["there"]), scopeFromList(["there"])],
+    #[untag("hey"), NoScope],
+    #[NoTag, NoScope],
+    #[Wildcard, NoScope],
+  ],
+)
+
+report(scopeLength, "scopeLength", [#[scopeFromList(["a", "b", "c"]), 3], #[NoScope, 0]])
+report(
+  isWild,
+  "isWild",
+  [#[tag("cool"), false], #[NoTag, false], #[Wildcard, true], #[untag("hey"), false]],
 )

@@ -5,7 +5,7 @@ import { seeded } from "@/Color"
 
 
 
-styled = (formatter, seedPrefix, value) => pipe(
+export styled = (formatter, seedPrefix, value) => pipe(
   seeded(seedPrefix),
   ansiColor($, formatter(value)),
 )(value)

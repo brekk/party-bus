@@ -8,13 +8,17 @@ import String from "String"
 
 export type Scope = Scope(Set String) | NoScope
 
+// scopeFromString :: String -> Scope
+// scopeFromString = isEmpty(
+
 scopeFromList :: List String -> Scope
 export scopeFromList = (strs) => {
   cleaned = pipe(
     map(String.trim),
     List.reject(String.isEmpty),
+    isEmpty,
   )(strs)
-  return if (isEmpty(cleaned)) {
+  return if (cleaned) {
     NoScope
   } else {
     pipe(

@@ -3,19 +3,25 @@ import type { Comparison } from "Compare"
 import type { Scope } from "@/Tag/Scope"
 
 import { EQ, GT, LT, gt } from "Compare"
-import { always, complement, equals, ifElse, when } from "Function"
+import { complement, equals } from "Function"
 import IO from "IO"
 import List from "List"
 import { Just, Nothing, fromMaybe } from "Maybe"
 import Set from "Set"
 import String from "String"
-import Term from "Terminal"
 
-import { NoScope, Scope, scopeFromList, scopeLength, scopeWithinScope } from "@/Tag/Scope"
+// import Term from "Terminal"
+
+import {
+  NoScope,
+  Scope,
+  scopeFromList,
+  scopeLength,
+  scopeWithinScope,
+} from "@/Tag/Scope"
 
 
 
-// A Tag lets us segment data
 export type Tag = Tag(String, Scope) | NegatedTag(String, Scope) | Wildcard | NoTag
 
 export alias TagList = List Tag
@@ -41,8 +47,6 @@ export untag = NegatedTag($, NoScope)
 
 // COMPARISONS
 
-equalsTag = (a, b) => a > b
-
 export PARALLEL_SCOPE = EQ
 export OUT_OF_SCOPE = LT
 export IN_SCOPE = GT
@@ -55,12 +59,6 @@ export compareTag = (a, b) => where(#[a, b]) {
 
   #[_, Wildcard] =>
     IN_SCOPE
-
-  #[NoTag, _] =>
-    OUT_OF_SCOPE
-
-  #[_, NoTag] =>
-    OUT_OF_SCOPE
 
   #[Tag(aName, NoScope), Tag(bName, _)] =>
     aName == bName ? IN_SCOPE : PARALLEL_SCOPE
@@ -88,6 +86,9 @@ export compareTag = (a, b) => where(#[a, b]) {
   _ =>
     OUT_OF_SCOPE
 }
+// _ =>
+//   OUT_OF_SCOPE
+
 
 // CHECKS
 
@@ -200,29 +201,21 @@ export fromString = (_part) => if (_part == "*") {
   )(part)
 }
 
-
-tagScopeLength :: Tag -> Integer
-export tagScopeLength = pipe(
-  getScope,
-  scopeLength,
-)
-
-
 _firstAsString :: List String -> String
 _firstAsString = pipe(
   List.first,
   fromMaybe(""),
 )
 
+appendScope = (str) => equals("", str) ? "" : ":" ++ str
+
 serialize :: Tag -> String
-export serialize = (t) => {
-  scope = pipe(
-    getConcreteScope,
-    String.join(":"),
-  )(t)
-  name = id(t)
-  return name ++ (equals("", scope) ? "" : ":" ++ scope)
-}
+export serialize = (t) => pipe(
+  getConcreteScope,
+  String.join(":"),
+  appendScope,
+  mappend(id(t)),
+)(t)
 
 isNoTag = (x) => x == NoTag
 
@@ -234,21 +227,11 @@ export manyFromString = pipe(
   List.reject(isNoTag),
 )
 
+anyTagMatches :: List Tag -> Tag -> Boolean
+export anyTagMatches = (xs, t) => pipe(
+  List.filter(gt($, t)),
+  complement(List.isEmpty),
+)(xs)
 
 matches :: List Tag -> Tag -> Boolean
-export matches = (xs, t) => {
-  name = id(t)
-  w = isWild(t)
-  return w
-    || pipe(
-      List.filter(
-        (x) => {
-          e = equalsTag(x, t)
-          o = x > t
-          neg = isNegated(x)
-          return e && (neg || o)
-        },
-      ),
-      complement(List.isEmpty),
-    )(xs)
-}
+export matches = (xs, t) => isWild(t) || anyTagMatches(xs, t)

@@ -246,18 +246,9 @@ export matches = (xs, t) => {
           e = equalsTag(x, t)
           o = x > t
           neg = isNegated(x)
-          check = e && (neg || o)
-
-          return check
+          return e && (neg || o)
         },
       ),
-      (e) => {
-        return if (!w && !List.isEmpty(e)) {
-          true
-        } else do {
-          IO.pTrace("\tskipped", { name: id(t), t, e })
-          return false
-        }
-      },
+      complement(List.isEmpty),
     )(xs)
 }

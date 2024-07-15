@@ -2,7 +2,7 @@ import type { Tag } from "@/Tag"
 
 import IO from "IO"
 
-import { debugged } from "@/Debug"
+import { debugged } from "@/Env/Debug"
 import P from "@/Processor"
 
 

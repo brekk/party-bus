@@ -8,10 +8,10 @@ import Random from "Random"
 import Term from "Terminal"
 import Wish from "Wish"
 
-import Lazy from "@/LazyProcessor"
 import { parsed, raw } from "@/Log"
 import Party from "@/PartyBus"
 import Pro from "@/Processor"
+import Lazy from "@/Processor/Lazy"
 import { Tag, compareTag, scoped, tag, untag } from "@/Tag"
 
 

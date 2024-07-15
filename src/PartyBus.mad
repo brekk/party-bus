@@ -1,5 +1,5 @@
-import type { Lazy } from "@/LazyProcessor"
 import type { Trace } from "@/Processor"
+import type { Lazy } from "@/Processor/Lazy"
 import type { Tag } from "@/Tag"
 import type { Scope } from "@/Tag/Scope"
 

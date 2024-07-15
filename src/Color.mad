@@ -71,7 +71,9 @@ export toTupleFloat = change(Integer.toFloat)
 
 export toTupleInt = change(Float.toInteger)
 
+export invert = (x) => FULL_COLOR_CHANNEL - x
 
+export rgbInvert = change(invert)
 
 isMid = ge($, HALF_COLOR_CHANNEL)
 

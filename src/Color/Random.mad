@@ -28,10 +28,5 @@ export seededSeq = (before, str) => pipe(
   },
 )(str)
 
-export rgbInvert = where {
-  #[r, g, b] =>
-    #[FULL_COLOR_CHANNEL - r, FULL_COLOR_CHANNEL - g, FULL_COLOR_CHANNEL - b]
-}
-
 export seededSeqBg = seededSeq(ANSI_BACKGROUND)
 export seededSeqFg = seededSeq(ANSI_FOREGROUND)

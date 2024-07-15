@@ -3,6 +3,7 @@ import Dict from "Dictionary"
 import List from "List"
 import { assertEquals, test } from "Test"
 
+import Party from "@/PartyBus"
 import { IN_SCOPE, OUT_OF_SCOPE, PARALLEL_SCOPE } from "@/Tag"
 import {
   NoTag,
@@ -87,24 +88,37 @@ report(
 )
 
 // let's pretend!
-TAGS = {
-  noDetail: untag("detail"),
-  warn: tag("warn"),
-  info: tag("info"),
-  machine: tag("machine"),
-  machineRun: scoped("machine", ["run"]),
-  state: tag("state"),
-  stateEvent: scoped("state", ["event"]),
+
+NAMED_RULES = {
+  // eating, just not in the kitchen
+  eating: Party.allow("eating"),
+  noEatingInTheKitchen: Party.avoidWithContext("eating", ["rooms", "kitchen"]),
+  // talking, just not loudly to maria
+  talking: Party.allow("talking"),
+  noTalkingLoudlyToMaria: Party.avoidWithContext("talking", ["loudly", "to", "maria"]),
+  // you can play anything 
+  playing: Party.allow("playing"),
+  // that isn't tv
+  noPlayingTV: Party.avoidWithContext("playing", ["tv"]),
+  // isn't a musical instrument
+  noPlayingMusic: Party.avoidWithContext("playing", ["music"]),
+  // unless it's a theremin
+  noPlayingMusicExceptTheremin: Party.allowWithContext("playing", ["music", "theremin"]),
+  // no singing
+  noSinging: Party.avoid("singing"),
 }
 
-
-
-
-report(
-  compareTag(TAGS.noDetail),
-  "compareTag - -detail",
-  [#[TAGS.warn, PARALLEL_SCOPE], #[tag("detail"), OUT_OF_SCOPE], #[Wildcard, IN_SCOPE]],
-)
+RULES = [
+  NAMED_RULES.eating,
+  NAMED_RULES.noEatingInTheKitchen,
+  NAMED_RULES.talking,
+  NAMED_RULES.noTalkingLoudlyToMaria,
+  NAMED_RULES.playing,
+  NAMED_RULES.noPlayingTV,
+  NAMED_RULES.noPlayingMusic,
+  NAMED_RULES.noPlayingMusicExceptTheremin,
+  NAMED_RULES.noSinging,
+]
 
 report(
   fromString,
@@ -131,5 +145,16 @@ report(
     #[scopeFromList(["a", "b"]), false],
     #[scopeFromList(["a", "c"]), false],
     #[scopeFromList(["a"]), false],
+  ],
+)
+
+report(
+  compareTag(NAMED_RULES.eating),
+  "compareTag - eating",
+  [
+    #[NAMED_RULES.eating, IN_SCOPE],
+    #[scoped("eating", ["outside"]), IN_SCOPE],
+  // #[Wildcard, IN_SCOPE],
+  // #[NoTag, OUT_OF_SCOPE],
   ],
 )

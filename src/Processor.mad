@@ -10,10 +10,12 @@ import { fromString, matches, serialize } from "@/Tag"
 
 
 
-export alias Trace b c = String -> b -> c
-export alias Invocable a b c = Trace b c -> List Tag -> Tag -> a -> b
+export alias Trace i o = String -> i -> o
+export alias Process i o signal = Trace i signal -> List Tag -> Tag -> i -> o
+export type Message i o signal = Message(Process i o signal)
 
-composed :: Invocable String String String
+
+composed :: Process String String String
 export composed = (run, tags, t, thing) => (matches(tags, t) ? run(serialize(t), thing) : thing)
 
 captured :: Trace String String -> List Tag -> Tag -> String -> Maybe String

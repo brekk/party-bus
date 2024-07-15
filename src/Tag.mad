@@ -22,15 +22,9 @@ export alias TagList = List Tag
 
 export type TagRange = TagRange(Boolean, TagList) | WildRange
 
-// instance Eq Tag {
-//   __EQ__ = tagEqualsTag
-// }
 instance Comparable Tag {
   compare = compareTag
 }
-
-
-
 
 // CONSTRUCTOR SUGAR
 
@@ -47,7 +41,7 @@ export untag = NegatedTag($, NoScope)
 
 // COMPARISONS
 
-equalsTag = (a, b) => a >= b
+equalsTag = (a, b) => a > b
 
 export PARALLEL_SCOPE = EQ
 export OUT_OF_SCOPE = LT
@@ -56,13 +50,25 @@ export IN_SCOPE = GT
 
 compareTag :: Tag -> Tag -> Comparison
 export compareTag = (a, b) => where(#[a, b]) {
-  #[Tag(aName, NoScope), Tag(bName, NoScope)] =>
+  #[Wildcard, _] =>
+    IN_SCOPE
+
+  #[_, Wildcard] =>
+    IN_SCOPE
+
+  #[NoTag, _] =>
+    OUT_OF_SCOPE
+
+  #[_, NoTag] =>
+    OUT_OF_SCOPE
+
+  #[Tag(aName, NoScope), Tag(bName, _)] =>
     aName == bName ? IN_SCOPE : PARALLEL_SCOPE
 
   // comparing two scoped Tags
   #[Tag(aName, aScope), Tag(bName, bScope)] =>
-    if (bName == aName) do {
-      return if (scopeWithinScope(aScope, bScope)) {
+    if (bName == aName) {
+      if (scopeWithinScope(aScope, bScope)) {
         IN_SCOPE
       } else {
         OUT_OF_SCOPE
@@ -79,17 +85,8 @@ export compareTag = (a, b) => where(#[a, b]) {
   #[NegatedTag(aName, _), Tag(bName, _)] =>
     aName == bName ? OUT_OF_SCOPE : PARALLEL_SCOPE
 
-  #[Wildcard, Wildcard] =>
-    IN_SCOPE
-
-  #[Wildcard, _] =>
-    IN_SCOPE
-
-  #[_, Wildcard] =>
-    IN_SCOPE
-
   _ =>
-    PARALLEL_SCOPE
+    OUT_OF_SCOPE
 }
 
 // CHECKS
@@ -166,7 +163,7 @@ export id = where {
     "*"
 
   NoTag =>
-    "!"
+    ""
 }
 
 // TRANSFORMS
@@ -227,16 +224,16 @@ export serialize = (t) => {
   return name ++ (equals("", scope) ? "" : ":" ++ scope)
 }
 
-/*
-IO.pTrace(
-  "\t"
-    ++ Term.ansiColor(
-      [check ? Term.ansi.FGBrightRed : Term.ansi.FGBrightYellow],
-      (neg ? "-" : "") ++ id(x) ++ " vs. " ++ name,
-    ),
-  { check, wild: w, eq: e, above: o },
+isNoTag = (x) => x == NoTag
+
+manyFromString :: String -> List Tag
+export manyFromString = pipe(
+  String.split(","),
+  List.reject(equals("")),
+  map(fromString),
+  List.reject(isNoTag),
 )
-*/
+
 
 matches :: List Tag -> Tag -> Boolean
 export matches = (xs, t) => {
@@ -264,13 +261,3 @@ export matches = (xs, t) => {
       },
     )(xs)
 }
-
-isNoTag = (x) => x == NoTag
-
-manyFromString :: String -> List Tag
-export manyFromString = pipe(
-  String.split(","),
-  List.reject(equals("")),
-  map(fromString),
-  List.reject(isNoTag),
-)

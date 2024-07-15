@@ -1,6 +1,7 @@
 import Dict from "Dictionary"
 import IO from "IO"
 import List from "List"
+import Random from "Random"
 // import { Just, fromMaybe } from "Maybe"
 // import Process from "Process"
 // import String from "String"
@@ -9,18 +10,54 @@ import Wish from "Wish"
 
 import Lazy from "@/LazyProcessor"
 import { parsed, raw } from "@/Log"
+import Party from "@/PartyBus"
 import Pro from "@/Processor"
-import { Tag, scoped, tag, untag } from "@/Tag"
+import { Tag, compareTag, scoped, tag, untag } from "@/Tag"
 
 
 
-SCOPES = [
-  scoped("a", []),
-  scoped("info", ["deep"]),
-  tag("warn"),
-  tag("log"),
-  scoped("issue", ["a", "b", "c"]),
-  untag("ignore"),
+announce = (msg) => pipe(
+  List.repeatWith((_) => "▀▄"),
+  List.reduce(mappend, ""),
+  (bar) => "\n▕"
+      ++ bar
+      ++ "▏"
+      ++ Term.ansiColor([Term.ansi.FGBrightBlack], " " ++ msg ++ " ")
+      ++ "▕"
+      ++ bar
+      ++ "▏\n",
+  IO.putLine,
+)(10)
+
+NAMED_RULES = {
+  // eating, just not in the kitchen
+  eating: Party.allow("eating"),
+  noEatingInTheKitchen: Party.avoidWithContext("eating", ["rooms", "kitchen"]),
+  // talking, just not loudly to maria
+  talking: Party.allow("talking"),
+  noTalkingLoudlyToMaria: Party.avoidWithContext("talking", ["loudly", "to", "maria"]),
+  // you can play anything 
+  playing: Party.allow("playing"),
+  // that isn't tv
+  noPlayingTV: Party.avoidWithContext("playing", ["tv"]),
+  // isn't a musical instrument
+  noPlayingMusic: Party.avoidWithContext("playing", ["music"]),
+  // unless it's a theremin
+  noPlayingMusicExceptTheremin: Party.allowWithContext("playing", ["music", "theremin"]),
+  // no singing
+  noSinging: Party.avoid("singing"),
+}
+
+RULES = [
+  NAMED_RULES.eating,
+  NAMED_RULES.noEatingInTheKitchen,
+  NAMED_RULES.talking,
+  NAMED_RULES.noTalkingLoudlyToMaria,
+  NAMED_RULES.playing,
+  NAMED_RULES.noPlayingTV,
+  NAMED_RULES.noPlayingMusic,
+  NAMED_RULES.noPlayingMusicExceptTheremin,
+  NAMED_RULES.noSinging,
 ]
 
 main = () => {
@@ -29,70 +66,13 @@ main = () => {
   PASS = mappend("✅ ")
   FAIL = mappend("⛔️ ")
 
-  HEADER = (msg) => pipe(
-    List.repeatWith((_) => "▀▄"),
-    List.reduce(mappend, ""),
-    (bar) => "\n▕"
-        ++ bar
-        ++ "▏"
-        ++ Term.ansiColor([Term.ansi.FGBrightBlack], " " ++ msg ++ " ")
-        ++ "▕"
-        ++ bar
-        ++ "▏\n",
-    IO.putLine,
-  )(10)
-  alog = raw(SCOPES)
-  HEADER("Log.raw")
-  // these are inconvenient at call-time unless partially applied
-  alog(scoped("info", ["deep"]), PASS("[deep] info!"))
-  alog(scoped("info", []), PASS("info info"))
-  alog(scoped("info", ["deeply", "nested"]), FAIL("skipping deeply.nested"))
-  alog(scoped("log", []), PASS("log"))
-  alog(scoped("warning", []), FAIL("this is skipped"))
-  alog(scoped("ignore", []), FAIL("this is skipped?"))
-  // these parse a tag:scope string
-  blog = parsed(SCOPES)
-  HEADER("Log.parsed")
-  blog("*", PASS("k fun star star!"))
-  blog("info:deep", PASS("info:deep with parsies!"))
-  blog("info", PASS("info:star"))
-  blog("issue:a:b", FAIL("issue:a:b is less than issue:a:b:c"))
-  blog("issue:a:b:c", PASS("issue:a:b:c"))
-  blog("issue:a:b:c:j", PASS("issue:a:b:c:j"))
-
-  HEADER("Processor.styled")
-  // styledLogger = Pro.styled("style", IO.pTrace)
-  styledLogger = Pro.styled("style", IO.pTrace)
-  // these parse a tag:scope string and colorize it
-  slog = styledLogger(SCOPES)
-  slog("*", PASS("colorful starstar!"))
-  slog("info:deep", PASS("colorful info:deep"))
-  slog("issue:a:b", PASS("colorful alpha issue"))
-  slog("issue:a:*", PASS("colorful nested issue"))
-  slog("ignore", FAIL("ignored message!"))
+  pb = Party.bus(IO.pTrace, RULES)
+  IO.pTrace("🥳 PARTY BUS", pb)
+  IO.pTrace("FORMAL RULES", Party.formalizeRuleset(RULES))
+  seed = Random.generateFromString("PARTY BUS")
   pipe(
-    slog("a:input"),
-    (a) => a ++ " there",
-    slog("a:output"),
-  )(PASS("hey"))
-  // skipping these for now because we can't guarantee shape
-  // dlog = debug("style", Process.Env)
-  // HEADER("Process.debug")
-
-  // dlog("*", "debugular starstar!")
-  // dlog("info:deep", "debugular info:deep")
-  // dlog("issue:a:b:c", "debuglar alpha issue")
-  // dlog("issue:a", "debarge nested issue")
-  // dlog("warning", "exclude warning")
-  // dlog("info:deep", "debugular info:deep round 2")
-
-  HEADER("Lazy")
-  sloth = Lazy.lazy(slog)
-  // sloth(IO.pTrace, [], Tag([], ""))
-  moss = sloth(SCOPES, scoped("*", []), PASS("lazy message info"))
-  pipe(
-    Lazy.transform(Pro.composed),
-    // Lazy.transform(Pro.captured),
-    Wish.fulfill((x) => { IO.pTrace("FAIL", x) }, (x) => { IO.pTrace("SUCCESS", x) }),
-  )(moss)
+    Random.shuffle($, seed),
+    List.sortBy(compareTag),
+    IO.pTrace("SORT?"),
+  )(RULES)
 }

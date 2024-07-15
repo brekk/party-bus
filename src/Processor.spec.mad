@@ -25,7 +25,7 @@ report(
     #[#[scoped("info", []), "nomatchmomatch"], Nothing],
     #[#[scoped("unmatched", []), "unmatched"], Nothing],
     #[#[scoped("issue", ["path"]), "[path] issue!"], Nothing],
-    #[#[scoped("issue", ["a", "b", "*"]), "a,b,* -- issue"], Just("a,b,* -- issue")],
+    #[#[scoped("issue", ["a", "b"]), "a,b -- issue"], Nothing],
     #[#[scoped("info", ["deep", "nested"]), "deep,nested info!"], Just("deep,nested info!")],
   ],
 )

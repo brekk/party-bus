@@ -1,3 +1,5 @@
+import type { Annotated } from "@/Tag/Interface"
+
 import Dict from "Dictionary"
 import IO from "IO"
 import List from "List"
@@ -13,8 +15,15 @@ import Party from "@/PartyBus"
 import Pro from "@/Processor"
 import Lazy from "@/Processor/Lazy"
 import { Tag, compareTag, scoped, tag, untag } from "@/Tag"
+import { Annotated } from "@/Tag/Interface"
 
 
+
+value :: Tagged a => Annotated a -> a
+value = where {
+  Annotated(_, a) =>
+    a
+}
 
 announce = (msg) => pipe(
   List.repeatWith((_) => "▀▄"),
@@ -48,6 +57,10 @@ NAMED_RULES = {
   noSinging: Party.avoid("singing"),
 }
 
+
+// INTERFACES ARE COOL
+
+
 RULES = [
   NAMED_RULES.eating,
   NAMED_RULES.noEatingInTheKitchen,
@@ -75,4 +88,5 @@ main = () => {
     List.sortBy(compareTag),
     IO.pTrace("SORT?"),
   )(RULES)
+  // IO.pTrace("Annotated!", value(Annotated.Annotated("hooray")))
 }

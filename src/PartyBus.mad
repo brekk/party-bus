@@ -37,7 +37,7 @@ export allow = allowWithContext($, [])
 alias Ruleset = Dictionary String (List Tag)
 
 insertTag :: String -> Ruleset -> Tag -> Ruleset
-insertTag = (name, agg, tag) => if (Dict.includes(name, agg)) {
+export insertTag = (name, agg, tag) => if (Dict.includes(name, agg)) {
   Dict.update(List.append(tag), name, agg)
 } else {
   Dict.insert(name, [tag], agg)

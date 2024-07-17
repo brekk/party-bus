@@ -80,13 +80,19 @@ main = () => {
   FAIL = mappend("⛔️ ")
 
   pb = Party.bus(IO.pTrace, RULES)
-  IO.pTrace("🥳 PARTY BUS", pb)
+  IO.pTrace("🚌✨✨✨  PARTY BUS", pb)
   IO.pTrace("FORMAL RULES", Party.formalizeRuleset(RULES))
   seed = Random.generateFromString("PARTY BUS")
+
+  //  pipe(
+  //    Random.shuffle($, seed),
+  //    List.sortBy(compareTag),
+  //    IO.pTrace("SORT?"),
+  //  )(RULES)
+  log = Pro.styled("styled!", IO.pTrace, RULES)
+
   pipe(
-    Random.shuffle($, seed),
-    List.sortBy(compareTag),
-    IO.pTrace("SORT?"),
-  )(RULES)
+    log("eating"),
+  )("xxx")
   // IO.pTrace("Annotated!", value(Annotated.Annotated("hooray")))
 }

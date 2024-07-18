@@ -68,3 +68,10 @@ events with signals and processes
 - filter
 - meta tooling?
   - capture timing?
+
+
+## Stuff we still want
+
+- tags are nice but we need granularity -- annotation?
+- finish interface for Tagged values
+- 

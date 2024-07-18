@@ -1,0 +1,2 @@
+ - add negated semantics
+ - maybe turn the Processor into a type

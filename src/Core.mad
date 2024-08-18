@@ -7,13 +7,10 @@ export type Tag = Tag(String, List String)
 export alias Effect = a -> a
 export alias BinaryEffect a b = b -> a -> a
 
-export type Party a = Party(Tag, String, a)
 export alias PartyPredicate = Tag -> String -> a -> Boolean
 
-// effect :: BinaryEffect a b -> b -> a -> a
-// effect = (eff, msg, x) => eff(msg, x)
 
-// invokeWithWhen :: BinaryEffect a String -> (a -> b) -> PartyPredicate -> Party b -> a
+// invokeWithWhen :: BinaryEffect a String -> (a -> b) -> PartyPredicate -> Tag -> String -> a -> a
 export invokeWithWhen = (eff, trans, check, t, msg, x) => if (check(t, msg, x)) do {
   eff(msg, trans(x))
   return x
@@ -25,5 +22,6 @@ tag :: String -> Tag
 export tag = Tag($, [])
 export tagWithScope = Tag
 
+// invoke always, with no change in values
 export invoke = invokeWithWhen($, identity, (_, _, _) => true)
 export taggedLog = invoke(IO.pTrace)

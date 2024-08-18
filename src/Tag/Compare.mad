@@ -1,0 +1,5 @@
+import type { Tag } from "@/Tag/Type"
+
+
+
+export type TagComparator = AnyTag | NoTag | Not(Tag)

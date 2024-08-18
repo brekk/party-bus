@@ -1,0 +1,53 @@
+import type { Scope } from "@/Tag/Scope"
+import type { Tag } from "@/Tag/Type"
+
+import List from "List"
+import String from "String"
+
+import { NoScope, Scope, concrete } from "@/Tag/Scope"
+import { Tag } from "@/Tag/Type"
+
+
+
+export Tag
+export Scope
+export NoScope
+
+// METHODS
+
+id :: Tag -> String
+export id = where {
+  Tag(n, _) =>
+    n
+}
+
+isScoped :: Tag -> Boolean
+export isScoped = where {
+  Tag(_, NoScope) =>
+    false
+
+  _ =>
+    true
+}
+
+getScope :: Tag -> Scope
+export getScope = where {
+  Tag(_, scope) =>
+    scope
+}
+
+getConcreteScope :: Tag -> List String
+export getConcreteScope = pipe(
+  getScope,
+  concrete,
+)
+
+serialize :: Tag -> String
+export serialize = (t) => pipe(
+  getConcreteScope,
+  String.join(":"),
+  (scope) => {
+    i = id(t)
+    return scope == "" ? i : i ++ ":" ++ scope
+  },
+)(t)

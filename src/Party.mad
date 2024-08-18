@@ -1,4 +1,7 @@
-# party-bus
+
+/*
+I wrote a lot of cool stuff but it made the core idea a little opaque.
+Let's refine our goal API here:
 
 Currently folks can use `IO.pTrace` or `IO.trace` for a string logger.
 It is synchronous and functions as identity plus a side-effect.
@@ -54,3 +57,5 @@ However, we also have need for the following modifications:
     PartyBus.transformWhen(pipe(.price, lt(40)), .name, log, "The name of pastries under $40")
     ```
 
+ 5. Ideally there should be a means of capturing all of the tagged calls and doing some kind of meta-analysis (akin to `console.time` and similar)
+*/

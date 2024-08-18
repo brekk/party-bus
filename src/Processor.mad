@@ -5,7 +5,8 @@ import type { Tag } from "@/Tag"
 import { Just, Nothing } from "Maybe"
 import Terminal from "Terminal"
 
-import { seeded } from "@/Color"
+import { seeded } from "Dye"
+
 import { fromString, matches, serialize } from "@/Tag"
 
 

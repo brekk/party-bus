@@ -1,5 +1,3 @@
-import type { Annotated } from "@/Tag/Interface"
-
 import Dict from "Dictionary"
 import IO from "IO"
 import List from "List"
@@ -10,89 +8,17 @@ import Random from "Random"
 import Term from "Terminal"
 import Wish from "Wish"
 
-import { parsed, raw } from "@/Log"
-import Party from "@/PartyBus"
-import Pro from "@/Processor"
-import Lazy from "@/Processor/Lazy"
-import { Tag, compareTag, scoped, tag, untag } from "@/Tag"
-import { Annotated } from "@/Tag/Interface"
+import Core from "@/Core"
 
 
-
-value :: Tagged a => Annotated a -> a
-value = where {
-  Annotated(_, a) =>
-    a
-}
-
-announce = (msg) => pipe(
-  List.repeatWith((_) => "▀▄"),
-  List.reduce(mappend, ""),
-  (bar) => "\n▕"
-      ++ bar
-      ++ "▏"
-      ++ Term.ansiColor([Term.ansi.FGBrightBlack], " " ++ msg ++ " ")
-      ++ "▕"
-      ++ bar
-      ++ "▏\n",
-  IO.putLine,
-)(10)
-
-NAMED_RULES = {
-  // eating, just not in the kitchen
-  eating: Party.allow("eating"),
-  noEatingInTheKitchen: Party.avoidWithContext("eating", ["rooms", "kitchen"]),
-  // talking, just not loudly to maria
-  talking: Party.allow("talking"),
-  noTalkingLoudlyToMaria: Party.avoidWithContext("talking", ["loudly", "to", "maria"]),
-  // you can play anything 
-  playing: Party.allow("playing"),
-  // that isn't tv
-  noPlayingTV: Party.avoidWithContext("playing", ["tv"]),
-  // isn't a musical instrument
-  noPlayingMusic: Party.avoidWithContext("playing", ["music"]),
-  // unless it's a theremin
-  noPlayingMusicExceptTheremin: Party.allowWithContext("playing", ["music", "theremin"]),
-  // no singing
-  noSinging: Party.avoid("singing"),
-}
-
-
-// INTERFACES ARE COOL
-
-
-RULES = [
-  NAMED_RULES.eating,
-  NAMED_RULES.noEatingInTheKitchen,
-  NAMED_RULES.talking,
-  NAMED_RULES.noTalkingLoudlyToMaria,
-  NAMED_RULES.playing,
-  NAMED_RULES.noPlayingTV,
-  NAMED_RULES.noPlayingMusic,
-  NAMED_RULES.noPlayingMusicExceptTheremin,
-  NAMED_RULES.noSinging,
-]
 
 main = () => {
-  // IO.pTrace("ARGV", Process.Argv)
-  // IO.pTrace("ENV", Process.Env)
-  PASS = mappend("✅ ")
-  FAIL = mappend("⛔️ ")
-
-  pb = Party.bus(IO.pTrace, RULES)
-  IO.pTrace("🚌✨✨✨  PARTY BUS", pb)
-  IO.pTrace("FORMAL RULES", Party.formalizeRuleset(RULES))
-  seed = Random.generateFromString("PARTY BUS")
-
-  //  pipe(
-  //    Random.shuffle($, seed),
-  //    List.sortBy(compareTag),
-  //    IO.pTrace("SORT?"),
-  //  )(RULES)
-  log = Pro.styled("styled!", IO.pTrace, RULES)
-
-  pipe(
-    log("eating"),
-  )("xxx")
-  // IO.pTrace("Annotated!", value(Annotated.Annotated("hooray")))
+  Core.invokeWithWhen(
+    IO.pTrace,
+    .name,
+    (_, _, _) => true,
+    Core.tag("bakery"),
+    "sale!",
+    { name: "croissant", price: 6.5, description: "plain" },
+  )
 }

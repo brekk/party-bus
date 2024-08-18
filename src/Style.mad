@@ -1,7 +1,7 @@
 import { identity } from "Function"
 import { ansiColor } from "Terminal"
 
-import { seeded } from "@/Color"
+import { seeded } from "Dye"
 
 
 

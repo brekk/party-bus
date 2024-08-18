@@ -24,14 +24,14 @@ printReport = (name, i) => `${name}\n  ↳ ${
   )(i)
 }`
 
-createTest = (name, fn, i, o) => test(printReport(name, i), () => assertEquals(fn(i), o))
+templateTest = (name, fn, i, o) => test(printReport(name, i), () => assertEquals(fn(i), o))
 
 export report = (fn, name, listInOut) => pipe(
-  map(where { #[i, o] => createTest(name, fn, i, o) }),
+  map(where { #[i, o] => templateTest(name, fn, i, o) }),
 )(listInOut)
 
 export reportBook = (fn, name, testDict) => pipe(
-  mapWithKey(createTest(name, fn)),
+  mapWithKey(templateTest(name, fn)),
   values,
 )(testDict)
 

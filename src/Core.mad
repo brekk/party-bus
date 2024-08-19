@@ -1,27 +1,36 @@
-import { always, identity } from "Function"
+import type { Tag } from "@/Tag/Type"
+
+import { identity } from "Function"
 import IO from "IO"
 
+import { Tag } from "@/Tag/Type"
 
 
-export type Tag = Tag(String, List String)
-export alias Effect = a -> a
-export alias BinaryEffect a b = b -> a -> a
 
 export alias PartyPredicate = Tag -> String -> a -> Boolean
 
 
-// invokeWithWhen :: BinaryEffect a String -> (a -> b) -> PartyPredicate -> Tag -> String -> a -> a
-export invokeWithWhen = (eff, trans, check, t, msg, x) => if (check(t, msg, x)) do {
-  eff(msg, trans(x))
-  return x
-} else {
-  x
-}
+invokeWithWhen :: (String -> b -> b) -> (a -> b) -> PartyPredicate -> Tag -> String -> a -> a
+export invokeWithWhen = (effect, change, check, tag, message, x) => (
+  if (!check(tag, message, x)) {
+    x
+  } else do {
+    effect(message, change(x))
+    return x
+  }
+)
 
-tag :: String -> Tag
-export tag = Tag($, [])
-export tagWithScope = Tag
+always :: PartyPredicate
+export always = (_, _, _) => true
 
-// invoke always, with no change in values
-export invoke = invokeWithWhen($, identity, (_, _, _) => true)
-export taggedLog = invoke(IO.pTrace)
+// invoke always, with a specific scope
+export invokeWith = invokeWithWhen($, $, always)
+// invoke sometimes, with no change in scope
+export invokeWhen = invokeWithWhen($, identity, $)
+// invoke always, with no change in scope
+export invoke = invokeWithWhen($, identity, always)
+
+// common aliases with logging
+export traceWith = invokeWith(IO.pTrace)
+export traceWhen = invokeWhen(IO.pTrace)
+export trace = invoke(IO.pTrace)

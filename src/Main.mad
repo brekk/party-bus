@@ -9,16 +9,35 @@ import Term from "Terminal"
 import Wish from "Wish"
 
 import Core from "@/Core"
+import { tag, tagWithScope } from "@/Tag"
 
 
+
+type BakedGoodKind = Pastry | Bread | Cake | Cookie | Muffin
+
+alias BakedGood = { kind :: BakedGoodKind, name :: String, price :: Float, servings :: Integer }
+
+baked :: BakedGoodKind -> String -> Integer -> Float -> BakedGood
+baked = (kind, name, servings, price) => ({ name, kind, servings, price })
+
+bread = baked(Bread)
+pastry = baked(Pastry)
+cake = baked(Cake)
+cookie = baked(Cookie)
+
+GOODS = {
+  rusticBread: bread("Rustic", 1, 12),
+  sourdough: bread("Sourdough", 1, 10),
+  bagette: bread("Bagette", 1, 8),
+  croissant: pastry("Croissant", 1, 6),
+  painDuChocolat: pastry("Pain du chocolat", 1, 8),
+  cookie: cookie("Chocolate Chip", 1, 4),
+  cookies: cookie("Chocolate Chip", 4, 12),
+}
+
+TAGS = { bakery: tag("bakery"), sell: tagWithScope("bakery", ["sale"]) }
 
 main = () => {
-  Core.invokeWithWhen(
-    IO.pTrace,
-    .name,
-    (_, _, _) => true,
-    Core.tag("bakery"),
-    "sale!",
-    { name: "croissant", price: 6.5, description: "plain" },
-  )
+  sellLog = Core.invokeWithWhen(IO.pTrace, .name, (_, _, _) => true, TAGS.sell)
+  sellLog("selling?", GOODS.cookie)
 }

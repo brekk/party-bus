@@ -10,8 +10,6 @@ import { NoScope, Scope, scopeWithinScope } from "@/Tag/Scope"
 
 export type Tag = Tag(String, Scope)
 
-export alias TagList = List Tag
-
 instance Comparable Tag {
   compare = compareTag
 }

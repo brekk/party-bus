@@ -1,5 +1,123 @@
+import type { Comparison } from "Compare"
+
 import type { Tag } from "@/Tag/Type"
 
+import { EQ, GT, LT, gt } from "Compare"
+import { complement, equals } from "Function"
+import List from "List"
+import { fromMaybe } from "Maybe"
+import String from "String"
+
+import { NoScope, Scope, scopeFromList, scopeWithinScope } from "@/Tag/Scope"
+import { Tag } from "@/Tag/Type"
 
 
-export type TagComparator = AnyTag | NoTag | Not(Tag)
+
+export type TagKind = AnyTag | NoTag | Not(Tag) | Exact(Tag)
+instance Comparable TagKind {
+  compare = compareTagKind
+}
+
+_firstAsString :: List String -> String
+_firstAsString = pipe(
+  List.first,
+  fromMaybe(""),
+)
+
+fromString :: String -> TagKind
+export fromString = (_part) => if (_part == "*") {
+  AnyTag
+} else if (_part == "") {
+  NoTag
+} else do {
+  pos = String.startsWith("-", _part)
+  part = if (pos) {
+    String.drop(1, _part)
+  } else {
+    _part
+  }
+  return pipe(
+    String.trim,
+    String.split(":"),
+    List.reject(equals("")),
+    (list) => {
+      listLen = List.length(list)
+      return if (listLen == 0) {
+        NoTag
+      } else do {
+        seg = listLen == 1 ? [] : List.tail(list)
+        return pipe(
+          _firstAsString,
+          Tag($, scopeFromList(seg)),
+          pos ? Not : Exact,
+        )(list)
+      }
+    },
+  )(part)
+}
+
+compareTagKind :: TagKind -> TagKind -> Comparison
+export compareTagKind = (a, b) => where(#[a, b]) {
+  #[AnyTag, _] =>
+    GT
+
+  #[_, AnyTag] =>
+    GT
+
+  #[Exact(Tag(aName, NoScope)), Exact(Tag(bName, _))] =>
+    aName == bName ? GT : EQ
+
+  #[Exact(Tag(aName, aScope)), Exact(Tag(bName, bScope))] =>
+    if (bName == aName) {
+      if (scopeWithinScope(aScope, bScope)) {
+        GT
+      } else {
+        LT
+      }
+    } else {
+      LT
+    }
+
+  // we only care if the names match and one is negated
+
+  #[Exact(Tag(aName, _)), Not(Tag(bName, _))] =>
+    aName == bName ? LT : EQ
+
+  #[Not(Tag(aName, _)), Exact(Tag(bName, _))] =>
+    aName == bName ? LT : EQ
+
+  _ =>
+    LT
+}
+
+manyFromString :: String -> List TagKind
+export manyFromString = pipe(
+  String.split(","),
+  List.reject(equals("")),
+  map(fromString),
+  List.reject(equals(NoTag)),
+)
+
+isNegated :: TagKind -> Boolean
+export isNegated = where {
+  Not(_) =>
+    true
+
+  _ =>
+    false
+}
+
+isWild :: TagKind -> Boolean
+export isWild = where {
+  AnyTag =>
+    true
+
+  _ =>
+    false
+}
+
+anyTagMatches :: List TagKind -> TagKind -> Boolean
+export anyTagMatches = (xs, t) => pipe(
+  List.filter(gt($, t)),
+  complement(List.isEmpty),
+)(xs)

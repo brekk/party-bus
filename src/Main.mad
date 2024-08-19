@@ -39,7 +39,6 @@ TAGS = { bakery: tag("bakery"), sell: tagWithScope("bakery", ["sale"]) }
 
 main = () => {
   // sellLog = Core.callAtTimeWithWhen(IO.pTrace, .name, (_, _, _) => true, TAGS.sell)
-  sellLog = Core.datedTrace(.name, (_, _, _) => true, TAGS.sell)
+  sellLog = Core.datedTrace(.name, Core.always, TAGS.sell)
   sellLog("selling?", GOODS.cookie)
-  Core.datedWithWhen
 }

@@ -1,6 +1,7 @@
 import type { Tag } from "@/Tag/Type"
 
 import { now, toISOString } from "Date"
+import Dict from "Dictionary"
 import { identity } from "Function"
 import IO from "IO"
 
@@ -59,6 +60,7 @@ export datedWithWhen = signalWithWhen(styleTagWithTime)
 always :: PartyPredicate a
 export always = (_, _, _) => true
 
+
 // invoke always, with a specific scope
 export invokeWith = invokeWithWhen($, $, always)
 // invoke sometimes, with no change in scope
@@ -74,9 +76,25 @@ export datedTrace = datedWithWhen(IO.pTrace)
 export datedWith = datedWithWhen($, $, always)
 export datedWhen = datedWithWhen($, identity, $)
 export dated = datedWithWhen($, identity, always)
+// nearly drop-in-replacement for IO.pTrace, with tagged and dated messages
 export dTrace = dated(IO.pTrace)
 
 // common aliases with logging
 export traceWith = callWith(IO.pTrace)
 export traceWhen = callWhen(IO.pTrace)
+// nearly drop-in-replacement for IO.pTrace, with tagged messages
 export trace = call(IO.pTrace)
+
+tagFactoryWithWhen :: Show b => SideEffect b
+  -> (a -> b)
+  -> PartyPredicate a
+  -> List Tag
+  -> Dictionary Tag (SideEffect a)
+export tagFactoryWithWhen = (effect, change, when, tags) => pipe(
+  map((tag) => #[tag, datedWithWhen(effect, change, when, tag)]),
+  Dict.fromList,
+)(tags)
+
+export traceFactoryWithWhen = tagFactoryWithWhen(IO.pTrace)
+export traceFactoryWhen = traceFactoryWithWhen(identity)
+export traceFactoryWith = traceFactoryWithWhen($, always)

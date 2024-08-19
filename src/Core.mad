@@ -1,26 +1,62 @@
 import type { Tag } from "@/Tag/Type"
 
+import { now, toISOString } from "Date"
 import { identity } from "Function"
 import IO from "IO"
 
+import { colorize } from "Dye"
+
+import { serialize } from "@/Tag"
 import { Tag } from "@/Tag/Type"
 
 
 
-export alias PartyPredicate = Tag -> String -> a -> Boolean
+export alias PartyPredicate a = Tag -> String -> a -> Boolean
+export alias SideEffect b = String -> b -> b
+export alias MessageModifier a = Tag -> String -> a -> String
 
-
-invokeWithWhen :: (String -> b -> b) -> (a -> b) -> PartyPredicate -> Tag -> String -> a -> a
-export invokeWithWhen = (effect, change, check, tag, message, x) => (
-  if (!check(tag, message, x)) {
+signalWithWhen :: MessageModifier a
+  -> SideEffect b
+  -> (a -> b)
+  -> PartyPredicate a
+  -> Tag
+  -> String
+  -> a
+  -> a
+export signalWithWhen = (modMessage, effect, change, check, tag, message, x) => {
+  msg = modMessage(tag, message, x)
+  return if (!check(tag, msg, x)) {
     x
   } else do {
-    effect(message, change(x))
+    effect(msg, change(x))
     return x
   }
+}
+
+export invokeWithWhen = signalWithWhen((_, m, _) => m)
+
+colorizeTag :: Tag -> String
+colorizeTag = pipe(
+  serialize,
+  (tagId) => colorize(tagId, " " ++ tagId ++ " "),
 )
 
-always :: PartyPredicate
+styleTag :: MessageModifier a
+export styleTag = (tag, message, _) => {
+  idWithColor = colorizeTag(tag)
+  return idWithColor ++ " " ++ message
+}
+
+styleTagWithTime :: MessageModifier a
+export styleTagWithTime = (tag, message, _) => {
+  idWithColor = colorizeTag(tag)
+  return idWithColor ++ " " ++ toISOString(now()) ++ " ▸ " ++ message
+}
+
+export callWithWhen = signalWithWhen(styleTag)
+export datedWithWhen = signalWithWhen(styleTagWithTime)
+
+always :: PartyPredicate a
 export always = (_, _, _) => true
 
 // invoke always, with a specific scope
@@ -30,7 +66,17 @@ export invokeWhen = invokeWithWhen($, identity, $)
 // invoke always, with no change in scope
 export invoke = invokeWithWhen($, identity, always)
 
+export callWith = callWithWhen($, $, always)
+export callWhen = callWithWhen($, identity, $)
+export call = callWithWhen($, identity, always)
+
+export datedTrace = datedWithWhen(IO.pTrace)
+export datedWith = datedWithWhen($, $, always)
+export datedWhen = datedWithWhen($, identity, $)
+export dated = datedWithWhen($, identity, always)
+export dTrace = dated(IO.pTrace)
+
 // common aliases with logging
-export traceWith = invokeWith(IO.pTrace)
-export traceWhen = invokeWhen(IO.pTrace)
-export trace = invoke(IO.pTrace)
+export traceWith = callWith(IO.pTrace)
+export traceWhen = callWhen(IO.pTrace)
+export trace = call(IO.pTrace)

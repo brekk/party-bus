@@ -1,12 +1,37 @@
-import type { Scope } from "@/Tag/Scope"
-import type { Tag } from "@/Tag/Type"
+import type { Comparison } from "Compare"
 
+import type { Scope } from "@/Tag/Scope"
+
+import { EQ, GT, LT } from "Compare"
 import List from "List"
 import String from "String"
 
-import { NoScope, Scope, concrete, scopeFromList } from "@/Tag/Scope"
-import { Tag, compareTag } from "@/Tag/Type"
+import { NoScope, Scope, concrete, scopeFromList, scopeWithinScope } from "@/Tag/Scope"
 
+
+
+export type Tag = Tag(String, Scope)
+
+instance Comparable Tag {
+  compare = compareTag
+}
+
+compareTag :: Tag -> Tag -> Comparison
+export compareTag = (a, b) => where(#[a, b]) {
+  #[Tag(aName, NoScope), Tag(bName, _)] =>
+    aName == bName ? GT : EQ
+
+  #[Tag(aName, aScope), Tag(bName, bScope)] =>
+    if (bName == aName) {
+      if (scopeWithinScope(aScope, bScope)) {
+        GT
+      } else {
+        LT
+      }
+    } else {
+      LT
+    }
+}
 
 
 // CONSTRUCTORS

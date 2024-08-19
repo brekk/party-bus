@@ -1,6 +1,6 @@
 import type { Comparison } from "Compare"
 
-import type { Tag } from "@/Tag/Type"
+import type { Tag } from "@/Tag"
 
 import { EQ, GT, LT, gt } from "Compare"
 import { complement, equals } from "Function"
@@ -8,8 +8,8 @@ import List from "List"
 import { fromMaybe } from "Maybe"
 import String from "String"
 
+import { Tag } from "@/Tag"
 import { NoScope, Scope, scopeFromList, scopeWithinScope } from "@/Tag/Scope"
-import { Tag } from "@/Tag/Type"
 
 
 

@@ -1,4 +1,5 @@
 import Dict from "Dictionary"
+import { identity } from "Function"
 import IO from "IO"
 import List from "List"
 import Random from "Random"
@@ -39,6 +40,29 @@ TAGS = { bakery: tag("bakery"), sell: tagWithScope("bakery", ["sale"]) }
 
 main = () => {
   // sellLog = Core.callAtTimeWithWhen(IO.pTrace, .name, (_, _, _) => true, TAGS.sell)
-  sellLog = Core.datedTrace(.name, Core.always, TAGS.sell)
+  // sellLog = Core.datedTrace(.name, Core.always, TAGS.sell)
+  // sellLog("selling?", GOODS.cookie)
+  sellLog = Core.signalWithConfig(
+    {
+      decorate: Core.decorateWithStyleAndDate,
+      effect: IO.pTrace,
+      change: .name,
+      check: Core.always,
+    },
+    TAGS.sell,
+  )
   sellLog("selling?", GOODS.cookie)
+  sellTrace = Core.dateTaggedSignal(TAGS.sell)
+  sellTrace("selling!", GOODS.rusticBread)
+  logWithStyle = Core.configurate(Core.decorateWithStyle, IO.pTrace)
+  bakeryLog = Core.signalWithConfig(logWithStyle(.price, Core.always), TAGS.bakery)
+  bakeryLog("cost!", GOODS.painDuChocolat)
+  expensiveLog = Core.signalWithConfig(
+    // this fails! :(
+    // logWithStyle(identity, (_, _, v) => v.price >= 8),
+    Core.configurate(Core.decorateWithStyle, IO.pTrace, identity, (_, _, v) => v.price >= 8),
+    TAGS.sell,
+  )
+  expensiveLog("single cookie doesn't log!", GOODS.cookie)
+  expensiveLog("many cookies does log!", GOODS.cookies)
 }

@@ -1,100 +1,154 @@
-import type { Tag } from "@/Tag/Type"
+import type { Tag } from "@/Tag"
 
 import { now, toISOString } from "Date"
-import Dict from "Dictionary"
 import { identity } from "Function"
 import IO from "IO"
 
 import { colorize } from "Dye"
 
 import { serialize } from "@/Tag"
-import { Tag } from "@/Tag/Type"
+import { Tag } from "@/Tag"
 
 
 
+/**
+ * The condition of when a side-effect should run
+ * @since 0.0.1
+ */
 export alias PartyPredicate a = Tag -> String -> a -> Boolean
-export alias SideEffect b = String -> b -> b
-export alias MessageModifier a = Tag -> String -> a -> String
 
-signalWithWhen :: MessageModifier a
-  -> SideEffect b
-  -> (a -> b)
-  -> PartyPredicate a
-  -> Tag
-  -> String
-  -> a
-  -> a
-export signalWithWhen = (modMessage, effect, change, check, tag, message, x) => {
-  msg = modMessage(tag, message, x)
-  return if (!check(tag, msg, x)) {
-    x
-  } else do {
-    effect(msg, change(x))
-    return x
+/**
+ * The side-effect to run
+ * @since 0.0.1
+ */
+export alias SideEffect b = String -> b -> b
+
+/**
+ * The message decoration
+ * @since 0.0.1
+ */
+export alias Decorator a = Tag -> String -> a -> String
+
+/**
+ * The configuration of the signal
+ * @since 0.0.1
+ */
+export alias Config = {
+  change :: a -> b,
+  check :: PartyPredicate a,
+  decorate :: Decorator a,
+  effect :: SideEffect b,
+}
+
+/**
+ * The core function that does all the magic of PartyBus.
+ * Conditionally call a side-effect with a specific tag, message and value.
+ * @since 0.0.1
+ */
+// signalWithConfig :: Config -> Tag -> String -> a -> a
+export signalWithConfig = (conf, tag, message, x) => {
+  return where(conf) {
+    { decorate, effect, change, check } =>
+      do {
+        msg = decorate(tag, message, x)
+        return if (check(tag, msg, x)) do {
+          effect(msg, change(x))
+          return x
+        } else {
+          x
+        }
+      }
   }
 }
 
-export invokeWithWhen = signalWithWhen((_, m, _) => m)
+/**
+ * A shorthand function to always fire the side-effect
+ * @since 0.0.1
+ */
+always :: PartyPredicate a
+export always = (_, _, _) => true
 
+/**
+ * A shorthand function to pass the message unchanged
+ * @since 0.0.1
+ */
+decorateRaw :: Decorator a
+export decorateRaw = (_, m, _) => m
+
+/**
+ * The default config to use when invoking the bus, shorthand for:
+ * Call IO.pTrace unconditionally, with no change to the value passing through. 
+ * @since 0.0.1
+ */
+export DEFAULT_CONFIG = {
+  decorate: decorateRaw,
+  check: always,
+  effect: IO.pTrace,
+  change: identity,
+}
+
+/**
+ * signalWithConfig minus the config
+ * @since 0.0.1
+ */
+signal :: Show a => Tag -> String -> a -> a
+export signal = signalWithConfig(DEFAULT_CONFIG)
+
+/**
+ * A means of colorizing a message by tag
+ * @since 0.0.1
+ */
 colorizeTag :: Tag -> String
-colorizeTag = pipe(
+export colorizeTag = pipe(
   serialize,
   (tagId) => colorize(tagId, " " ++ tagId ++ " "),
 )
 
-styleTag :: MessageModifier a
-export styleTag = (tag, message, _) => {
+/**
+ * Color by tag and prepend to message
+ * @since 0.0.1
+ */
+decorateWithStyle :: Decorator a
+export decorateWithStyle = (tag, message, _) => {
   idWithColor = colorizeTag(tag)
   return idWithColor ++ " " ++ message
 }
 
-styleTagWithTime :: MessageModifier a
-export styleTagWithTime = (tag, message, _) => {
+/**
+ * Color by tag, add current time and prepend to message
+ * @since 0.0.1
+ */
+decorateWithStyleAndDate :: Decorator a
+export decorateWithStyleAndDate = (tag, message, _) => {
   idWithColor = colorizeTag(tag)
   return idWithColor ++ " " ++ toISOString(now()) ++ " ▸ " ++ message
 }
 
-export callWithWhen = signalWithWhen(styleTag)
-export datedWithWhen = signalWithWhen(styleTagWithTime)
+/**
+ * A sugar method to create a Config record, usually by partial application
+ * @since 0.0.1
+ */
+configurate :: Decorator a -> SideEffect b -> (a -> b) -> PartyPredicate a -> Config
+export configurate = (decorate, effect, change, check) => ({ decorate, effect, change, check })
 
-always :: PartyPredicate a
-export always = (_, _, _) => true
+/**
+ * Call signal with a colorized serialized tag prepended to the message
+ * @since 0.0.1
+ */
+export taggedSignal = signalWithConfig({
+  decorate: decorateWithStyle,
+  effect: IO.pTrace,
+  change: identity,
+  check: always,
+})
 
-
-// invoke always, with a specific scope
-export invokeWith = invokeWithWhen($, $, always)
-// invoke sometimes, with no change in scope
-export invokeWhen = invokeWithWhen($, identity, $)
-// invoke always, with no change in scope
-export invoke = invokeWithWhen($, identity, always)
-
-export callWith = callWithWhen($, $, always)
-export callWhen = callWithWhen($, identity, $)
-export call = callWithWhen($, identity, always)
-
-export datedTrace = datedWithWhen(IO.pTrace)
-export datedWith = datedWithWhen($, $, always)
-export datedWhen = datedWithWhen($, identity, $)
-export dated = datedWithWhen($, identity, always)
-// nearly drop-in-replacement for IO.pTrace, with tagged and dated messages
-export dTrace = dated(IO.pTrace)
-
-// common aliases with logging
-export traceWith = callWith(IO.pTrace)
-export traceWhen = callWhen(IO.pTrace)
-// nearly drop-in-replacement for IO.pTrace, with tagged messages
-export trace = call(IO.pTrace)
-
-tagFactoryWithWhen :: Show b => SideEffect b
-  -> (a -> b)
-  -> PartyPredicate a
-  -> List Tag
-  -> Dictionary Tag (SideEffect a)
-export tagFactoryWithWhen = (effect, change, when, tags) => pipe(
-  map((tag) => #[tag, datedWithWhen(effect, change, when, tag)]),
-  Dict.fromList,
-)(tags)
-
-export traceFactoryWithWhen = tagFactoryWithWhen(IO.pTrace)
-export traceFactoryWhen = traceFactoryWithWhen(identity)
-export traceFactoryWith = traceFactoryWithWhen($, always)
+/**
+ * Call signal with a colorized serialized tag and date prepended to the message
+ * @since 0.0.1
+ */
+export dateTaggedSignal = signalWithConfig({
+  decorate: decorateWithStyleAndDate,
+  effect: IO.pTrace,
+  change: identity,
+  check: always,
+})

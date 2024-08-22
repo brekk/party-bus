@@ -2,6 +2,7 @@ import type { Config, Decorator, PartyPredicate, SideEffect } from "@/Core"
 import type { Query } from "@/Query"
 import type { Tag } from "@/Tag"
 
+import Dict from "Dictionary"
 import { identity } from "Function"
 import IO from "IO"
 import Process from "Process"
@@ -48,6 +49,10 @@ export DEFAULT_CONFIG = {
 signal :: Show a => Tag -> String -> a -> a
 export signal = signalWithConfig(DEFAULT_CONFIG)
 
+/**
+ * An alternative config based on the default config with a styled decorator
+ * @since 0.0.1
+ */
 export STYLED_CONFIG = {
   decorate: decorateWithStyle,
   effect: IO.pTrace,
@@ -61,6 +66,10 @@ export STYLED_CONFIG = {
  */
 export taggedSignal = signalWithConfig(STYLED_CONFIG)
 
+/**
+ * An alternative config based on the default config with a styled and dated config
+ * @since 0.0.1
+ */
 export DATED_CONFIG = {
   decorate: decorateWithStyleAndDate,
   effect: IO.pTrace,
@@ -74,7 +83,10 @@ export DATED_CONFIG = {
  */
 export dateTaggedSignal = signalWithConfig(DATED_CONFIG)
 
-
+/**
+ * signalWithConfig, but wired to a list of queries
+ * @since 0.0.1
+ */
 partyBus :: List Query -> Config -> Tag -> String -> a -> a
 export partyBus = (legend, config, t, msg, x) => signalWithConfig(
   {
@@ -88,6 +100,10 @@ export partyBus = (legend, config, t, msg, x) => signalWithConfig(
   x,
 )
 
+/**
+ * partyBus, but wired to a dictionary of string keys to parse
+ * @since 0.0.1
+ */
 envFrom :: Dictionary String String -> String -> Config -> Tag -> String -> a -> a
 export envFrom = (envDict, key, config, t, msg, x) => partyBus(
   getEnvWithKey(key, envDict),
@@ -97,9 +113,24 @@ export envFrom = (envDict, key, config, t, msg, x) => partyBus(
   x,
 )
 
+/**
+ * partyBus, but wired to the environment
+ * @since 0.0.1
+ */
 keyedEnv :: String -> Config -> Tag -> String -> a -> a
 export keyedEnv = envFrom(Process.Env)
 
+/**
+ * partyBus, but wired to the DEBUG value from the environment
+ * @since 0.0.1
+ */
+bus :: Config -> Tag -> String -> a -> a
+export bus = keyedEnv("DEBUG")
 
-env :: Config -> Tag -> String -> a -> a
-export env = keyedEnv("DEBUG")
+/**
+ * partyBus, but wired to the DEBUG value with the styled
+ * and dated config
+ * @since 0.0.1
+ */
+env :: Show a => Tag -> String -> a -> a
+export env = bus(DATED_CONFIG)

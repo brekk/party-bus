@@ -10,6 +10,7 @@ import Term from "Terminal"
 import Wish from "Wish"
 
 import Core from "@/Core"
+import PB from "@/PartyBus"
 import { tag, tagWithScope } from "@/Tag"
 
 
@@ -38,10 +39,7 @@ GOODS = {
 
 TAGS = { bakery: tag("bakery"), sell: tagWithScope("bakery", ["sale"]) }
 
-main = () => {
-  // sellLog = Core.callAtTimeWithWhen(IO.pTrace, .name, (_, _, _) => true, TAGS.sell)
-  // sellLog = Core.datedTrace(.name, Core.always, TAGS.sell)
-  // sellLog("selling?", GOODS.cookie)
+solo = () => {
   sellLog = Core.signalWithConfig(
     {
       decorate: Core.decorateWithStyleAndDate,
@@ -52,17 +50,30 @@ main = () => {
     TAGS.sell,
   )
   sellLog("selling?", GOODS.cookie)
-  sellTrace = Core.dateTaggedSignal(TAGS.sell)
+  sellTrace = PB.dateTaggedSignal(TAGS.sell)
   sellTrace("selling!", GOODS.rusticBread)
   logWithStyle = Core.configurate(Core.decorateWithStyle, IO.pTrace)
   bakeryLog = Core.signalWithConfig(logWithStyle(.price, Core.always), TAGS.bakery)
   bakeryLog("cost!", GOODS.painDuChocolat)
   expensiveLog = Core.signalWithConfig(
-    // this fails! :(
-    // logWithStyle(identity, (_, _, v) => v.price >= 8),
     Core.configurate(Core.decorateWithStyle, IO.pTrace, identity, (_, _, v) => v.price >= 8),
     TAGS.sell,
   )
   expensiveLog("single cookie doesn't log!", GOODS.cookie)
   expensiveLog("many cookies does log!", GOODS.cookies)
+}
+
+main = () => {
+  PB.env(TAGS.bakery, "Give me a minute", { cool: "hooray!" })
+  PB.bus(
+    {
+      decorate: PB.DATED_CONFIG.decorate,
+      effect: PB.DATED_CONFIG.effect,
+      change: PB.DATED_CONFIG.change,
+      check: (_, _, v) => v.price > 8,
+    },
+    TAGS.sell,
+    "cookies!!!",
+    GOODS.cookies,
+  )
 }

@@ -8,6 +8,10 @@ import { assertEquals, test } from "Test"
 
 import {
   always,
+  confChange,
+  confCheck,
+  confDecorator,
+  confEffect,
   configurate,
   decorateRaw,
   decorateWithStyle,
@@ -187,16 +191,22 @@ test(
   },
 )
 
+test(
+  "confDecorator + confChange",
+  () => do {
+    conf = pipe(
+      confDecorator(decorateRaw),
+      confChange((_) => "x"),
+    )(DEFAULT_CONFIG)
+    _ <- assertEquals(conf.decorate(tag("a"), "b", "c"), "b")
+    return assertEquals(conf.change("hello?"), "x")
+  },
+)
 
 test(
   "DATED_CONFIG-ish / dateTaggedSignal-ish",
   () => do {
-    conf = {
-      effect: binaryIdentity,
-      decorate: DATED_CONFIG.decorate,
-      change: DATED_CONFIG.change,
-      check: DATED_CONFIG.check,
-    }
+    conf = confEffect(binaryIdentity, DATED_CONFIG)
     return assertEquals(
       pipe(
         signalWithConfig(conf, tag("yo"), "blah"),
@@ -209,12 +219,10 @@ test(
 test(
   "never",
   () => do {
-    conf = {
-      effect: binaryIdentity,
-      decorate: DATED_CONFIG.decorate,
-      change: DATED_CONFIG.change,
-      check: (_, _, _) => false,
-    }
+    conf = pipe(
+      confEffect(binaryIdentity),
+      confCheck((_, _, _) => false),
+    )(DATED_CONFIG)
     return assertEquals(
       pipe(
         signalWithConfig(conf, tag("yo"), "blah"),

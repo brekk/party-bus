@@ -1,0 +1,19 @@
+import { caseN3, report } from "Study"
+
+import { confEffect } from "@/Core"
+import { STYLED_CONFIG, envFrom } from "@/PartyBus"
+import { tag, tagWithScope } from "@/Tag"
+
+
+
+TEST_ENV = {{ "DEBUG": "test:scope:detail,check,-nice" }}
+
+report(
+  caseN3(envFrom(TEST_ENV, "DEBUG", confEffect((_, x) => x, STYLED_CONFIG))),
+  "partyBus",
+  [
+    #[#[tag("check"), "message!", "raw"], "raw"],
+    #[#[tagWithScope("test", ["scope", "detail"]), "message!", "raw"], "raw"],
+    #[#[tag("nothing"), "message!", "raw"], "raw"],
+  ],
+)

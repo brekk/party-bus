@@ -8,6 +8,7 @@ import {
   NoTag,
   Not,
   anyTagMatches,
+  checkEnvironment,
   compareQuery,
   exact,
   exactWithScope,
@@ -18,6 +19,7 @@ import {
   not,
   notWithScope,
 } from "@/Query"
+import { tag } from "@/Tag"
 
 
 
@@ -77,5 +79,17 @@ report(
     #[#[[exact("blah")], exact("blah")], true],
     #[#[[exactWithScope("blah", ["blah"])], exact("blah")], false],
     #[#[[notWithScope("blah", ["blah"])], exact("blah")], false],
+  ],
+)
+
+report(
+  caseN2(checkEnvironment),
+  "checkEnvironment",
+  [
+    #[#[[AnyTag], tag("blah")], true],
+    #[#[[NoTag], tag("blah")], false],
+    #[#[[exact("blah")], tag("blah")], true],
+    #[#[[exactWithScope("blah", ["blah"])], tag("blah")], false],
+    #[#[[notWithScope("blah", ["blah"])], tag("blah")], false],
   ],
 )

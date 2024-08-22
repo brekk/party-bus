@@ -2,13 +2,18 @@ import type { Config, Decorator, PartyPredicate, SideEffect } from "@/Core"
 import type { Query } from "@/Query"
 import type { Tag } from "@/Tag"
 
-import Dict from "Dictionary"
 import { identity } from "Function"
 import IO from "IO"
 import Process from "Process"
 
 import {
   always,
+  colorizeTag,
+  confChange,
+  confCheck,
+  confDecorator,
+  confEffect,
+  configurate,
   decorateRaw,
   decorateWithStyle,
   decorateWithStyleAndDate,
@@ -24,11 +29,18 @@ export type Decorator
 export type PartyPredicate
 export type SideEffect
 
+// re-export the Core
+export signalWithConfig
 export always
 export decorateRaw
+export colorizeTag
 export decorateWithStyle
 export decorateWithStyleAndDate
-export signalWithConfig
+export configurate
+export confDecorator
+export confEffect
+export confChange
+export confCheck
 
 /**
  * The default config to use when invoking the bus, shorthand for:
@@ -42,6 +54,7 @@ export DEFAULT_CONFIG = {
   change: identity,
 }
 
+// we don't test this because it's wired to IO
 /**
  * signalWithConfig minus the config
  * @since 0.0.1
@@ -60,6 +73,7 @@ export STYLED_CONFIG = {
   check: always,
 }
 
+// we don't test this because it's wired to IO
 /**
  * Call signal with a colorized serialized tag prepended to the message
  * @since 0.0.1
@@ -77,6 +91,7 @@ export DATED_CONFIG = {
   check: always,
 }
 
+// we don't test this because it's wired to IO
 /**
  * Call signal with a colorized serialized tag and date prepended to the message
  * @since 0.0.1
@@ -89,12 +104,10 @@ export dateTaggedSignal = signalWithConfig(DATED_CONFIG)
  */
 partyBus :: List Query -> Config -> Tag -> String -> a -> a
 export partyBus = (legend, config, t, msg, x) => signalWithConfig(
-  {
-    decorate: config.decorate,
-    effect: config.effect,
-    change: config.change,
-    check: (_tag, _msg, _x) => checkEnvironment(legend, _tag) && config.check(_tag, _msg, _x),
-  },
+  confCheck(
+    (_tag, _msg, _x) => checkEnvironment(legend, _tag) && config.check(_tag, _msg, _x),
+    config,
+  ),
   t,
   msg,
   x,
@@ -113,6 +126,7 @@ export envFrom = (envDict, key, config, t, msg, x) => partyBus(
   x,
 )
 
+// The following functions are untested because they rely upon Process.Env, which we can't guarantee from the test environment
 /**
  * partyBus, but wired to the environment
  * @since 0.0.1

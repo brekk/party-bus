@@ -104,9 +104,26 @@ export decorateWithStyleAndDate = (tag, message, _) => {
   return idWithColor ++ " " ++ toISOString(now()) ++ " ▸ " ++ message
 }
 
+// (this currently has an issue)
 /**
- * A sugar method to create a Config record, usually by partial application
+ * A sugar method to create a Config record, usually by partial application 
  * @since 0.0.1
  */
 configurate :: Decorator a -> SideEffect b -> (a -> b) -> PartyPredicate a -> Config
 export configurate = (decorate, effect, change, check) => ({ decorate, effect, change, check })
+
+export confDecorator = (decorate, conf) => (
+  { decorate, effect: conf.effect, change: conf.change, check: conf.check }
+)
+
+export confEffect = (effect, conf) => (
+  { decorate: conf.decorate, effect, change: conf.change, check: conf.check }
+)
+
+export confChange = (change, conf) => (
+  { change, decorate: conf.decorate, effect: conf.effect, check: conf.check }
+)
+
+export confCheck = (check, conf) => (
+  { check, decorate: conf.decorate, effect: conf.effect, change: conf.change }
+)

@@ -1,0 +1,81 @@
+import { EQ, GT, LT } from "Compare"
+
+import { caseN2, report } from "Study"
+
+import {
+  AnyTag,
+  Exact,
+  NoTag,
+  Not,
+  anyTagMatches,
+  compareQuery,
+  exact,
+  exactWithScope,
+  fromString,
+  isNegated,
+  isWild,
+  manyFromString,
+  not,
+  notWithScope,
+} from "@/Query"
+
+
+
+report(
+  fromString,
+  "fromString",
+  [
+    #["", NoTag],
+    #["*", AnyTag],
+    #["hey", exact("hey")],
+    #["alpha:beta:delta:gamma", exactWithScope("alpha", ["beta", "delta", "gamma"])],
+    #["-alpha:beta:delta:gamma", notWithScope("alpha", ["beta", "delta", "gamma"])],
+  ],
+)
+
+report(
+  caseN2(compareQuery),
+  "compareQuery",
+  [
+    #[#[AnyTag, NoTag], GT],
+    #[#[NoTag, AnyTag], GT],
+    #[#[exact("yo"), exact("yo")], GT],
+    #[#[exact("yo"), exact("no")], EQ],
+    #[#[exactWithScope("a", ["b"]), exactWithScope("a", ["b"])], GT],
+    #[#[exactWithScope("a", ["b"]), exactWithScope("a", ["b", "c"])], GT],
+    #[#[exactWithScope("a", ["b", "c"]), exactWithScope("a", ["b"])], LT],
+    #[#[exactWithScope("a", ["b"]), exactWithScope("b", ["a"])], LT],
+    #[#[exactWithScope("a", ["b"]), not("a")], LT],
+    #[#[exactWithScope("a", ["b"]), not("b")], EQ],
+    #[#[notWithScope("a", ["b"]), exact("a")], LT],
+    #[#[notWithScope("a", ["b"]), exact("b")], EQ],
+    #[#[exactWithScope("a", ["b"]), NoTag], LT],
+  ],
+)
+
+
+report(
+  manyFromString,
+  "manyFromString",
+  [
+    #["", []],
+    #["a,b", [exact("a"), exact("b")]],
+    #["a,b,c:d", [exact("a"), exact("b"), exactWithScope("c", ["d"])]],
+    #["a,-b,c:d", [exact("a"), not("b"), exactWithScope("c", ["d"])]],
+  ],
+)
+
+report(isNegated, "isNegated", [#[not("yo"), true], #[exact("yo"), false]])
+report(isWild, "isWild", [#[AnyTag, true], #[exact("yo"), false]])
+
+report(
+  caseN2(anyTagMatches),
+  "anyTagMatches",
+  [
+    #[#[[AnyTag], exact("blah")], true],
+    #[#[[NoTag], exact("blah")], false],
+    #[#[[exact("blah")], exact("blah")], true],
+    #[#[[exactWithScope("blah", ["blah"])], exact("blah")], false],
+    #[#[[notWithScope("blah", ["blah"])], exact("blah")], false],
+  ],
+)

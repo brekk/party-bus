@@ -45,7 +45,7 @@ export alias Config = {
  * Conditionally call a side-effect with a specific tag, message and value.
  * @since 0.0.1
  */
-// signalWithConfig :: Config -> Tag -> String -> a -> a
+signalWithConfig :: Config -> Tag -> String -> a -> a
 export signalWithConfig = (conf, tag, message, x) => {
   return where(conf) {
     { decorate, effect, change, check } =>
@@ -131,24 +131,28 @@ export decorateWithStyleAndDate = (tag, message, _) => {
 configurate :: Decorator a -> SideEffect b -> (a -> b) -> PartyPredicate a -> Config
 export configurate = (decorate, effect, change, check) => ({ decorate, effect, change, check })
 
-/**
- * Call signal with a colorized serialized tag prepended to the message
- * @since 0.0.1
- */
-export taggedSignal = signalWithConfig({
+export STYLED_CONFIG = {
   decorate: decorateWithStyle,
   effect: IO.pTrace,
   change: identity,
   check: always,
-})
+}
+
+/**
+ * Call signal with a colorized serialized tag prepended to the message
+ * @since 0.0.1
+ */
+export taggedSignal = signalWithConfig(STYLED_CONFIG)
+
+export DATED_CONFIG = {
+  decorate: decorateWithStyleAndDate,
+  effect: IO.pTrace,
+  change: identity,
+  check: always,
+}
 
 /**
  * Call signal with a colorized serialized tag and date prepended to the message
  * @since 0.0.1
  */
-export dateTaggedSignal = signalWithConfig({
-  decorate: decorateWithStyleAndDate,
-  effect: IO.pTrace,
-  change: identity,
-  check: always,
-})
+export dateTaggedSignal = signalWithConfig(DATED_CONFIG)

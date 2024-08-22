@@ -10,6 +10,11 @@
       "url": "https://github.com/brekk/dye/archive/refs/tags/v0.0.2.zip",
       "description": "Dye",
       "minVersion": "0.0.2"
+    },
+    {
+      "url": "https://github.com/brekk/study/archive/refs/tags/v0.0.1.zip",
+      "description": "Study",
+      "minVersion": "0.0.1"
     }
   ]
 }

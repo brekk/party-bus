@@ -8,15 +8,41 @@ import List from "List"
 import { fromMaybe } from "Maybe"
 import String from "String"
 
-import { Tag } from "@/Tag"
-import { NoScope, Scope, scopeFromList, scopeWithinScope } from "@/Tag/Scope"
+import { Tag, tag, tagWithScope } from "@/Tag"
+import { NoScope, scopeFromList, scopeWithinScope } from "@/Tag/Scope"
 
 
 
-export type TagKind = AnyTag | NoTag | Not(Tag) | Exact(Tag)
-instance Comparable TagKind {
-  compare = compareTagKind
+export type Query = AnyTag | NoTag | Not(Tag) | Exact(Tag)
+instance Comparable Query {
+  compare = compareQuery
 }
+
+// SUGAR
+
+exact :: String -> Query
+export exact = pipe(
+  tag,
+  Exact,
+)
+
+exactWithScope :: String -> List String -> Query
+export exactWithScope = (t, sc) => pipe(
+  tagWithScope(t),
+  Exact,
+)(sc)
+
+not :: String -> Query
+export not = pipe(
+  tag,
+  Not,
+)
+
+notWithScope :: String -> List String -> Query
+export notWithScope = (t, sc) => pipe(
+  tagWithScope(t),
+  Not,
+)(sc)
 
 _firstAsString :: List String -> String
 _firstAsString = pipe(
@@ -24,7 +50,7 @@ _firstAsString = pipe(
   fromMaybe(""),
 )
 
-fromString :: String -> TagKind
+fromString :: String -> Query
 export fromString = (_part) => if (_part == "*") {
   AnyTag
 } else if (_part == "") {
@@ -42,22 +68,18 @@ export fromString = (_part) => if (_part == "*") {
     List.reject(equals("")),
     (list) => {
       listLen = List.length(list)
-      return if (listLen == 0) {
-        NoTag
-      } else do {
-        seg = listLen == 1 ? [] : List.tail(list)
-        return pipe(
-          _firstAsString,
-          Tag($, scopeFromList(seg)),
-          pos ? Not : Exact,
-        )(list)
-      }
+      seg = listLen == 1 ? [] : List.tail(list)
+      return pipe(
+        _firstAsString,
+        Tag($, scopeFromList(seg)),
+        pos ? Not : Exact,
+      )(list)
     },
   )(part)
 }
 
-compareTagKind :: TagKind -> TagKind -> Comparison
-export compareTagKind = (a, b) => where(#[a, b]) {
+compareQuery :: Query -> Query -> Comparison
+export compareQuery = (a, b) => where(#[a, b]) {
   #[AnyTag, _] =>
     GT
 
@@ -90,7 +112,7 @@ export compareTagKind = (a, b) => where(#[a, b]) {
     LT
 }
 
-manyFromString :: String -> List TagKind
+manyFromString :: String -> List Query
 export manyFromString = pipe(
   String.split(","),
   List.reject(equals("")),
@@ -98,7 +120,7 @@ export manyFromString = pipe(
   List.reject(equals(NoTag)),
 )
 
-isNegated :: TagKind -> Boolean
+isNegated :: Query -> Boolean
 export isNegated = where {
   Not(_) =>
     true
@@ -107,7 +129,7 @@ export isNegated = where {
     false
 }
 
-isWild :: TagKind -> Boolean
+isWild :: Query -> Boolean
 export isWild = where {
   AnyTag =>
     true
@@ -116,7 +138,7 @@ export isWild = where {
     false
 }
 
-anyTagMatches :: List TagKind -> TagKind -> Boolean
+anyTagMatches :: List Query -> Query -> Boolean
 export anyTagMatches = (xs, t) => pipe(
   List.filter(gt($, t)),
   complement(List.isEmpty),

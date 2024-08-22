@@ -1,0 +1,233 @@
+import { identity } from "Function"
+import IO from "IO"
+import List from "List"
+import String from "String"
+import { assertEquals, test } from "Test"
+
+// import { report } from "Study"
+
+import {
+  DATED_CONFIG,
+  DEFAULT_CONFIG,
+  STYLED_CONFIG,
+  always,
+  configurate,
+  // dateTaggedSignal,
+  decorateRaw,
+  decorateWithStyle,
+  decorateWithStyleAndDate,
+  signalWithConfig,
+} from "./Core"
+// signal,
+// taggedSignal,
+
+import {
+  tag,
+} from "@/Tag"
+
+
+
+test("always", () => assertEquals(always(tag("unimportant"), "nothing", true), true))
+
+test(
+  "configurate",
+  () => do {
+    return assertEquals(configurate(decorateRaw, IO.pTrace, identity, always), DEFAULT_CONFIG)
+  },
+)
+
+test("decorateRaw", () => assertEquals(decorateRaw(tag("yo"), "cool", "blah"), "cool"))
+
+ANSI_ESCAPE = '\x1b'
+
+test(
+  "decorateWithStyle",
+  () => assertEquals(
+    pipe(
+      decorateWithStyle($, "yo", "blah"),
+      String.toList,
+    )(tag("silly")),
+    [
+      ANSI_ESCAPE,
+      '[',
+      '3',
+      '8',
+      ';',
+      '2',
+      ';',
+      '2',
+      '5',
+      '5',
+      ';',
+      '2',
+      '5',
+      '5',
+      ';',
+      '2',
+      '5',
+      '5',
+      ';',
+      '4',
+      '8',
+      ';',
+      '2',
+      ';',
+      '5',
+      ';',
+      '1',
+      '4',
+      '4',
+      ';',
+      '2',
+      'm',
+      ' ',
+      's',
+      'i',
+      'l',
+      'l',
+      'y',
+      ' ',
+      ANSI_ESCAPE,
+      '[',
+      '0',
+      'm',
+      ' ',
+      'y',
+      'o',
+    ],
+  ),
+)
+
+skipDateInStyledString = pipe(
+  String.split(" "),
+  map(String.toList),
+  // we skip the third index because time is hard to test
+  (raw) => List.concat(List.slice(0, 2, raw), List.slice(4, 5, raw)),
+)
+
+test(
+  "decorateWithStyleAndDate",
+  () => assertEquals(
+    pipe(
+      decorateWithStyleAndDate(tag("hey"), "yo"),
+      skipDateInStyledString,
+    )("blah"),
+    [
+      [
+        ANSI_ESCAPE,
+        '[',
+        '3',
+        '8',
+        ';',
+        '2',
+        ';',
+        '2',
+        '5',
+        '5',
+        ';',
+        '2',
+        '5',
+        '5',
+        ';',
+        '2',
+        '5',
+        '5',
+        ';',
+        '4',
+        '8',
+        ';',
+        '2',
+        ';',
+        '1',
+        '9',
+        '9',
+        ';',
+        '3',
+        '1',
+        ';',
+        '8',
+        '4',
+        'm',
+      ],
+      ['h', 'e', 'y'],
+      [ANSI_ESCAPE, '[', '0', 'm'],
+      ['▸'],
+      ['y', 'o'],
+    ],
+  ),
+)
+
+binaryIdentity = (_, b) => b
+
+test(
+  "STYLED_CONFIG-ish / taggedSignal-ish",
+  () => do {
+    conf = {
+      effect: binaryIdentity,
+      decorate: STYLED_CONFIG.decorate,
+      change: STYLED_CONFIG.change,
+      check: STYLED_CONFIG.check,
+    }
+    return assertEquals(
+      pipe(
+        signalWithConfig(conf, tag("yo"), "blah"),
+      )("raw"),
+      "raw",
+    )
+  },
+)
+
+test(
+  "DEFAULT_CONFIG-ish / signal-ish",
+  () => do {
+    conf = {
+      effect: binaryIdentity,
+      decorate: DEFAULT_CONFIG.decorate,
+      change: DEFAULT_CONFIG.change,
+      check: DEFAULT_CONFIG.check,
+    }
+    return assertEquals(
+      pipe(
+        signalWithConfig(conf, tag("yo"), "blah"),
+      )("raw"),
+      "raw",
+    )
+  },
+)
+
+
+test(
+  "DATED_CONFIG-ish / dateTaggedSignal-ish",
+  () => do {
+    conf = {
+      effect: binaryIdentity,
+      decorate: DATED_CONFIG.decorate,
+      change: DATED_CONFIG.change,
+      check: DATED_CONFIG.check,
+    }
+    return assertEquals(
+      pipe(
+        signalWithConfig(conf, tag("yo"), "blah"),
+      )("raw"),
+      "raw",
+    )
+  },
+)
+
+test(
+  "never",
+  () => do {
+    conf = {
+      effect: binaryIdentity,
+      decorate: DATED_CONFIG.decorate,
+      change: DATED_CONFIG.change,
+      check: (_, _, _) => false,
+    }
+    return assertEquals(
+      pipe(
+        signalWithConfig(conf, tag("yo"), "blah"),
+      )("raw"),
+      "raw",
+    )
+  },
+)

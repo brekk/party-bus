@@ -1,0 +1,93 @@
+import { EQ, GT, LT } from "Compare"
+import Set from "Set"
+import { assertEquals, test } from "Test"
+
+import { caseN2, report } from "Study"
+
+import {
+  Tag,
+  compareTag,
+  getConcreteScope,
+  getScope,
+  hasScope,
+  id,
+  serialize,
+  tag,
+  tagWithScope,
+} from "@/Tag"
+import {
+  NoScope,
+  Scope,
+  checkScopeList,
+  concrete,
+  scopeFromList,
+  scopeLength,
+  scopeWithinScope,
+} from "@/Tag/Scope"
+
+
+
+report(tag, "tag", [#["yo", Tag("yo", NoScope)]])
+
+report(id, "id", [#[tag("zip"), "zip"], #[tagWithScope("zip", ["zop"]), "zip"]])
+
+report(hasScope, "hasScope", [#[tagWithScope("zip", ["zop"]), true], #[tag("blip"), false]])
+
+report(
+  getScope,
+  "getScope",
+  [#[tagWithScope("zip", ["zop"]), scopeFromList(["zop"])], #[tag("blip"), NoScope]],
+)
+
+report(
+  getConcreteScope,
+  "getConcreteScope",
+  [#[tagWithScope("zip", ["zop"]), ["zop"]], #[tag("blip"), []]],
+)
+
+report(
+  serialize,
+  "serialize",
+  [#[tag("hooray"), "hooray"], #[tagWithScope("hooray", ["blu", "ray"]), "hooray:blu:ray"]],
+)
+
+report(
+  caseN2(compareTag),
+  "compareTag",
+  [
+    #[#[tag("a"), tag("b")], EQ],
+    #[#[tag("a"), tag("a")], GT],
+    #[#[tagWithScope("a", ["aardvark"]), tag("a")], LT],
+    #[#[tag("a"), tagWithScope("a", ["aardvark"])], GT],
+    #[#[tagWithScope("a", ["aardvark"]), tagWithScope("a", ["aardvark"])], GT],
+    #[#[tagWithScope("a", ["aardvark"]), tagWithScope("a", ["aardvark", "aerobics"])], GT],
+    #[#[tagWithScope("a", ["aardvark"]), tagWithScope("b", ["block"])], LT],
+  ],
+)
+
+test(
+  "compare literals",
+  () => do {
+    a = tag("a")
+    b = tag("b")
+    c = tagWithScope("a", ["yo"])
+    _ <- assertEquals(a < b, false)
+    _ <- assertEquals(a < c, false)
+    _ <- assertEquals(b > a, false)
+    _ <- assertEquals(c > a, false)
+    _ <- assertEquals(a > a, true)
+    return assertEquals(a == b, false)
+  },
+)
+
+report(checkScopeList, "checkScopeList", [#[[], true], #[["yoooo"], false]])
+report(
+  scopeFromList,
+  "scopeFromList",
+  [#[[], NoScope], #[["yoooo"], Scope(Set.fromList(["yoooo"]))]],
+)
+report(
+  scopeLength,
+  "scopeLength",
+  [#[scopeFromList([]), 0], #[scopeFromList(["yo", "no", "bo"]), 3]],
+)

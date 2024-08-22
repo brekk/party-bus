@@ -1,5 +1,4 @@
-import IO from "IO"
-import { isEmpty, length } from "List"
+import { isEmpty } from "List"
 import List from "List"
 import Set from "Set"
 import String from "String"
@@ -8,24 +7,20 @@ import String from "String"
 
 export type Scope = Scope(Set String) | NoScope
 
-// scopeFromString :: String -> Scope
-// scopeFromString = isEmpty(
+export checkScopeList = pipe(
+  map(String.trim),
+  List.reject(String.isEmpty),
+  isEmpty,
+)
 
 scopeFromList :: List String -> Scope
-export scopeFromList = (strs) => {
-  cleaned = pipe(
-    map(String.trim),
-    List.reject(String.isEmpty),
-    isEmpty,
+export scopeFromList = (strs) => if (checkScopeList(strs)) {
+  NoScope
+} else {
+  pipe(
+    Set.fromList,
+    Scope,
   )(strs)
-  return if (cleaned) {
-    NoScope
-  } else {
-    pipe(
-      Set.fromList,
-      Scope,
-    )(strs)
-  }
 }
 
 scopeLength :: Scope -> Integer
@@ -47,4 +42,13 @@ export scopeWithinScope = (a, z) => where(#[a, z]) {
 
   #[_, _] =>
     false
+}
+
+concrete :: Scope -> List String
+export concrete = where {
+  Scope(raw) =>
+    Set.toList(raw)
+
+  _ =>
+    []
 }

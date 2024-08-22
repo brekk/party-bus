@@ -1,5 +1,0 @@
-import { awareOf } from "@/Env"
-
-
-
-export debugged = awareOf("DEBUG")

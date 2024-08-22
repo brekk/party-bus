@@ -1,77 +1,56 @@
 # party-bus
 
-# Usage
-
-```mad
-import Party from "PartyBus"
-
-// Make a PartyBus!
-// bus takes:
-//   - a trace function: String -> a -> a
-//   - an event ruleset: List Tag
-//   - an event: Tag
-//   - a subject: a
-
-bus = Party.bus(IO.trace)
-partybus = Party.bus(IO.pTrace)
-
-// Inform your guests about rules of the party
-
-invite = Party.bus(IO.trace, [
-  // eat dance talk be-merry
-  Party.allow("eating", []),
-  Party.allow("dancing", ["rooms", "living-room"]),
-  Party.allow("talking", []),
-  Party.allow("playing", []),
-  // don't do this stuff
-  Party.avoid("singing"),
-  Party.avoid("playing", ["tv"])
-  Party.avoid("playing", ["guitar"])
-  Party.avoid("eating", ["rooms", "kitchen"])
-  Party.avoid("smoking", ["indoors"]),
-])
-
-// RSVP
-
-// this bakes in the rules
-
-try = Party.rsvp(invite)
-
-// Stuff you _can't_ do at the party
-
-// uncool keith - You know dancing only in the dancing:rooms:living-room
-try(Party.event("dancing"), "I'm dancing in the kitchen")
-
-// uncool singing sally - You know no singing!
-try(Party.event("singing"), "I love singing and demanding attention!")
-
-// uncool debbie downer - Keep the vibe up!
-try(Party.event("downer"), "By the way... it's official...")
-
-// Stuff you _can_ do at the party
-
-danceInTheLivingRoom = try(Party.event("dancing", ["rooms", "living-room"]))
-danceInTheLivingRoom("I love living room dancing and not dancing in other rooms!")
-danceInTheLivingRoom("I too enjoy dancing in the appropriate room!")
-
-try(Party.event("eating", ["rooms", "dining-room"]), "I enjoy eating in the appropriate room!")
-try(Party.event("smoking", ["outside"]), "I am not smoking:indoors!")
+Currently folks can use `IO.pTrace` or `IO.trace` for a string logger.
+It is synchronous and functions as identity plus a side-effect.
+It takes the form of a message and any value, i.e.
 
 ```
+IO.pTrace("message", anyValue)
+```
 
-events with signals and processes
+In order to make this library effective, we should make a synchronous API which can function as a
+drop-in replacement for the common IO behavior.
 
-- toggleable
-- tagged
-- nested
-- auto-colors
-- filter
-- meta tooling?
-  - capture timing?
+However, we also have need for the following modifications:
 
+ 1. Rather than ad-hoc / one-off messages ( i.e. `IO.pTrace("output", x)` ), we should support tags.
+    Tags are known before the logger is used, and provide a means of segmenting messages.
+    Tags can be strings (i.e. "parser" ) or be scoped to be more specific ( i.e. "parser:json:string" )
+    However, tags are an addendum to the message / value form presented above, i.e.
 
-## Stuff we still want
+    ```
+    parseLog = PartyBus.taggedLog("parser")
+    parseLog("message", anyValue)
 
-- tags are nice but we need granularity -- annotation?
-- finish interface for Tagged values
-- 
+    parseJLog = PartyBus.taggedLogWithScope("parser", ["json", "string"])
+    parseJLog("message", anyValue)
+    ```
+ 2. We shall support other kinds of side-effectful behavior, not just logging.
+
+    ```
+    taggedLog = PartyBus.tagged(IO.putLine)
+    ```
+
+ 3. Because we're invoking a side-effect, we should provide a means of manipulating the value as it
+    goes through the bus:
+
+    ```
+    log = PartyBus.taggedLogWithScope("sell", ["pastry"])
+    // modify the log to show only the price when called
+    PartyBus.transform(log, .price, "The price of the pastry is")
+    ```
+
+ 4. We shall support conditional logging.
+    
+    ```
+    log = PartyBus.taggedLogWithScope("sell", ["pastry"])
+    PartyBus.callWhen(pipe(.price, lt(40)), log, "The price of pastry is under $40")
+    ```
+
+    Ostensibly we should be able to both manipulate the value and invoke the call conditionally:
+
+    ```
+    log = PartyBus.taggedLogWithScope("sell", ["pastry"])
+    PartyBus.transformWhen(pipe(.price, lt(40)), .name, log, "The name of pastries under $40")
+    ```
+

@@ -1,6 +1,5 @@
-import type { Annotated } from "@/Tag/Interface"
-
 import Dict from "Dictionary"
+import { identity } from "Function"
 import IO from "IO"
 import List from "List"
 import Random from "Random"
@@ -10,89 +9,71 @@ import Random from "Random"
 import Term from "Terminal"
 import Wish from "Wish"
 
-import { parsed, raw } from "@/Log"
-import Party from "@/PartyBus"
-import Pro from "@/Processor"
-import Lazy from "@/Processor/Lazy"
-import { Tag, compareTag, scoped, tag, untag } from "@/Tag"
-import { Annotated } from "@/Tag/Interface"
+import Core from "@/Core"
+import PB from "@/PartyBus"
+import { tag, tagWithScope } from "@/Tag"
 
 
 
-value :: Tagged a => Annotated a -> a
-value = where {
-  Annotated(_, a) =>
-    a
+type BakedGoodKind = Pastry | Bread | Cake | Cookie | Muffin
+
+alias BakedGood = { kind :: BakedGoodKind, name :: String, price :: Float, servings :: Integer }
+
+baked :: BakedGoodKind -> String -> Integer -> Float -> BakedGood
+baked = (kind, name, servings, price) => ({ name, kind, servings, price })
+
+bread = baked(Bread)
+pastry = baked(Pastry)
+cake = baked(Cake)
+cookie = baked(Cookie)
+
+GOODS = {
+  rusticBread: bread("Rustic", 1, 12),
+  sourdough: bread("Sourdough", 1, 10),
+  bagette: bread("Bagette", 1, 8),
+  croissant: pastry("Croissant", 1, 6),
+  painDuChocolat: pastry("Pain du chocolat", 1, 8),
+  cookie: cookie("Chocolate Chip", 1, 4),
+  cookies: cookie("Chocolate Chip", 4, 12),
 }
 
-announce = (msg) => pipe(
-  List.repeatWith((_) => "▀▄"),
-  List.reduce(mappend, ""),
-  (bar) => "\n▕"
-      ++ bar
-      ++ "▏"
-      ++ Term.ansiColor([Term.ansi.FGBrightBlack], " " ++ msg ++ " ")
-      ++ "▕"
-      ++ bar
-      ++ "▏\n",
-  IO.putLine,
-)(10)
+TAGS = { bakery: tag("bakery"), sell: tagWithScope("bakery", ["sale"]) }
 
-NAMED_RULES = {
-  // eating, just not in the kitchen
-  eating: Party.allow("eating"),
-  noEatingInTheKitchen: Party.avoidWithContext("eating", ["rooms", "kitchen"]),
-  // talking, just not loudly to maria
-  talking: Party.allow("talking"),
-  noTalkingLoudlyToMaria: Party.avoidWithContext("talking", ["loudly", "to", "maria"]),
-  // you can play anything 
-  playing: Party.allow("playing"),
-  // that isn't tv
-  noPlayingTV: Party.avoidWithContext("playing", ["tv"]),
-  // isn't a musical instrument
-  noPlayingMusic: Party.avoidWithContext("playing", ["music"]),
-  // unless it's a theremin
-  noPlayingMusicExceptTheremin: Party.allowWithContext("playing", ["music", "theremin"]),
-  // no singing
-  noSinging: Party.avoid("singing"),
+solo = () => {
+  sellLog = Core.signalWithConfig(
+    {
+      decorate: Core.decorateWithStyleAndDate,
+      effect: IO.pTrace,
+      change: .name,
+      check: Core.always,
+    },
+    TAGS.sell,
+  )
+  sellLog("selling?", GOODS.cookie)
+  sellTrace = PB.dateTaggedSignal(TAGS.sell)
+  sellTrace("selling!", GOODS.rusticBread)
+  logWithStyle = Core.configurate(Core.decorateWithStyle, IO.pTrace)
+  bakeryLog = Core.signalWithConfig(logWithStyle(.price, Core.always), TAGS.bakery)
+  bakeryLog("cost!", GOODS.painDuChocolat)
+  expensiveLog = Core.signalWithConfig(
+    Core.configurate(Core.decorateWithStyle, IO.pTrace, identity, (_, _, v) => v.price >= 8),
+    TAGS.sell,
+  )
+  expensiveLog("single cookie doesn't log!", GOODS.cookie)
+  expensiveLog("many cookies does log!", GOODS.cookies)
 }
-
-
-// INTERFACES ARE COOL
-
-
-RULES = [
-  NAMED_RULES.eating,
-  NAMED_RULES.noEatingInTheKitchen,
-  NAMED_RULES.talking,
-  NAMED_RULES.noTalkingLoudlyToMaria,
-  NAMED_RULES.playing,
-  NAMED_RULES.noPlayingTV,
-  NAMED_RULES.noPlayingMusic,
-  NAMED_RULES.noPlayingMusicExceptTheremin,
-  NAMED_RULES.noSinging,
-]
 
 main = () => {
-  // IO.pTrace("ARGV", Process.Argv)
-  // IO.pTrace("ENV", Process.Env)
-  PASS = mappend("✅ ")
-  FAIL = mappend("⛔️ ")
-
-  pb = Party.bus(IO.pTrace, RULES)
-  IO.pTrace("🚌✨✨✨  PARTY BUS", pb)
-  IO.pTrace("FORMAL RULES", Party.formalizeRuleset(RULES))
-  seed = Random.generateFromString("PARTY BUS")
-
-  //  pipe(
-  //    Random.shuffle($, seed),
-  //    List.sortBy(compareTag),
-  //    IO.pTrace("SORT?"),
-  //  )(RULES)
-  log = Pro.styled("styled!", IO.pTrace, RULES)
-
-  pipe(
-    log("eating"),
-  )("xxx")
-  // IO.pTrace("Annotated!", value(Annotated.Annotated("hooray")))
+  PB.env(TAGS.bakery, "Give me a minute", { cool: "hooray!" })
+  PB.bus(
+    {
+      decorate: PB.DATED_CONFIG.decorate,
+      effect: PB.DATED_CONFIG.effect,
+      change: PB.DATED_CONFIG.change,
+      check: (_, _, v) => v.price > 8,
+    },
+    TAGS.sell,
+    "cookies!!!",
+    GOODS.cookies,
+  )
 }

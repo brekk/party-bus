@@ -1,210 +1,93 @@
-import Party from "@/PartyBus"
-import { IN_SCOPE, OUT_OF_SCOPE, PARALLEL_SCOPE } from "@/Tag"
+import { EQ, GT, LT } from "Compare"
+import Set from "Set"
+import { assertEquals, test } from "Test"
+
+import { caseN2, report } from "Study"
+
 import {
-  NoTag,
   Tag,
-  Wildcard,
   compareTag,
-  fromString,
   getConcreteScope,
   getScope,
+  hasScope,
   id,
-  isNegated,
-  isScoped,
-  isWild,
-  manyFromString,
-  matches,
-  negated,
-  scoped,
   serialize,
   tag,
-  untag,
+  tagWithScope,
 } from "@/Tag"
-import { NoScope, Scope, scopeFromList, scopeLength, scopeWithinScope } from "@/Tag/Scope"
-import { report, reportBook } from "@/Test"
+import {
+  NoScope,
+  Scope,
+  checkScopeList,
+  concrete,
+  scopeFromList,
+  scopeLength,
+  scopeWithinScope,
+} from "@/Tag/Scope"
 
 
 
-test__manyFromString = reportBook(manyFromString)
-test__manyFromString(
-  "manyFromString - single tags",
-  {{ "yo": [scoped("yo", [])], "yo:scoped": [scoped("yo", ["scoped"])] }},
-)
-test__manyFromString(
-  "manyFromString - multiple tags",
-  {{
-    "a, b, spaced": [tag("a"), tag("b"), tag("spaced")],
-    "a,b:belabor": [tag("a"), scoped("b", ["belabor"])],
-  }},
-)
-test__manyFromString("manyFromString - various garbage", {{ "": [], ",,": [], "::::,": [] }})
+report(tag, "tag", [#["yo", Tag("yo", NoScope)]])
+
+report(id, "id", [#[tag("zip"), "zip"], #[tagWithScope("zip", ["zop"]), "zip"]])
+
+report(hasScope, "hasScope", [#[tagWithScope("zip", ["zop"]), true], #[tag("blip"), false]])
 
 report(
-  isScoped,
-  "isScoped - testcase",
-  [
-    #[scoped("yo", []), false],
-    #[scoped("yo", ["yo"]), true],
-    #[untag("hey"), false],
-    #[negated("hey", ["a", "b"]), true],
-  ],
+  getScope,
+  "getScope",
+  [#[tagWithScope("zip", ["zop"]), scopeFromList(["zop"])], #[tag("blip"), NoScope]],
 )
-
 
 report(
   getConcreteScope,
   "getConcreteScope",
-  [#[scoped("yo", []), []], #[scoped("yo", ["a", "b"]), ["a", "b"]]],
+  [#[tagWithScope("zip", ["zop"]), ["zop"]], #[tag("blip"), []]],
 )
 
 report(
   serialize,
   "serialize",
-  [#[scoped("a", ["deeply", "nested", "value"]), "a:deeply:nested:value"], #[scoped("a", []), "a"]],
+  [#[tag("hooray"), "hooray"], #[tagWithScope("hooray", ["blu", "ray"]), "hooray:blu:ray"]],
 )
 
-report(isNegated, "isNegated", [#[untag("raw"), true], #[tag("raw"), false]])
-
 report(
-  matches([
-    scoped("a", []),
-    scoped("info", ["deep"]),
-    tag("warn"),
-    tag("log"),
-    scoped("issue", ["a", "b", "c"]),
-    untag("ignore"),
-  ]),
-  "matches :: List Tag -> Tag -> Boolean",
+  caseN2(compareTag),
+  "compareTag",
   [
-    #[tag("warn"), true],
-    #[scoped("warn", ["a"]), true],
-    #[scoped("warn", ["b"]), true],
-    #[scoped("warn", ["x"]), true],
-    #[scoped("issue", ["j"]), false],
-    #[scoped("issue", ["a"]), false],
-    #[scoped("issue", []), false],
-    #[scoped("issue", ["a", "j"]), false],
-    #[scoped("issue", ["a", "b", "j"]), false],
-    #[scoped("issue", ["a", "b", "c"]), true],
-    #[scoped("issue", ["a", "b", "c", "d"]), true],
-    #[scoped("issue", ["a", "b", "c", "d", "x"]), true],
-    #[tag("ignore"), false],
+    #[#[tag("a"), tag("b")], EQ],
+    #[#[tag("a"), tag("a")], GT],
+    #[#[tagWithScope("a", ["aardvark"]), tag("a")], LT],
+    #[#[tag("a"), tagWithScope("a", ["aardvark"])], GT],
+    #[#[tagWithScope("a", ["aardvark"]), tagWithScope("a", ["aardvark"])], GT],
+    #[#[tagWithScope("a", ["aardvark"]), tagWithScope("a", ["aardvark", "aerobics"])], GT],
+    #[#[tagWithScope("a", ["aardvark"]), tagWithScope("b", ["block"])], LT],
   ],
 )
 
-// let's pretend!
-
-NAMED_RULES = {
-  // eating, just not in the kitchen
-  eating: Party.allow("eating"),
-  noEatingInTheKitchen: Party.avoidWithContext("eating", ["rooms", "kitchen"]),
-  // talking, just not loudly to maria
-  talking: Party.allow("talking"),
-  noTalkingLoudlyToMaria: Party.avoidWithContext("talking", ["loudly", "to", "maria"]),
-  // you can play anything 
-  playing: Party.allow("playing"),
-  // that isn't tv
-  noPlayingTV: Party.avoidWithContext("playing", ["tv"]),
-  // isn't a musical instrument
-  noPlayingMusic: Party.avoidWithContext("playing", ["music"]),
-  // unless it's a theremin
-  noPlayingMusicExceptTheremin: Party.allowWithContext("playing", ["music", "theremin"]),
-  // no singing
-  noSinging: Party.avoid("singing"),
-}
-
-RULES = [
-  NAMED_RULES.eating,
-  NAMED_RULES.noEatingInTheKitchen,
-  NAMED_RULES.talking,
-  NAMED_RULES.noTalkingLoudlyToMaria,
-  NAMED_RULES.playing,
-  NAMED_RULES.noPlayingTV,
-  NAMED_RULES.noPlayingMusic,
-  NAMED_RULES.noPlayingMusicExceptTheremin,
-  NAMED_RULES.noSinging,
-]
-
-report(
-  fromString,
-  "Tag.fromString",
-  [
-    #["a", tag("a")],
-    #["a:b", scoped("a", ["b"])],
-    #["a:b:c", scoped("a", ["b", "c"])],
-    #["-a:b:c", negated("a", ["b", "c"])],
-    #["-a:b", negated("a", ["b"])],
-    #["-a", untag("a")],
-    #["*", Wildcard],
-    #["", NoTag],
-  ],
+test(
+  "compare literals",
+  () => do {
+    a = tag("a")
+    b = tag("b")
+    c = tagWithScope("a", ["yo"])
+    _ <- assertEquals(a < b, false)
+    _ <- assertEquals(a < c, false)
+    _ <- assertEquals(b > a, false)
+    _ <- assertEquals(c > a, false)
+    _ <- assertEquals(a > a, true)
+    return assertEquals(a == b, false)
+  },
 )
 
+report(checkScopeList, "checkScopeList", [#[[], true], #[["yoooo"], false]])
 report(
-  scopeWithinScope(scopeFromList(["a", "b", "c"])),
-  "scopeWithinScope -- a:b:c ↓",
-  [
-    #[scopeFromList(["a", "b", "c", "d"]), true],
-    #[scopeFromList(["a", "b", "c", "d", "e"]), true],
-    #[scopeFromList(["a", "b", "c"]), true],
-    #[scopeFromList(["a", "b"]), false],
-    #[scopeFromList(["a", "c"]), false],
-    #[scopeFromList(["a"]), false],
-  ],
+  scopeFromList,
+  "scopeFromList",
+  [#[[], NoScope], #[["yoooo"], Scope(Set.fromList(["yoooo"]))]],
 )
-
 report(
-  compareTag(Wildcard),
-  "compareTag - *",
-  [
-    #[NAMED_RULES.eating, IN_SCOPE],
-    #[scoped("eating", ["outside"]), IN_SCOPE],
-    #[scoped("eating", ["rooms"]), IN_SCOPE],
-    #[NAMED_RULES.noEatingInTheKitchen, IN_SCOPE],
-    #[Wildcard, IN_SCOPE],
-    #[NoTag, IN_SCOPE],
-  ],
-)
-
-report(
-  compareTag(NAMED_RULES.eating),
-  "compareTag - eating",
-  [
-    #[NAMED_RULES.eating, IN_SCOPE],
-    #[scoped("eating", ["outside"]), IN_SCOPE],
-    #[NAMED_RULES.noEatingInTheKitchen, OUT_OF_SCOPE],
-    #[Wildcard, IN_SCOPE],
-    #[NoTag, OUT_OF_SCOPE],
-  ],
-)
-
-report(
-  id,
-  "id",
-  [
-    #[tag("hey"), "hey"],
-    #[scoped("hey", ["there"]), "hey"],
-    #[untag("hey"), "hey"],
-    #[NoTag, ""],
-    #[Wildcard, "*"],
-  ],
-)
-
-report(
-  getScope,
-  "getScope",
-  [
-    #[tag("hey"), NoScope],
-    #[scoped("hey", ["there"]), scopeFromList(["there"])],
-    #[untag("hey"), NoScope],
-    #[NoTag, NoScope],
-    #[Wildcard, NoScope],
-  ],
-)
-
-report(scopeLength, "scopeLength", [#[scopeFromList(["a", "b", "c"]), 3], #[NoScope, 0]])
-report(
-  isWild,
-  "isWild",
-  [#[tag("cool"), false], #[NoTag, false], #[Wildcard, true], #[untag("hey"), false]],
+  scopeLength,
+  "scopeLength",
+  [#[scopeFromList([]), 0], #[scopeFromList(["yo", "no", "bo"]), 3]],
 )

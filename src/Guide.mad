@@ -1,7 +1,0 @@
-import type { Tag } from "@/Tag"
-
-
-
-interface Tagged a {
-  exhibit :: a -> #[Tag, a]
-}

@@ -1,2 +1,3 @@
- - add negated semantics
- - maybe turn the Processor into a type
+ - Add stream API
+ - abstract the color seed so that you can have consistent colors independent of tagname
+ - 

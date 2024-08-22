@@ -1,21 +1,9 @@
-import Dict from "Dictionary"
-import { identity } from "Function"
-import IO from "IO"
-import List from "List"
-import Random from "Random"
-// import { Just, fromMaybe } from "Maybe"
-// import Process from "Process"
-// import String from "String"
-import Term from "Terminal"
-import Wish from "Wish"
-
-import Core from "@/Core"
 import PB from "@/PartyBus"
 import { tag, tagWithScope } from "@/Tag"
 
 
 
-type BakedGoodKind = Pastry | Bread | Cake | Cookie | Muffin
+type BakedGoodKind = Pastry | Bread | Cookie
 
 alias BakedGood = { kind :: BakedGoodKind, name :: String, price :: Float, servings :: Integer }
 
@@ -24,55 +12,26 @@ baked = (kind, name, servings, price) => ({ name, kind, servings, price })
 
 bread = baked(Bread)
 pastry = baked(Pastry)
-cake = baked(Cake)
 cookie = baked(Cookie)
 
 GOODS = {
   rusticBread: bread("Rustic", 1, 12),
   sourdough: bread("Sourdough", 1, 10),
-  bagette: bread("Bagette", 1, 8),
+  baguette: bread("Baguette", 1, 8),
   croissant: pastry("Croissant", 1, 6),
   painDuChocolat: pastry("Pain du chocolat", 1, 8),
   cookie: cookie("Chocolate Chip", 1, 4),
   cookies: cookie("Chocolate Chip", 4, 12),
 }
 
-TAGS = { bakery: tag("bakery"), sell: tagWithScope("bakery", ["sale"]) }
-
-solo = () => {
-  sellLog = Core.signalWithConfig(
-    {
-      decorate: Core.decorateWithStyleAndDate,
-      effect: IO.pTrace,
-      change: .name,
-      check: Core.always,
-    },
-    TAGS.sell,
-  )
-  sellLog("selling?", GOODS.cookie)
-  sellTrace = PB.dateTaggedSignal(TAGS.sell)
-  sellTrace("selling!", GOODS.rusticBread)
-  logWithStyle = Core.configurate(Core.decorateWithStyle, IO.pTrace)
-  bakeryLog = Core.signalWithConfig(logWithStyle(.price, Core.always), TAGS.bakery)
-  bakeryLog("cost!", GOODS.painDuChocolat)
-  expensiveLog = Core.signalWithConfig(
-    Core.configurate(Core.decorateWithStyle, IO.pTrace, identity, (_, _, v) => v.price >= 8),
-    TAGS.sell,
-  )
-  expensiveLog("single cookie doesn't log!", GOODS.cookie)
-  expensiveLog("many cookies does log!", GOODS.cookies)
-}
+TAGS = { bakery: tag("bakery"), sale: tagWithScope("bakery", ["counter", "sale"]) }
 
 main = () => {
-  PB.env(TAGS.bakery, "Give me a minute", { cool: "hooray!" })
+  PB.env(TAGS.bakery, "baked goods!", GOODS)
+  // this logs only if the final item passes the predicate (.price > 8)
   PB.bus(
-    {
-      decorate: PB.DATED_CONFIG.decorate,
-      effect: PB.DATED_CONFIG.effect,
-      change: PB.DATED_CONFIG.change,
-      check: (_, _, v) => v.price > 8,
-    },
-    TAGS.sell,
+    PB.confCheck((_, _, v) => v.price > 8, PB.DATED_CONFIG),
+    TAGS.sale,
     "cookies!!!",
     GOODS.cookies,
   )

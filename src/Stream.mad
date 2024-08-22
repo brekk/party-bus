@@ -1,19 +1,46 @@
+import type { Stream } from "Stream"
 import type { Wish } from "Wish"
 
+import type { Query } from "@/Query"
 import type { Tag } from "@/Tag"
+
+import { noop } from "Function"
+import { append } from "List"
+import { range, reduce, subscribe } from "Stream"
+import { Wish } from "Wish"
 
 import { Tag } from "@/Tag"
 
 
 
-// map these to Stream semantics
+type Spout fail ev = Log(ev) | Jam(fail) | Consumed
 
-export type Event a b = Event(a, Tag, b)
-export alias Predicate a = a -> Boolean
-export type Signal a b = Skipped(Event a b) | Called(Event a b) | ToCall(Predicate a, Event a b)
-
-export type EventDrain a b = EventDrain(List (Signal a b))
-export alias Produce a b = Event a b -> b
-export alias Consume e a b = Event a b -> Wish e (Signal a b)
-export alias Transform a b = a -> b
-export type EventPump e a b = EventPump(Produce a b, Consume e a b, Transform a b)
+// spout :: Stream Tag (Spout Tag Tag)
+//   -> Wish (List (Spout Tag (Spout Tag Tag))) (List (Spout Tag (Spout Tag Tag)))
+export spout = (stream) => {
+  events = []
+  push = (x) => {
+    events := append(x, events)
+    return events
+  }
+  return Wish(
+    (bad, good) => {
+      fail = pipe(
+        Jam,
+        push,
+        bad,
+        noop,
+      )
+      iter = pipe(
+        Log,
+        push,
+        noop,
+      )
+      end = () => {
+        good(push(Consumed))
+      }
+      subscribe(fail, iter, end)(stream)
+      return () => {}
+    },
+  )
+}

@@ -1,13 +1,11 @@
+import type { Query } from "@/Query"
 import type { Tag } from "@/Tag"
 
 import { now, toISOString } from "Date"
-import { identity } from "Function"
-import IO from "IO"
 
 import { colorize } from "Dye"
 
-import { serialize } from "@/Tag"
-import { Tag } from "@/Tag"
+import { Tag, serialize } from "@/Tag"
 
 
 
@@ -75,24 +73,6 @@ export always = (_, _, _) => true
 decorateRaw :: Decorator a
 export decorateRaw = (_, m, _) => m
 
-/**
- * The default config to use when invoking the bus, shorthand for:
- * Call IO.pTrace unconditionally, with no change to the value passing through. 
- * @since 0.0.1
- */
-export DEFAULT_CONFIG = {
-  decorate: decorateRaw,
-  check: always,
-  effect: IO.pTrace,
-  change: identity,
-}
-
-/**
- * signalWithConfig minus the config
- * @since 0.0.1
- */
-signal :: Show a => Tag -> String -> a -> a
-export signal = signalWithConfig(DEFAULT_CONFIG)
 
 /**
  * A means of colorizing a message by tag
@@ -130,29 +110,3 @@ export decorateWithStyleAndDate = (tag, message, _) => {
  */
 configurate :: Decorator a -> SideEffect b -> (a -> b) -> PartyPredicate a -> Config
 export configurate = (decorate, effect, change, check) => ({ decorate, effect, change, check })
-
-export STYLED_CONFIG = {
-  decorate: decorateWithStyle,
-  effect: IO.pTrace,
-  change: identity,
-  check: always,
-}
-
-/**
- * Call signal with a colorized serialized tag prepended to the message
- * @since 0.0.1
- */
-export taggedSignal = signalWithConfig(STYLED_CONFIG)
-
-export DATED_CONFIG = {
-  decorate: decorateWithStyleAndDate,
-  effect: IO.pTrace,
-  change: identity,
-  check: always,
-}
-
-/**
- * Call signal with a colorized serialized tag and date prepended to the message
- * @since 0.0.1
- */
-export dateTaggedSignal = signalWithConfig(DATED_CONFIG)

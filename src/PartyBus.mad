@@ -1,0 +1,105 @@
+import type { Config, Decorator, PartyPredicate, SideEffect } from "@/Core"
+import type { Query } from "@/Query"
+import type { Tag } from "@/Tag"
+
+import { identity } from "Function"
+import IO from "IO"
+import Process from "Process"
+
+import {
+  always,
+  decorateRaw,
+  decorateWithStyle,
+  decorateWithStyleAndDate,
+  signalWithConfig,
+} from "@/Core"
+import { getEnvWithKey } from "@/Env"
+import { checkEnvironment } from "@/Query"
+
+
+
+export type Config
+export type Decorator
+export type PartyPredicate
+export type SideEffect
+
+export always
+export decorateRaw
+export decorateWithStyle
+export decorateWithStyleAndDate
+export signalWithConfig
+
+/**
+ * The default config to use when invoking the bus, shorthand for:
+ * Call IO.pTrace unconditionally, with no change to the value passing through. 
+ * @since 0.0.1
+ */
+export DEFAULT_CONFIG = {
+  decorate: decorateRaw,
+  check: always,
+  effect: IO.pTrace,
+  change: identity,
+}
+
+/**
+ * signalWithConfig minus the config
+ * @since 0.0.1
+ */
+signal :: Show a => Tag -> String -> a -> a
+export signal = signalWithConfig(DEFAULT_CONFIG)
+
+export STYLED_CONFIG = {
+  decorate: decorateWithStyle,
+  effect: IO.pTrace,
+  change: identity,
+  check: always,
+}
+
+/**
+ * Call signal with a colorized serialized tag prepended to the message
+ * @since 0.0.1
+ */
+export taggedSignal = signalWithConfig(STYLED_CONFIG)
+
+export DATED_CONFIG = {
+  decorate: decorateWithStyleAndDate,
+  effect: IO.pTrace,
+  change: identity,
+  check: always,
+}
+
+/**
+ * Call signal with a colorized serialized tag and date prepended to the message
+ * @since 0.0.1
+ */
+export dateTaggedSignal = signalWithConfig(DATED_CONFIG)
+
+
+partyBus :: List Query -> Config -> Tag -> String -> a -> a
+export partyBus = (legend, config, t, msg, x) => signalWithConfig(
+  {
+    decorate: config.decorate,
+    effect: config.effect,
+    change: config.change,
+    check: (_tag, _msg, _x) => checkEnvironment(legend, _tag) && config.check(_tag, _msg, _x),
+  },
+  t,
+  msg,
+  x,
+)
+
+envFrom :: Dictionary String String -> String -> Config -> Tag -> String -> a -> a
+export envFrom = (envDict, key, config, t, msg, x) => partyBus(
+  getEnvWithKey(key, envDict),
+  config,
+  t,
+  msg,
+  x,
+)
+
+keyedEnv :: String -> Config -> Tag -> String -> a -> a
+export keyedEnv = envFrom(Process.Env)
+
+
+env :: Config -> Tag -> String -> a -> a
+export env = keyedEnv("DEBUG")

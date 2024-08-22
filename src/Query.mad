@@ -143,3 +143,6 @@ export anyTagMatches = (xs, t) => pipe(
   List.filter(gt($, t)),
   complement(List.isEmpty),
 )(xs)
+
+checkEnvironment :: List Query -> Tag -> Boolean
+export checkEnvironment = (legend, t) => anyTagMatches(legend, Exact(t))

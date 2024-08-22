@@ -7,23 +7,15 @@ import { assertEquals, test } from "Test"
 // import { report } from "Study"
 
 import {
-  DATED_CONFIG,
-  DEFAULT_CONFIG,
-  STYLED_CONFIG,
   always,
   configurate,
-  // dateTaggedSignal,
   decorateRaw,
   decorateWithStyle,
   decorateWithStyleAndDate,
   signalWithConfig,
-} from "./Core"
-// signal,
-// taggedSignal,
-
-import {
-  tag,
-} from "@/Tag"
+} from "@/Core"
+import { DATED_CONFIG, DEFAULT_CONFIG, STYLED_CONFIG } from "@/PartyBus"
+import { tag } from "@/Tag"
 
 
 

@@ -2,6 +2,7 @@ import type { Query } from "@/Query"
 import type { Tag } from "@/Tag"
 
 import { now, toISOString } from "Date"
+import { append } from "List"
 
 import { colorize } from "Dye"
 
@@ -59,6 +60,7 @@ export signalWithConfig = (conf, tag, message, x) => {
   }
 }
 
+
 /**
  * A shorthand function to always fire the side-effect
  * @since 0.0.1
@@ -112,6 +114,7 @@ export decorateWithStyleAndDate = (tag, message, _) => {
 configurate :: Decorator a -> SideEffect b -> (a -> b) -> PartyPredicate a -> Config
 export configurate = (decorate, effect, change, check) => ({ decorate, effect, change, check })
 
+// these need to change when object-spreading is fixed
 export confDecorator = (decorate, conf) => (
   { decorate, effect: conf.effect, change: conf.change, check: conf.check }
 )

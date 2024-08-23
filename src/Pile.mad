@@ -1,0 +1,32 @@
+import type { Config } from "@/Core"
+import type { Tag } from "@/Tag"
+
+import { append } from "List"
+
+
+
+export type Lazy a = Lazy(Tag, String, a)
+
+export alias Pile = { get :: {} -> List b, send :: Tag -> String -> a }
+
+// lazyWithConfig :: Config -> Pile
+export lazyWithConfig = (conf) => {
+  pile = []
+  return where(conf) {
+    { decorate, effect, check, change } =>
+      (
+        {
+          send: (tag, message, x) => do {
+            msg = decorate(tag, message, x)
+            return if (check(tag, msg, x)) do {
+              pile := append(Lazy(tag, msg, x), pile)
+              return x
+            } else {
+              x
+            }
+          },
+          get: () => map(where { Lazy(tag, msg, x) => effect(msg, x) }, pile),
+        }
+      )
+  }
+}

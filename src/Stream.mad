@@ -40,7 +40,9 @@ export spout = (stream) => {
         good(push(Consumed))
       }
       subscribe(fail, iter, end)(stream)
-      return () => {}
+      return () => {
+        events := []
+      }
     },
   )
 }

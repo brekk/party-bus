@@ -1,4 +1,7 @@
+import IO from "IO"
+
 import PB from "@/PartyBus"
+import { lazyWithConfig } from "@/Pile"
 import { tag, tagWithScope } from "@/Tag"
 
 
@@ -26,7 +29,7 @@ GOODS = {
 
 TAGS = { bakery: tag("bakery"), sale: tagWithScope("bakery", ["counter", "sale"]) }
 
-main = () => {
+party = () => {
   PB.env(TAGS.bakery, "baked goods!", GOODS)
   // this logs only if the final item passes the predicate (.price > 8)
   PB.bus(
@@ -35,4 +38,11 @@ main = () => {
     "cookies!!!",
     GOODS.cookies,
   )
+}
+
+main = () => {
+  pile = lazyWithConfig(PB.confCheck((_, _, v) => v.price > 8, PB.DATED_CONFIG))
+  pile.send(TAGS.sale, "cookies!!!", GOODS.cookies)
+  pile.send(TAGS.sale, "cookie!", GOODS.cookie)
+  pile.get()
 }

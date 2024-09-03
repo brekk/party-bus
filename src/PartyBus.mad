@@ -1,6 +1,7 @@
 import type { Config, Decorator, PartyPredicate, SideEffect } from "@/Core"
 import type { Query } from "@/Query"
 import type { Tag } from "@/Tag"
+import type { Scope } from "@/Tag/Scope"
 
 import { identity } from "Function"
 import IO from "IO"
@@ -21,26 +22,32 @@ import {
 } from "@/Core"
 import { getEnvWithKey } from "@/Env"
 import { checkEnvironment } from "@/Query"
+import { Tag, tag, tagWithScope } from "@/Tag"
 
 
 
+export type Tag
+export type Scope
 export type Config
 export type Decorator
 export type PartyPredicate
 export type SideEffect
+export type Query
 
 // re-export the Core
-export signalWithConfig
 export always
-export decorateRaw
 export colorizeTag
-export decorateWithStyle
-export decorateWithStyleAndDate
-export configurate
-export confDecorator
-export confEffect
 export confChange
 export confCheck
+export confDecorator
+export confEffect
+export configurate
+export decorateRaw
+export decorateWithStyle
+export decorateWithStyleAndDate
+export signalWithConfig
+export tag
+export tagWithScope
 
 /**
  * The default config to use when invoking the bus, shorthand for:

@@ -1,6 +1,6 @@
 {
   "name": "PartyBus",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "src/PartyBus.mad",
   "importAliases": {
     ".": "src"
@@ -12,9 +12,9 @@
       "minVersion": "0.0.2"
     },
     {
-      "url": "https://github.com/brekk/study/archive/refs/tags/v0.0.1.zip",
+      "url": "https://github.com/brekk/study/archive/refs/tags/v0.0.3.zip",
       "description": "Study",
-      "minVersion": "0.0.1"
+      "minVersion": "0.0.3"
     }
   ]
 }

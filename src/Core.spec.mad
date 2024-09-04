@@ -12,6 +12,7 @@ import {
   confCheck,
   confDecorator,
   confEffect,
+  confSeed,
   configurate,
   decorateRaw,
   decorateWithStyle,
@@ -32,7 +33,7 @@ test(
   },
 )
 
-test("decorateRaw", () => assertEquals(decorateRaw(tag("yo"), "cool", "blah"), "cool"))
+test("decorateRaw", () => assertEquals(decorateRaw("party-bus", tag("yo"), "cool", "blah"), "cool"))
 
 ANSI_ESCAPE = '\x1b'
 
@@ -40,7 +41,7 @@ test(
   "decorateWithStyle",
   () => assertEquals(
     pipe(
-      decorateWithStyle($, "yo", "blah"),
+      decorateWithStyle("party-bus", $, "yo", "blah"),
       String.toList,
     )(tag("silly")),
     [
@@ -68,13 +69,15 @@ test(
       ';',
       '2',
       ';',
-      '5',
-      ';',
       '1',
-      '4',
-      '4',
+      '0',
+      '3',
       ';',
-      '2',
+      '5',
+      '1',
+      ';',
+      '7',
+      '5',
       'm',
       ' ',
       's',
@@ -105,7 +108,7 @@ test(
   "decorateWithStyleAndDate",
   () => assertEquals(
     pipe(
-      decorateWithStyleAndDate(tag("hey"), "yo"),
+      decorateWithStyleAndDate("party-bus", tag("hey"), "yo"),
       skipDateInStyledString,
     )("blah"),
     [
@@ -117,32 +120,28 @@ test(
         ';',
         '2',
         ';',
-        '2',
-        '5',
-        '5',
+        '0',
         ';',
-        '2',
-        '5',
-        '5',
+        '0',
         ';',
-        '2',
-        '5',
-        '5',
+        '0',
         ';',
         '4',
         '8',
         ';',
         '2',
         ';',
-        '1',
-        '9',
-        '9',
+        '2',
+        '0',
+        '0',
         ';',
-        '3',
         '1',
+        '2',
+        '2',
         ';',
-        '8',
-        '4',
+        '1',
+        '1',
+        '6',
         'm',
       ],
       ['h', 'e', 'y'],
@@ -159,6 +158,7 @@ test(
   "STYLED_CONFIG-ish / taggedSignal-ish",
   () => do {
     conf = {
+      seed: "party-bus",
       effect: binaryIdentity,
       decorate: STYLED_CONFIG.decorate,
       change: STYLED_CONFIG.change,
@@ -177,6 +177,7 @@ test(
   "DEFAULT_CONFIG-ish / signal-ish",
   () => do {
     conf = {
+      seed: "party-bus",
       effect: binaryIdentity,
       decorate: DEFAULT_CONFIG.decorate,
       change: DEFAULT_CONFIG.change,
@@ -192,13 +193,14 @@ test(
 )
 
 test(
-  "confDecorator + confChange",
+  "confDecorator + confChange + confSeed",
   () => do {
     conf = pipe(
+      confSeed("ahoy"),
       confDecorator(decorateRaw),
       confChange((_) => "x"),
     )(DEFAULT_CONFIG)
-    _ <- assertEquals(conf.decorate(tag("a"), "b", "c"), "b")
+    _ <- assertEquals(conf.decorate("ahoy", tag("a"), "b", "c"), "b")
     return assertEquals(conf.change("hello?"), "x")
   },
 )

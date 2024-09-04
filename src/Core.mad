@@ -1,4 +1,3 @@
-import type { Query } from "@/Query"
 import type { Tag } from "@/Tag"
 
 import { now, toISOString } from "Date"
@@ -25,7 +24,7 @@ export alias SideEffect b = String -> b -> b
  * The message decoration
  * @since 0.0.1
  */
-export alias Decorator a = Tag -> String -> a -> String
+export alias Decorator a = String -> Tag -> String -> a -> String
 
 /**
  * The configuration of the signal
@@ -36,6 +35,7 @@ export alias Config = {
   check :: PartyPredicate a,
   decorate :: Decorator a,
   effect :: SideEffect b,
+  seed :: String,
 }
 
 /**
@@ -46,9 +46,9 @@ export alias Config = {
 signalWithConfig :: Config -> Tag -> String -> a -> a
 export signalWithConfig = (conf, tag, message, x) => {
   return where(conf) {
-    { decorate, effect, change, check } =>
+    { seed, decorate, effect, change, check } =>
       do {
-        msg = decorate(tag, message, x)
+        msg = decorate(seed, tag, message, x)
         return if (check(tag, msg, x)) do {
           effect(msg, change(x))
           return x
@@ -71,26 +71,26 @@ export always = (_, _, _) => true
  * @since 0.0.1
  */
 decorateRaw :: Decorator a
-export decorateRaw = (_, m, _) => m
+export decorateRaw = (_, _, m, _) => m
 
 
 /**
  * A means of colorizing a message by tag
  * @since 0.0.1
  */
-colorizeTag :: Tag -> String
-export colorizeTag = pipe(
+colorizeTag :: String -> Tag -> String
+export colorizeTag = (seed, x) => pipe(
   serialize,
-  (tagId) => colorize(tagId, " " ++ tagId ++ " "),
-)
+  (tagId) => colorize(seed, " " ++ tagId ++ " "),
+)(x)
 
 /**
  * Color by tag and prepend to message
  * @since 0.0.1
  */
 decorateWithStyle :: Decorator a
-export decorateWithStyle = (tag, message, _) => {
-  idWithColor = colorizeTag(tag)
+export decorateWithStyle = (seed, tag, message, _) => {
+  idWithColor = colorizeTag(seed, tag)
   return idWithColor ++ " " ++ message
 }
 
@@ -99,31 +99,44 @@ export decorateWithStyle = (tag, message, _) => {
  * @since 0.0.1
  */
 decorateWithStyleAndDate :: Decorator a
-export decorateWithStyleAndDate = (tag, message, _) => {
-  idWithColor = colorizeTag(tag)
+export decorateWithStyleAndDate = (seed, tag, message, _) => {
+  idWithColor = colorizeTag(seed, tag)
   return idWithColor ++ " " ++ toISOString(now()) ++ " ▸ " ++ message
 }
 
-// (this currently has an issue)
+// (this currently has an issue w/r/t partial application - it works but not as well as it should)
 /**
  * A sugar method to create a Config record, usually by partial application 
  * @since 0.0.1
  */
-configurate :: Decorator a -> SideEffect b -> (a -> b) -> PartyPredicate a -> Config
-export configurate = (decorate, effect, change, check) => ({ decorate, effect, change, check })
+configurateWithSeed :: String
+  -> Decorator a
+  -> SideEffect b
+  -> (a -> b)
+  -> PartyPredicate a
+  -> Config
+export configurateWithSeed = (seed, decorate, effect, change, check) => (
+  { seed, decorate, effect, change, check }
+)
+
+export configurate = configurateWithSeed("party-bus")
+
+export confSeed = (seed, conf) => (
+  { seed, effect: conf.effect, change: conf.change, check: conf.check, decorate: conf.decorate }
+)
 
 export confDecorator = (decorate, conf) => (
-  { decorate, effect: conf.effect, change: conf.change, check: conf.check }
+  { decorate, effect: conf.effect, change: conf.change, check: conf.check, seed: conf.seed }
 )
 
 export confEffect = (effect, conf) => (
-  { decorate: conf.decorate, effect, change: conf.change, check: conf.check }
+  { decorate: conf.decorate, effect, change: conf.change, check: conf.check, seed: conf.seed }
 )
 
 export confChange = (change, conf) => (
-  { change, decorate: conf.decorate, effect: conf.effect, check: conf.check }
+  { change, decorate: conf.decorate, effect: conf.effect, check: conf.check, seed: conf.seed }
 )
 
 export confCheck = (check, conf) => (
-  { check, decorate: conf.decorate, effect: conf.effect, change: conf.change }
+  { check, decorate: conf.decorate, effect: conf.effect, change: conf.change, seed: conf.seed }
 )

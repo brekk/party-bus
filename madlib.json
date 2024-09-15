@@ -1,15 +1,15 @@
 {
   "name": "PartyBus",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "main": "src/PartyBus.mad",
   "importAliases": {
     ".": "src"
   },
   "dependencies": [
     {
-      "url": "https://github.com/brekk/dye/archive/refs/tags/v0.0.2.zip",
+      "url": "https://github.com/brekk/dye/archive/refs/tags/v0.0.10.zip",
       "description": "Dye",
-      "minVersion": "0.0.2"
+      "minVersion": "0.0.10"
     },
     {
       "url": "https://github.com/brekk/study/archive/refs/tags/v0.0.3.zip",

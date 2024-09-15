@@ -3,8 +3,11 @@ import type { Query } from "@/Query"
 import type { Tag } from "@/Tag"
 import type { Scope } from "@/Tag/Scope"
 
+import Dict from "Dictionary"
 import { identity } from "Function"
 import IO from "IO"
+import List from "List"
+import { fromMaybe } from "Maybe"
 import Process from "Process"
 
 import {
@@ -160,3 +163,13 @@ export bus = keyedEnv("DEBUG")
  */
 env :: Show a => Tag -> String -> a -> a
 export env = bus(DATED_CONFIG)
+
+createTags :: String -> List (List String) -> List Tag
+export createTags = (key, scopes) => pipe(
+  map(tagWithScope(key)),
+)(scopes)
+
+createTagDictionary :: String -> Dictionary String (List String) -> Dictionary String Tag
+export createTagDictionary = (key, scopes) => pipe(
+  map(tagWithScope(key)),
+)(scopes)

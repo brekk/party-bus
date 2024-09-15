@@ -1,7 +1,7 @@
 import { caseN3, report } from "Study"
 
 import { confEffect } from "@/Core"
-import { STYLED_CONFIG, envFrom } from "@/PartyBus"
+import { STYLED_CONFIG, createTagDictionary, createTags, envFrom } from "@/PartyBus"
 import { tag, tagWithScope } from "@/Tag"
 
 
@@ -15,5 +15,42 @@ report(
     #[#[tag("check"), "message!", "raw"], "raw"],
     #[#[tagWithScope("test", ["scope", "detail"]), "message!", "raw"], "raw"],
     #[#[tag("nothing"), "message!", "raw"], "raw"],
+  ],
+)
+
+report(
+  createTags("test"),
+  "createTags",
+  [
+    #[
+      [["info"], ["warn"], ["detail"], ["detail", "nested"]],
+      [
+        tagWithScope("test", ["info"]),
+        tagWithScope("test", ["warn"]),
+        tagWithScope("test", ["detail"]),
+        tagWithScope("test", ["detail", "nested"]),
+      ],
+    ],
+  ],
+)
+
+report(
+  createTagDictionary("test"),
+  "createTagDictionary",
+  [
+    #[
+      {{
+        "info": ["info"],
+        "warn": ["warn"],
+        "detail": ["detail"],
+        "detailNested": ["detail", "nested"],
+      }},
+      {{
+        "info": tagWithScope("test", ["info"]),
+        "warn": tagWithScope("test", ["warn"]),
+        "detail": tagWithScope("test", ["detail"]),
+        "detailNested": tagWithScope("test", ["detail", "nested"]),
+      }},
+    ],
   ],
 )

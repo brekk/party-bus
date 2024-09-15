@@ -38,12 +38,14 @@ export alias Config = {
   seed :: String,
 }
 
+export alias Signal a = Tag -> String -> a -> a
+
 /**
  * The core function that does all the magic of PartyBus.
  * Conditionally call a side-effect with a specific tag, message and value.
  * @since 0.0.1
  */
-signalWithConfig :: Config -> Tag -> String -> a -> a
+signalWithConfig :: Config -> Signal a
 export signalWithConfig = (conf, tag, message, x) => {
   return where(conf) {
     { seed, decorate, effect, change, check } =>

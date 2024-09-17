@@ -3,11 +3,9 @@ import type { Query } from "@/Query"
 import type { Tag } from "@/Tag"
 import type { Scope } from "@/Tag/Scope"
 
-import Dict from "Dictionary"
 import { identity } from "Function"
 import IO from "IO"
 import List from "List"
-import { fromMaybe } from "Maybe"
 import Process from "Process"
 
 import {
@@ -27,6 +25,7 @@ import {
 import { getEnvWithKey } from "@/Env"
 import { checkEnvironment } from "@/Query"
 import { Tag, tag, tagWithScope } from "@/Tag"
+import { scopeToList } from "@/Tag/Scope"
 
 
 
@@ -141,6 +140,29 @@ export envFrom = (envDict, key, config, t, msg, x) => partyBus(
   x,
 )
 
+/**
+ * Create multiple tags with different scopes but the same base
+ * @since 0.0.4
+ */
+export createTags = (key, scopes) => pipe(
+  map(tagWithScope(key)),
+)(scopes)
+
+/**
+ * "Push" a new base onto an existing tag,
+ * converting the extant base to the beginning of the scope
+ * @since 0.0.5
+ */
+pushTag :: String -> Tag -> Tag
+export pushTag = (parent, t) => where(t) {
+  Tag(a, x) =>
+    pipe(
+      scopeToList,
+      List.concat([a]),
+      tagWithScope(parent),
+    )(x)
+}
+
 // The following functions are untested because they rely upon Process.Env, which we can't guarantee from the test environment
 /**
  * partyBus, but wired to the environment
@@ -163,13 +185,3 @@ export bus = keyedEnv("DEBUG")
  */
 env :: Show a => Tag -> String -> a -> a
 export env = bus(DATED_CONFIG)
-
-createTags :: String -> List (List String) -> List Tag
-export createTags = (key, scopes) => pipe(
-  map(tagWithScope(key)),
-)(scopes)
-
-createTagDictionary :: String -> Dictionary String (List String) -> Dictionary String Tag
-export createTagDictionary = (key, scopes) => pipe(
-  map(tagWithScope(key)),
-)(scopes)

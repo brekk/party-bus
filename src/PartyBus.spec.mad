@@ -1,7 +1,7 @@
 import { caseN3, report } from "Study"
 
 import { confEffect } from "@/Core"
-import { STYLED_CONFIG, createTagDictionary, createTags, envFrom } from "@/PartyBus"
+import { STYLED_CONFIG, createTags, envFrom, pushTag } from "@/PartyBus"
 import { tag, tagWithScope } from "@/Tag"
 
 
@@ -35,8 +35,8 @@ report(
 )
 
 report(
-  createTagDictionary("test"),
-  "createTagDictionary",
+  createTags("test"),
+  "createTags - Dictionary",
   [
     #[
       {{
@@ -52,5 +52,15 @@ report(
         "detailNested": tagWithScope("test", ["detail", "nested"]),
       }},
     ],
+  ],
+)
+
+
+report(
+  pushTag("test"),
+  "pushTag",
+  [
+    #[tag("hey"), tagWithScope("test", ["hey"])],
+    #[tagWithScope("hey", ["there"]), tagWithScope("test", ["hey", "there"])],
   ],
 )

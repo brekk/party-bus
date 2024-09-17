@@ -23,6 +23,15 @@ export scopeFromList = (strs) => if (checkScopeList(strs)) {
   )(strs)
 }
 
+scopeToList :: Scope -> List String
+export scopeToList = where {
+  NoScope =>
+    []
+
+  Scope(x) =>
+    Set.toList(x)
+}
+
 scopeLength :: Scope -> Integer
 export scopeLength = where {
   Scope(l) =>

@@ -1,11 +1,10 @@
 import { isEmpty } from "List"
 import List from "List"
-import Set from "Set"
 import String from "String"
 
 
 
-export type Scope = Scope(Set String) | NoScope
+export type Scope = Scope(List String) | NoScope
 
 export checkScopeList = pipe(
   map(String.trim),
@@ -17,10 +16,7 @@ scopeFromList :: List String -> Scope
 export scopeFromList = (strs) => if (checkScopeList(strs)) {
   NoScope
 } else {
-  pipe(
-    Set.fromList,
-    Scope,
-  )(strs)
+  Scope(strs)
 }
 
 scopeToList :: Scope -> List String
@@ -29,13 +25,13 @@ export scopeToList = where {
     []
 
   Scope(x) =>
-    Set.toList(x)
+    x
 }
 
 scopeLength :: Scope -> Integer
 export scopeLength = where {
   Scope(l) =>
-    Set.length(l)
+    List.length(l)
 
   NoScope =>
     0
@@ -45,19 +41,21 @@ scopeWithinScope :: Scope -> Scope -> Boolean
 export scopeWithinScope = (a, z) => where(#[a, z]) {
   #[Scope(outer), Scope(inner)] =>
     pipe(
-      Set.diff(outer),
-      (d) => d == Set.empty,
+      List.difference(outer),
+      List.isEmpty,
     )(inner)
 
   #[_, _] =>
     false
 }
 
+/*
 concrete :: Scope -> List String
 export concrete = where {
   Scope(raw) =>
-    Set.toList(raw)
+    raw
 
   _ =>
     []
 }
+*/

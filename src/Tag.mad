@@ -6,7 +6,7 @@ import { EQ, GT, LT } from "Compare"
 import List from "List"
 import String from "String"
 
-import { NoScope, Scope, concrete, scopeFromList, scopeWithinScope } from "@/Tag/Scope"
+import { NoScope, Scope, scopeFromList, scopeToList, scopeWithinScope } from "@/Tag/Scope"
 
 
 
@@ -68,7 +68,7 @@ export getScope = where {
 getConcreteScope :: Tag -> List String
 export getConcreteScope = pipe(
   getScope,
-  concrete,
+  scopeToList,
 )
 
 serialize :: Tag -> String

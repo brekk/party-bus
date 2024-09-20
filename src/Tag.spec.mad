@@ -1,5 +1,4 @@
 import { EQ, GT, LT } from "Compare"
-import Set from "Set"
 import { assertEquals, test } from "Test"
 
 import { caseN2, report } from "Study"
@@ -19,7 +18,6 @@ import {
   NoScope,
   Scope,
   checkScopeList,
-  concrete,
   scopeFromList,
   scopeLength,
   scopeWithinScope,
@@ -81,11 +79,7 @@ test(
 )
 
 report(checkScopeList, "checkScopeList", [#[[], true], #[["yoooo"], false]])
-report(
-  scopeFromList,
-  "scopeFromList",
-  [#[[], NoScope], #[["yoooo"], Scope(Set.fromList(["yoooo"]))]],
-)
+report(scopeFromList, "scopeFromList", [#[[], NoScope], #[["yoooo"], Scope(["yoooo"])]])
 report(
   scopeLength,
   "scopeLength",

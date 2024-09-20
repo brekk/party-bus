@@ -2,7 +2,7 @@ import type { Comparison } from "Compare"
 
 import type { Tag } from "@/Tag"
 
-import { EQ, GT, LT, gt } from "Compare"
+import { EQ, GT, LT, gt, lt } from "Compare"
 import { complement, equals } from "Function"
 import List from "List"
 import { fromMaybe } from "Maybe"
@@ -139,10 +139,17 @@ export isWild = where {
 }
 
 anyTagMatches :: List Query -> Query -> Boolean
-export anyTagMatches = (xs, t) => pipe(
-  List.filter(gt($, t)),
-  complement(List.isEmpty),
-)(xs)
+export anyTagMatches = (xs, t) => {
+  noneUnder = pipe(
+    List.filter(lt($, t)),
+    List.isEmpty,
+  )(xs)
+  someOver = pipe(
+    List.filter(gt($, t)),
+    complement(List.isEmpty),
+  )(xs)
+  return noneUnder && someOver
+}
 
 checkEnvironment :: List Query -> Tag -> Boolean
 export checkEnvironment = (legend, t) => anyTagMatches(legend, Exact(t))

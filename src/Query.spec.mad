@@ -19,7 +19,7 @@ import {
   not,
   notWithScope,
 } from "@/Query"
-import { tag } from "@/Tag"
+import { tag, tagWithScope } from "@/Tag"
 
 
 
@@ -51,6 +51,7 @@ report(
     #[#[exactWithScope("a", ["b"]), not("b")], EQ],
     #[#[notWithScope("a", ["b"]), exact("a")], LT],
     #[#[notWithScope("a", ["b"]), exact("b")], EQ],
+    #[#[notWithScope("ortho", ["split"]), exactWithScope("ortho", ["split", "camel"])], LT],
     #[#[exactWithScope("a", ["b"]), NoTag], LT],
   ],
 )
@@ -79,6 +80,13 @@ report(
     #[#[[exact("blah")], exact("blah")], true],
     #[#[[exactWithScope("blah", ["blah"])], exact("blah")], false],
     #[#[[notWithScope("blah", ["blah"])], exact("blah")], false],
+    #[
+      #[
+        [exact("ortho"), notWithScope("ortho", ["split"])],
+        exactWithScope("ortho", ["split", "camel"]),
+      ],
+      false,
+    ],
   ],
 )
 
@@ -91,5 +99,14 @@ report(
     #[#[[exact("blah")], tag("blah")], true],
     #[#[[exactWithScope("blah", ["blah"])], tag("blah")], false],
     #[#[[notWithScope("blah", ["blah"])], tag("blah")], false],
+    // we want to be able to include a broad selector
+    // but exclude a nested selector
+    #[
+      #[
+        [exact("ortho"), notWithScope("ortho", ["split"])],
+        tagWithScope("ortho", ["split", "camel"]),
+      ],
+      false,
+    ],
   ],
 )

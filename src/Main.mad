@@ -37,7 +37,11 @@ GOODS = {
   cookies: cookie("Chocolate Chip", 4, 12),
 }
 
-TAGS = { bakery: tag("bakery"), sell: tagWithScope("bakery", ["sale"]) }
+TAGS = {
+  bakery: tag("bakery"),
+  sell: tagWithScope("bakery", ["sale"]),
+  nested: tagWithScope("bakery", ["nested", "deeply"]),
+}
 
 solo = () => {
   sellLog = Core.signalWithConfig(
@@ -46,6 +50,7 @@ solo = () => {
       effect: IO.pTrace,
       change: .name,
       check: Core.always,
+      seed: "my cool seed",
     },
     TAGS.sell,
   )
@@ -63,7 +68,7 @@ solo = () => {
   expensiveLog("many cookies does log!", GOODS.cookies)
 }
 
-main = () => {
+soloWithCheck = () => {
   PB.env(TAGS.bakery, "Give me a minute", { cool: "hooray!" })
   PB.bus(
     {
@@ -71,9 +76,16 @@ main = () => {
       effect: PB.DATED_CONFIG.effect,
       change: PB.DATED_CONFIG.change,
       check: (_, _, v) => v.price > 8,
+      seed: "my cool seed",
     },
     TAGS.sell,
     "cookies!!!",
     GOODS.cookies,
   )
+}
+
+main = () => {
+  pipe(
+    PB.env(TAGS.nested, "hey there!"),
+  )("raw")
 }

@@ -80,13 +80,6 @@ report(
     #[#[[exact("blah")], exact("blah")], true],
     #[#[[exactWithScope("blah", ["blah"])], exact("blah")], false],
     #[#[[notWithScope("blah", ["blah"])], exact("blah")], false],
-    #[
-      #[
-        [exact("ortho"), notWithScope("ortho", ["split"])],
-        exactWithScope("ortho", ["split", "camel"]),
-      ],
-      false,
-    ],
   ],
 )
 
@@ -99,8 +92,54 @@ report(
     #[#[[exact("blah")], tag("blah")], true],
     #[#[[exactWithScope("blah", ["blah"])], tag("blah")], false],
     #[#[[notWithScope("blah", ["blah"])], tag("blah")], false],
-    // we want to be able to include a broad selector
-    // but exclude a nested selector
+  ],
+)
+
+// we want to be able to include a broad selector
+// but exclude a nested selector
+// https://github.com/brekk/party-bus/issues/3
+
+report(
+  caseN2(anyTagMatches),
+  "anyTagMatches - issues/3",
+  [
+    #[
+      #[
+        [exact("ortho"), notWithScope("ortho", ["split"])],
+        exactWithScope("ortho", ["split", "camel"]),
+      ],
+      false,
+    ],
+    #[
+      #[
+        [
+          exact("scorpion"),
+          notWithScope("scorpion", ["thorax"]),
+          exact("spider"),
+          notWithScope("scorpion", ["pedipalp", "hair"]),
+        ],
+        exactWithScope("spider", ["pedipalp"]),
+      ],
+      true,
+    ],
+    #[
+      #[
+        [
+          exact("scorpion"),
+          notWithScope("scorpion", ["thorax"]),
+          exact("spider"),
+          notWithScope("scorpion", ["pedipalp", "hair"]),
+        ],
+        exactWithScope("spider", ["cool", "dope", "nice"]),
+      ],
+      true,
+    ],
+  ],
+)
+report(
+  caseN2(checkEnvironment),
+  "checkEnvironment - issues/3",
+  [
     #[
       #[
         [exact("ortho"), notWithScope("ortho", ["split"])],
@@ -108,5 +147,24 @@ report(
       ],
       false,
     ],
+    #[
+      #[[exact("ortho"), notWithScope("ortho", ["split"])], tagWithScope("ortho", ["split"])],
+      false,
+    ],
+    #[
+      #[
+        [exact("ortho"), notWithScope("ortho", ["split"])],
+        tagWithScope("ortho", ["split", "camel", "detail"]),
+      ],
+      false,
+    ],
+    #[
+      #[
+        [exact("scorpion"), notWithScope("scorpion", ["split"])],
+        tagWithScope("scorpion", ["a", "different", "route"]),
+      ],
+      true,
+    ],
+    #[#[[exact("scorpion"), notWithScope("scorpion", ["split"])], tag("scorpion")], true],
   ],
 )

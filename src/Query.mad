@@ -138,17 +138,48 @@ export isWild = where {
     false
 }
 
+import IO from "IO"
+
+
+
 anyTagMatches :: List Query -> Query -> Boolean
 export anyTagMatches = (xs, t) => {
-  noneUnder = pipe(
+  trace = (msg, u) => where(t) {
+    Exact(Tag(x, _)) =>
+      if (x == "scorpion" || x == "spider") {
+        if (String.contains("over", msg)) {
+          IO.pTrace(IO.yellow(msg), u)
+        } else {
+          IO.pTrace(IO.green(msg), u)
+        }
+      } else {
+        u
+      }
+
+    _ =>
+      u
+  }
+  under = pipe(
     List.filter(lt($, t)),
+    trace("under"),
+  )(xs)
+  noneUnder = pipe(
     List.isEmpty,
+    trace("\tmatched under"),
+  )(under)
+  over = pipe(
+    List.filter(gt($, t)),
+    trace("over"),
   )(xs)
   someOver = pipe(
-    List.filter(gt($, t)),
     complement(List.isEmpty),
-  )(xs)
-  return noneUnder && someOver
+    trace("\tmatched over"),
+  )(over)
+  if (someOver || noneUnder) do {
+    matches = List.any((o) => List.any(lt($, o), over))(under)
+    IO.pTrace("MATCHES", matches)
+  }
+  return someOver && noneUnder
 }
 
 checkEnvironment :: List Query -> Tag -> Boolean

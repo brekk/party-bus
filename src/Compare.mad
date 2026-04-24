@@ -1,0 +1,40 @@
+import type { Comparison } from "Compare"
+
+import { EQ, GT, LT } from "Compare"
+
+
+
+validateCompare :: (a -> a -> Comparison) -> a -> a -> a -> #[Boolean, Boolean, Boolean]
+export validateCompare = (check, a, b, c) => {
+  aa = check(a, a)
+  bb = check(b, b)
+
+  ab = check(a, b)
+  ba = check(b, a)
+
+
+  refA = aa == EQ
+  refB = bb == EQ
+  isReflexive = refA && refB
+
+  isAntiSymmetric = if (ab == EQ) {
+    ab == ba
+  } else if (ab == GT) {
+    ba == LT
+  } else {
+    ba == GT
+  }
+  isTransitive = if (ab == ba) do {
+    ac = check(a, c)
+    return ab == ac && ba == ac
+  } else {
+    true
+  }
+  return #[isReflexive, isAntiSymmetric, isTransitive]
+}
+
+checkCompare :: (a -> a -> Comparison) -> a -> a -> a -> Boolean
+export checkCompare = (check, a, b, c) => where(validateCompare(check, a, b, c)) {
+  #[ref, antiSym, trans] =>
+    ref && antiSym && trans
+}

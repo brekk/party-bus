@@ -1,0 +1,35 @@
+import { EQ, GT, LT } from "Compare"
+
+import Study from "Study"
+
+import { validateCompare } from "@/Compare"
+
+
+
+ascending = (a, b) => a == b ? EQ : a < b ? LT : GT
+descending = (a, b) => a == b ? EQ : a > b ? LT : GT
+
+modulus = (a, _) => a % 2 == 0 ? EQ : GT
+
+testValidate = Study.report(Study.caseN4(validateCompare))
+
+testValidate(
+  "validateCompare - numeric",
+  [
+    #[#[ascending, 0, 1, 2], #[true, true, true]],
+    #[#[ascending, 0, 0, 0], #[true, true, true]],
+    #[#[ascending, 2, 1, 0], #[true, true, true]],
+    #[#[descending, 0, 1, 2], #[true, true, true]],
+    #[#[descending, 0, 0, 0], #[true, true, true]],
+    #[#[descending, 2, 1, 0], #[true, true, true]],
+  ],
+)
+
+testValidate(
+  "validateCompare - modulus",
+  [
+    #[#[modulus, 0, 1, 2], #[false, false, true]],
+    #[#[modulus, 0, 0, 0], #[true, true, true]],
+    #[#[modulus, 2, 1, 0], #[false, false, true]],
+  ],
+)

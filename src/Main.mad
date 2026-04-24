@@ -54,7 +54,9 @@ solo = () => {
     },
     TAGS.sell,
   )
-  sellLog("selling?", GOODS.cookie)
+  o = sellLog("selling?", GOODS.cookie)
+  IO.pTrace("OOOO", o)
+
   sellTrace = PB.dateTaggedSignal(TAGS.sell)
   sellTrace("selling!", GOODS.rusticBread)
   logWithStyle = Core.configurate(Core.decorateWithStyle, IO.pTrace)
@@ -83,8 +85,9 @@ soloWithCheck = () => {
     GOODS.cookies,
   )
 }
+main = solo
 
-main = () => {
+ok = () => {
   pipe(
     PB.env(TAGS.nested, "hey there!"),
   )("raw")

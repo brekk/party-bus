@@ -14,6 +14,50 @@ import { NoScope, scopeFromList, scopeWithinScope } from "@/Tag/Scope"
 
 
 export type Query = AnyTag | NoTag | Not(Tag) | Exact(Tag)
+
+compareQuery :: Query -> Query -> Comparison
+export compareQuery = (a, b) => where(#[a, b]) {
+  #[AnyTag, _] =>
+    GT
+
+  #[_, AnyTag] =>
+    GT
+
+  // two tags with the same value are equal
+  // otherwise, the second is less
+  #[Exact(Tag(aName, NoScope)), Exact(Tag(bName, NoScope))] =>
+    aName == bName ? EQ : aName < bName ? LT : GT
+
+  // if a scoped tag and an unscoped tag share the same value
+  // the unscoped tag is lower than the scoped one
+  #[Exact(Tag(aName, NoScope)), Exact(Tag(bName, _))] =>
+    aName == bName ? LT : aName < bName ? LT : GT
+
+  #[Exact(Tag(aName, aScope)), Exact(Tag(bName, bScope))] =>
+    // if they share the same name
+    if (aName == bName) {
+      // higher nested scope is higher
+      if (scopeWithinScope(aScope, bScope)) {
+        GT
+      } else {
+        // or equal
+        EQ
+      }
+    } else {
+      aName < bName ? LT : GT
+    }
+
+  // we only care if the names match and one is negated
+
+  #[Exact(Tag(aName, _)), Not(Tag(bName, _))] =>
+    aName == bName ? EQ : aName < bName ? LT : GT
+
+  #[Not(Tag(aName, _)), Exact(Tag(bName, _))] =>
+    LT
+
+  _ =>
+    LT
+}
 instance Comparable Query {
   compare = compareQuery
 }
@@ -78,39 +122,7 @@ export fromString = (_part) => if (_part == "*") {
   )(part)
 }
 
-compareQuery :: Query -> Query -> Comparison
-export compareQuery = (a, b) => where(#[a, b]) {
-  #[AnyTag, _] =>
-    GT
 
-  #[_, AnyTag] =>
-    GT
-
-  #[Exact(Tag(aName, NoScope)), Exact(Tag(bName, _))] =>
-    aName == bName ? GT : EQ
-
-  #[Exact(Tag(aName, aScope)), Exact(Tag(bName, bScope))] =>
-    if (bName == aName) {
-      if (scopeWithinScope(aScope, bScope)) {
-        GT
-      } else {
-        LT
-      }
-    } else {
-      LT
-    }
-
-  // we only care if the names match and one is negated
-
-  #[Exact(Tag(aName, _)), Not(Tag(bName, _))] =>
-    aName == bName ? LT : EQ
-
-  #[Not(Tag(aName, _)), Exact(Tag(bName, _))] =>
-    aName == bName ? LT : EQ
-
-  _ =>
-    LT
-}
 
 manyFromString :: String -> List Query
 export manyFromString = pipe(
@@ -163,7 +175,7 @@ export anyTagMatches = (xs, t) => {
     List.filter(lt($, t)),
     trace("under"),
   )(xs)
-  noneUnder = pipe(
+  noneUnderIndex = pipe(
     List.isEmpty,
     trace("\tmatched under"),
   )(under)
@@ -171,15 +183,18 @@ export anyTagMatches = (xs, t) => {
     List.filter(gt($, t)),
     trace("over"),
   )(xs)
-  someOver = pipe(
+  someOverIndex = pipe(
     complement(List.isEmpty),
     trace("\tmatched over"),
   )(over)
-  if (someOver || noneUnder) do {
+  return if (someOverIndex || noneUnderIndex) do {
     matches = List.any((o) => List.any(lt($, o), over))(under)
+
     IO.pTrace("MATCHES", matches)
+    return someOverIndex && noneUnderIndex
+  } else {
+    IO.pTrace("OTHERWISE", someOverIndex && noneUnderIndex)
   }
-  return someOver && noneUnder
 }
 
 checkEnvironment :: List Query -> Tag -> Boolean

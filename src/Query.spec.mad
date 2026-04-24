@@ -34,23 +34,33 @@ report(
     #["-alpha:beta:delta:gamma", notWithScope("alpha", ["beta", "delta", "gamma"])],
   ],
 )
-
-report(
-  caseN2(compareQuery),
+testCompareQuery = report(caseN2(compareQuery))
+testCompareQuery(
+  "compareQuery - * is always higher",
+  [#[#[AnyTag, NoTag], GT], #[#[NoTag, AnyTag], GT]],
+)
+testCompareQuery(
+  "compareQuery - identical queries are equal",
+  [
+    #[#[exact("yo"), exact("yo")], EQ],
+    #[#[exactWithScope("a", ["b", "c"]), exactWithScope("a", ["b", "c"])], EQ],
+  ],
+)
+testCompareQuery(
+  "compareQuery - two dissimilar queries compare base tags",
+  [#[#[exact("yo"), exact("no")], GT], #[#[exact("no"), exact("yo")], LT]],
+)
+testCompareQuery(
   "compareQuery",
   [
-    #[#[AnyTag, NoTag], GT],
-    #[#[NoTag, AnyTag], GT],
-    #[#[exact("yo"), exact("yo")], GT],
-    #[#[exact("yo"), exact("no")], EQ],
     #[#[exactWithScope("a", ["b"]), exactWithScope("a", ["b"])], GT],
     #[#[exactWithScope("a", ["b"]), exactWithScope("a", ["b", "c"])], GT],
-    #[#[exactWithScope("a", ["b", "c"]), exactWithScope("a", ["b"])], LT],
+    #[#[exactWithScope("a", ["b", "c"]), exactWithScope("a", ["b"])], EQ],
     #[#[exactWithScope("a", ["b"]), exactWithScope("b", ["a"])], LT],
-    #[#[exactWithScope("a", ["b"]), not("a")], LT],
-    #[#[exactWithScope("a", ["b"]), not("b")], EQ],
+    #[#[exactWithScope("a", ["b"]), not("a")], EQ],
+    #[#[exactWithScope("a", ["b"]), not("b")], LT],
     #[#[notWithScope("a", ["b"]), exact("a")], LT],
-    #[#[notWithScope("a", ["b"]), exact("b")], EQ],
+    #[#[notWithScope("a", ["b"]), exact("b")], LT],
     #[#[notWithScope("ortho", ["split"]), exactWithScope("ortho", ["split", "camel"])], LT],
     #[#[exactWithScope("a", ["b"]), NoTag], LT],
   ],
@@ -99,9 +109,9 @@ report(
 // but exclude a nested selector
 // https://github.com/brekk/party-bus/issues/3
 
-report(
-  caseN2(anyTagMatches),
-  "anyTagMatches - issues/3",
+testAnyTagMatches = report(caseN2(anyTagMatches))
+testAnyTagMatches(
+  "anyTagMatches - issues/3 - ortho,-ortho:split will not print ortho:split:camel",
   [
     #[
       #[
@@ -110,6 +120,11 @@ report(
       ],
       false,
     ],
+  ],
+)
+testAnyTagMatches(
+  "anyTagMatches - issues/3 - scorpion,-scorpion:thorax,spider,-scorpion:pedipalp:hair will print spider:pedipalp",
+  [
     #[
       #[
         [
@@ -122,6 +137,11 @@ report(
       ],
       true,
     ],
+  ],
+)
+testAnyTagMatches(
+  "anyTagMatches - issues/3 - scorpion,-scorpion:thorax,spider,-scorpion:pedipalp:hair will print spider:cool:dope:nice",
+  [
     #[
       #[
         [
@@ -136,9 +156,11 @@ report(
     ],
   ],
 )
-report(
-  caseN2(checkEnvironment),
-  "checkEnvironment - issues/3",
+
+testEnv = report(caseN2(checkEnvironment))
+
+testEnv(
+  "checkEnvironment - issues/3 - ortho,-ortho:split will not print ortho:split:camel",
   [
     #[
       #[
@@ -147,10 +169,20 @@ report(
       ],
       false,
     ],
+  ],
+)
+testEnv(
+  "checkEnvironment - issues/3 - ortho,-ortho:split will not print ortho:split",
+  [
     #[
       #[[exact("ortho"), notWithScope("ortho", ["split"])], tagWithScope("ortho", ["split"])],
       false,
     ],
+  ],
+)
+testEnv(
+  "checkEnvironment - issues/3 - ortho,-ortho:split will not print ortho:split:camel:detail",
+  [
     #[
       #[
         [exact("ortho"), notWithScope("ortho", ["split"])],
@@ -158,6 +190,11 @@ report(
       ],
       false,
     ],
+  ],
+)
+testEnv(
+  "checkEnvironment - issues/3 - scorpion,-scorpion:split will print scorpion:a:different:route",
+  [
     #[
       #[
         [exact("scorpion"), notWithScope("scorpion", ["split"])],
@@ -165,6 +202,21 @@ report(
       ],
       true,
     ],
-    #[#[[exact("scorpion"), notWithScope("scorpion", ["split"])], tag("scorpion")], true],
   ],
+)
+testEnv(
+  "checkEnvironment - issues/3 - *,-scorpion:split will print scorpion:a:different:route",
+  [
+    #[
+      #[
+        [AnyTag, notWithScope("scorpion", ["split"])],
+        tagWithScope("scorpion", ["a", "different", "route"]),
+      ],
+      true,
+    ],
+  ],
+)
+testEnv(
+  "checkEnvironment - issues/3 - scorpion,-scorpion:split will print scorpion",
+  [#[#[[exact("scorpion"), notWithScope("scorpion", ["split"])], tag("scorpion")], true]],
 )

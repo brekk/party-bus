@@ -36,12 +36,16 @@ export scopeLength = where {
   NoScope =>
     0
 }
+import IO from "IO"
+
+
 
 scopeWithinScope :: Scope -> Scope -> Boolean
 export scopeWithinScope = (a, z) => where(#[a, z]) {
   #[Scope(outer), Scope(inner)] =>
     pipe(
       List.difference(outer),
+      IO.pTrace("DIF FID"),
       List.isEmpty,
     )(inner)
 

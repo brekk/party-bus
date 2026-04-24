@@ -1,0 +1,31 @@
+import { EQ, GT, LT } from "Compare"
+import IO from "IO"
+import List from "List"
+
+import Q from "@/Query"
+import { Tag, tagWithScope } from "@/Tag"
+
+
+
+export main = () => {
+  smokeTest = List.sortBy((a, b) => a % 2 == 0 ? GT : EQ, List.range(0, 40))
+  IO.pTrace("SMOKE", smokeTest)
+
+  legend = pipe(
+    IO.pTrace("before"),
+    List.sortBy(Q.compareQuery),
+    IO.pTrace("after"),
+  )([
+    Q.notWithScope("wolf", ["urine"]),
+    Q.exactWithScope("fox", ["cunning"]),
+    Q.exact("fox"),
+    Q.not("wolf"),
+    Q.notWithScope("mouse", ["scent"]),
+    Q.exactWithScope("fox", ["hunger"]),
+  ])
+  pipe(
+    IO.pTrace("would this tag"),
+    Q.checkEnvironment(legend),
+    IO.pTrace("get run?"),
+  )(tagWithScope("fox", ["cunning"]))
+}

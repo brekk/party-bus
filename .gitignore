@@ -4,3 +4,4 @@ build
 .repl
 .module_cache
 madlib_modules
+src/*.mjs

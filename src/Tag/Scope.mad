@@ -1,3 +1,6 @@
+import { EQ, GT, LT } from "Compare"
+import Fn from "Function"
+import IO from "IO"
 import { isEmpty } from "List"
 import List from "List"
 import String from "String"
@@ -5,6 +8,43 @@ import String from "String"
 
 
 export type Scope = Scope(List String) | NoScope
+
+
+
+compareScopes = (a, b) => {
+  return where(#[a, b]) {
+    #[NoScope, NoScope] =>
+      EQ
+
+    #[NoScope, Scope(_)] =>
+      LT
+
+    #[Scope(_), NoScope] =>
+      GT
+
+    #[Scope(_a), Scope(_b)] =>
+      pipe(
+        List.difference(_a),
+        Fn.ifElse(List.isEmpty, Fn.always(EQ), Fn.always(GT)),
+      )(_b)
+  }
+}
+
+instance Comparable Scope {
+  compare = compareScopes
+}
+
+scopeWithinScope :: Scope -> Scope -> Boolean
+export scopeWithinScope = (a, z) => where(#[a, z]) {
+  #[Scope(outer), Scope(inner)] =>
+    pipe(
+      List.difference(outer),
+      List.isEmpty,
+    )(inner)
+
+  #[_, _] =>
+    false
+}
 
 export checkScopeList = pipe(
   map(String.trim),
@@ -35,22 +75,6 @@ export scopeLength = where {
 
   NoScope =>
     0
-}
-import IO from "IO"
-
-
-
-scopeWithinScope :: Scope -> Scope -> Boolean
-export scopeWithinScope = (a, z) => where(#[a, z]) {
-  #[Scope(outer), Scope(inner)] =>
-    pipe(
-      List.difference(outer),
-      IO.pTrace("DIF FID"),
-      List.isEmpty,
-    )(inner)
-
-  #[_, _] =>
-    false
 }
 
 /*

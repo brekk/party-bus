@@ -58,9 +58,11 @@ export compareQuery = (a, b) => where(#[a, b]) {
   _ =>
     LT
 }
-instance Comparable Query {
-  compare = compareQuery
-}
+// instance Comparable Query {
+//   compare = compareQuery
+// }
+
+derive Comparable Query
 
 // SUGAR
 

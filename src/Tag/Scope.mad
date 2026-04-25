@@ -8,10 +8,32 @@ import String from "String"
 
 
 export type Scope = Scope(List String) | NoScope
+// pipe(
+//   List.difference(_a),
+//   Fn.ifElse(List.isEmpty, Fn.always(LT), Fn.always(GT)),
+// )(_b)
 
+walkBoth = (ax, bx) => where(#[ax, bx]) {
+  #[[a, ...ay], [b, ...by]] =>
+    if (!List.isEmpty(ay) && !List.isEmpty(by)) {
+      IO.pTrace("walk further! " ++ a ++ " is shared between both...", walkBoth(ay, by))
+    } else do {
+      out = a == b ? EQ : a < b ? LT : GT
+      IO.pTrace("raw!", #[a, ay, b, by])
+      return out
+    }
 
+  #[[], []] =>
+    EQ
 
-compareScopes = (a, b) => {
+  #[[], _] =>
+    LT
+
+  #[_, []] =>
+    GT
+}
+
+export compareScopes = (a, b) => {
   return where(#[a, b]) {
     #[NoScope, NoScope] =>
       EQ
@@ -23,15 +45,20 @@ compareScopes = (a, b) => {
       GT
 
     #[Scope(_a), Scope(_b)] =>
-      pipe(
-        List.difference(_a),
-        Fn.ifElse(List.isEmpty, Fn.always(EQ), Fn.always(GT)),
-      )(_b)
+      walkBoth(_a, _b)
   }
 }
 
 instance Comparable Scope {
   compare = compareScopes
+}
+
+export isNoScope = where {
+  NoScope =>
+    true
+
+  _ =>
+    false
 }
 
 scopeWithinScope :: Scope -> Scope -> Boolean
@@ -76,14 +103,3 @@ export scopeLength = where {
   NoScope =>
     0
 }
-
-/*
-concrete :: Scope -> List String
-export concrete = where {
-  Scope(raw) =>
-    raw
-
-  _ =>
-    []
-}
-*/

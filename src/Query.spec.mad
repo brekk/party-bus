@@ -35,10 +35,14 @@ report(
   ],
 )
 testCompareQuery = report(caseN2(compareQuery))
+
+testCompareQuery("compareQuery - * is greater", [#[#[AnyTag, NoTag], GT], #[#[NoTag, AnyTag], LT]])
 testCompareQuery(
-  "compareQuery - * is always higher",
-  [#[#[AnyTag, NoTag], GT], #[#[NoTag, AnyTag], GT]],
+  "compareQuery - NoTag is lesser",
+  [#[#[exact("huh"), NoTag], GT], #[#[NoTag, exact("yes")], LT]],
 )
+
+
 testCompareQuery(
   "compareQuery - identical queries are equal",
   [
@@ -48,22 +52,32 @@ testCompareQuery(
 )
 testCompareQuery(
   "compareQuery - two dissimilar queries compare base tags",
-  [#[#[exact("yo"), exact("no")], GT], #[#[exact("no"), exact("yo")], LT]],
+  [
+    #[#[exact("yo"), exact("no")], GT],
+    #[#[exact("no"), exact("yo")], LT],
+    #[#[exactWithScope("a", ["b"]), exactWithScope("b", ["a"])], LT],
+  ],
 )
 testCompareQuery(
-  "compareQuery",
+  "compareQuery - same base comparisons",
   [
-    #[#[exactWithScope("a", ["b"]), exactWithScope("a", ["b"])], GT],
-    #[#[exactWithScope("a", ["b"]), exactWithScope("a", ["b", "c"])], GT],
+    #[#[exactWithScope("a", ["b"]), exactWithScope("a", ["b", "c"])], EQ],
     #[#[exactWithScope("a", ["b", "c"]), exactWithScope("a", ["b"])], EQ],
-    #[#[exactWithScope("a", ["b"]), exactWithScope("b", ["a"])], LT],
-    #[#[exactWithScope("a", ["b"]), not("a")], EQ],
-    #[#[exactWithScope("a", ["b"]), not("b")], LT],
-    #[#[notWithScope("a", ["b"]), exact("a")], LT],
-    #[#[notWithScope("a", ["b"]), exact("b")], LT],
-    #[#[notWithScope("ortho", ["split"]), exactWithScope("ortho", ["split", "camel"])], LT],
-    #[#[exactWithScope("a", ["b"]), NoTag], LT],
   ],
+)
+testCompareQuery(
+  "compareQuery - negated scopes",
+  [
+    #[#[exactWithScope("a", ["b"]), not("a")], GT],
+    #[#[exactWithScope("a", ["b"]), not("b")], LT],
+    #[#[notWithScope("a", ["b"]), exact("a")], GT],
+    #[#[notWithScope("a", ["b"]), exact("b")], LT],
+    #[#[notWithScope("ortho", ["split"]), exactWithScope("ortho", ["split", "camel"])], EQ],
+  ],
+)
+testCompareQuery(
+  "compareQuery - NoTag",
+  [#[#[exactWithScope("a", ["b"]), NoTag], GT], #[#[NoTag, exact("a")], LT]],
 )
 
 

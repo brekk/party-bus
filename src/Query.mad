@@ -9,60 +9,60 @@ import { fromMaybe } from "Maybe"
 import String from "String"
 
 import { Tag, tag, tagWithScope } from "@/Tag"
-import { NoScope, scopeFromList, scopeWithinScope } from "@/Tag/Scope"
+import { NoScope, compareScopes, scopeFromList, scopeWithinScope } from "@/Tag/Scope"
 
 
 
 export type Query = AnyTag | NoTag | Not(Tag) | Exact(Tag)
 
+
+compareSubScopes = (aName, aScope, bName, bScope) => {
+  // if they share the same name
+  return if (aName == bName) {
+    // higher nested scope is higher
+    compareScopes(aScope, bScope)
+  } else {
+    aName < bName ? LT : GT
+  }
+}
+
 compareQuery :: Query -> Query -> Comparison
 export compareQuery = (a, b) => where(#[a, b]) {
+  #[NoTag, _] =>
+    LT
+
+  #[_, NoTag] =>
+    GT
+
   #[AnyTag, _] =>
     GT
 
   #[_, AnyTag] =>
-    GT
+    LT
 
   // two tags with the same value are equal
   // otherwise, the second is less
   #[Exact(Tag(aName, NoScope)), Exact(Tag(bName, NoScope))] =>
     aName == bName ? EQ : aName < bName ? LT : GT
 
-  // if a scoped tag and an unscoped tag share the same value
-  // the unscoped tag is lower than the scoped one
-  #[Exact(Tag(aName, NoScope)), Exact(Tag(bName, _))] =>
-    aName == bName ? LT : aName < bName ? LT : GT
-
   #[Exact(Tag(aName, aScope)), Exact(Tag(bName, bScope))] =>
-    // if they share the same name
-    if (aName == bName) {
-      // higher nested scope is higher
-      if (scopeWithinScope(aScope, bScope)) {
-        GT
-      } else {
-        // or equal
-        EQ
-      }
-    } else {
-      aName < bName ? LT : GT
-    }
+    compareSubScopes(aName, aScope, bName, bScope)
 
   // we only care if the names match and one is negated
 
-  #[Exact(Tag(aName, _)), Not(Tag(bName, _))] =>
-    aName == bName ? EQ : aName < bName ? LT : GT
+  #[Exact(Tag(aName, aScope)), Not(Tag(bName, bScope))] =>
+    compareSubScopes(aName, aScope, bName, bScope)
 
-  #[Not(Tag(aName, _)), Exact(Tag(bName, _))] =>
-    LT
+  #[Not(Tag(aName, aScope)), Exact(Tag(bName, bScope))] =>
+    compareSubScopes(aName, aScope, bName, bScope)
 
-  _ =>
-    LT
+  #[Not(Tag(aName, aScope)), Not(Tag(bName, bScope))] =>
+    compareSubScopes(aName, aScope, bName, bScope)
 }
-// instance Comparable Query {
-//   compare = compareQuery
-// }
+instance Comparable Query {
+  compare = compareQuery
+}
 
-derive Comparable Query
 
 // SUGAR
 
@@ -157,45 +157,27 @@ import IO from "IO"
 
 
 anyTagMatches :: List Query -> Query -> Boolean
-export anyTagMatches = (xs, t) => {
-  trace = (msg, u) => where(t) {
-    Exact(Tag(x, _)) =>
-      if (x == "scorpion" || x == "spider") {
-        if (String.contains("over", msg)) {
-          IO.pTrace(IO.yellow(msg), u)
-        } else {
-          IO.pTrace(IO.green(msg), u)
-        }
-      } else {
-        u
-      }
-
-    _ =>
-      u
-  }
+export anyTagMatches = (xs, t) => if (t == AnyTag) {
+  true
+} else do {
   under = pipe(
     List.filter(lt($, t)),
-    trace("under"),
   )(xs)
   noneUnderIndex = pipe(
     List.isEmpty,
-    trace("\tmatched under"),
   )(under)
   over = pipe(
     List.filter(gt($, t)),
-    trace("over"),
   )(xs)
   someOverIndex = pipe(
     complement(List.isEmpty),
-    trace("\tmatched over"),
   )(over)
   return if (someOverIndex || noneUnderIndex) do {
     matches = List.any((o) => List.any(lt($, o), over))(under)
 
-    IO.pTrace("MATCHES", matches)
-    return someOverIndex && noneUnderIndex
+    return matches || someOverIndex && noneUnderIndex
   } else {
-    IO.pTrace("OTHERWISE", someOverIndex && noneUnderIndex)
+    someOverIndex && noneUnderIndex
   }
 }
 

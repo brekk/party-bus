@@ -3,6 +3,8 @@ import { EQ, GT, LT } from "Compare"
 import Study from "Study"
 
 import { validateCompare } from "@/Compare"
+import Q from "@/Query"
+import Scope from "@/Tag/Scope"
 
 
 
@@ -11,25 +13,74 @@ descending = (a, b) => a == b ? EQ : a > b ? LT : GT
 
 modulus = (a, _) => a % 2 == 0 ? EQ : GT
 
+fullyValid = { reflexive: true, antisymmetric: true, transitive: true }
+
 testValidate = Study.report(Study.caseN4(validateCompare))
 
 testValidate(
   "validateCompare - numeric",
   [
-    #[#[ascending, 0, 1, 2], #[true, true, true]],
-    #[#[ascending, 0, 0, 0], #[true, true, true]],
-    #[#[ascending, 2, 1, 0], #[true, true, true]],
-    #[#[descending, 0, 1, 2], #[true, true, true]],
-    #[#[descending, 0, 0, 0], #[true, true, true]],
-    #[#[descending, 2, 1, 0], #[true, true, true]],
+    #[#[ascending, 0, 1, 2], fullyValid],
+    #[#[ascending, 0, 0, 0], fullyValid],
+    #[#[ascending, 2, 1, 0], fullyValid],
+    #[#[descending, 0, 1, 2], fullyValid],
+    #[#[descending, 0, 0, 0], fullyValid],
+    #[#[descending, 2, 1, 0], fullyValid],
   ],
 )
 
 testValidate(
   "validateCompare - modulus",
   [
-    #[#[modulus, 0, 1, 2], #[false, false, true]],
-    #[#[modulus, 0, 0, 0], #[true, true, true]],
-    #[#[modulus, 2, 1, 0], #[false, false, true]],
+    #[#[modulus, 0, 1, 2], { reflexive: false, antisymmetric: false, transitive: true }],
+    #[#[modulus, 0, 0, 0], fullyValid],
+    #[#[modulus, 2, 1, 0], { reflexive: false, antisymmetric: false, transitive: true }],
+  ],
+)
+
+testValidate(
+  "validateCompare - compareQuery - a vs. a:b vs. a:c",
+  [
+    #[
+      #[Q.compareQuery, Q.exact("a"), Q.exactWithScope("a", ["b"]), Q.exactWithScope("a", ["c"])],
+      fullyValid,
+    ],
+  ],
+)
+
+testValidate(
+  "validateCompare - compareQuery - a:a vs. a:b vs. a:c",
+  [
+    #[
+      #[
+        Q.compareQuery,
+        Q.exactWithScope("a", ["a"]),
+        Q.exactWithScope("a", ["b"]),
+        Q.exactWithScope("a", ["c"]),
+      ],
+      fullyValid,
+    ],
+  ],
+)
+
+testValidate(
+  "validateCompare - compareQuery - a vs. b vs. c",
+  [#[#[Q.compareQuery, Q.exact("a"), Q.exact("b"), Q.exact("c")], fullyValid]],
+)
+
+NoScope = Scope.NoScope
+Sight = Scope.Scope
+
+testScopes = Study.report(Study.caseN3(validateCompare(Scope.compareScopes)))
+testScopes(
+  "validateCompare - compareScopes",
+  [
+    #[#[NoScope, NoScope, NoScope], fullyValid],
+    #[#[Sight(["ant"]), Sight(["buffalo"]), Sight(["caiman"])], fullyValid],
+    #[#[Sight(["ant", "ant"]), Sight(["ant", "buffalo"]), Sight(["ant", "caiman"])], fullyValid],
+    #[
+      #[Sight(["ant", "buffalo"]), Sight(["buffalo", "caiman"]), Sight(["ant", "caiman"])],
+      fullyValid,
+    ],
   ],
 )

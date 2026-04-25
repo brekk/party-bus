@@ -16,10 +16,9 @@ export type Scope = Scope(List String) | NoScope
 walkBoth = (ax, bx) => where(#[ax, bx]) {
   #[[a, ...ay], [b, ...by]] =>
     if (!List.isEmpty(ay) && !List.isEmpty(by)) {
-      IO.pTrace("walk further! " ++ a ++ " is shared between both...", walkBoth(ay, by))
+      walkBoth(ay, by)
     } else do {
       out = a == b ? EQ : a < b ? LT : GT
-      IO.pTrace("raw!", #[a, ay, b, by])
       return out
     }
 

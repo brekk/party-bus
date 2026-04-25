@@ -8,7 +8,7 @@ import { Tag, tagWithScope } from "@/Tag"
 
 
 export main = () => {
-  smokeTest = List.sortBy((a, b) => a % 2 == 0 ? GT : EQ, List.range(0, 40))
+  smokeTest = List.sortBy((a, _) => a % 2 == 0 ? GT : EQ, List.range(0, 40))
   IO.pTrace("SMOKE", smokeTest)
 
   legend = pipe(
@@ -16,16 +16,23 @@ export main = () => {
     List.sortBy(Q.compareQuery),
     IO.pTrace("after"),
   )([
+    Q.exact("weather"),
+    Q.exact("sunlight"),
+    Q.notWithScope("weather", ["sunny"]),
+    Q.notWithScope("mouse", ["scent"]),
+    Q.exact("plant"),
+    Q.notWithScope("plant", ["biology"]),
+    Q.exactWithScope("plant", ["biology", "spore"]),
+    Q.exact("mouse"),
     Q.notWithScope("wolf", ["urine"]),
     Q.exactWithScope("fox", ["cunning"]),
     Q.exact("fox"),
     Q.not("wolf"),
-    Q.notWithScope("mouse", ["scent"]),
     Q.exactWithScope("fox", ["hunger"]),
   ])
   pipe(
-    IO.pTrace("would this tag"),
+    IO.pTrace("### would this tag"),
     Q.checkEnvironment(legend),
-    IO.pTrace("get run?"),
+    IO.pTrace("### get run?"),
   )(tagWithScope("fox", ["cunning"]))
 }

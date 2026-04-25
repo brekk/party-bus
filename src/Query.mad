@@ -16,6 +16,32 @@ import { NoScope, compareScopes, scopeFromList, scopeWithinScope } from "@/Tag/S
 
 export type Query = AnyTag | NoTag | Not(Tag) | Exact(Tag)
 
+export isConcrete = where {
+  AnyTag =>
+    false
+
+  NoTag =>
+    false
+
+  _ =>
+    true
+}
+
+export isMagic = Fn.complement(isConcrete)
+
+export ref = where {
+  Not(Tag(s, _)) =>
+    s
+
+  Exact(Tag(s, _)) =>
+    s
+
+  AnyTag =>
+    "__PARTY_BUS_ANY_TAG__"
+
+  NoTag =>
+    "__PARTY_BUS_ANY_TAG__"
+}
 
 compareSubScopes = (aName, aScope, aNeg, bName, bScope, bNeg) => {
   // if they share the same name
@@ -59,8 +85,6 @@ export compareQuery = (a, b) => where(#[a, b]) {
 
   #[Exact(Tag(aName, aScope)), Exact(Tag(bName, bScope))] =>
     compareSubScopes(aName, aScope, false, bName, bScope, false)
-
-  // we only care if the names match and one is negated
 
   #[Exact(Tag(aName, aScope)), Not(Tag(bName, bScope))] =>
     compareSubScopes(aName, aScope, false, bName, bScope, true)
@@ -168,32 +192,80 @@ import IO from "IO"
 
 
 
-anyTagMatches :: List Query -> Query -> Boolean
-export anyTagMatches = (xs, t) => if (t == AnyTag) {
-  true
-} else do {
-  under = pipe(
-    List.filter(lt($, t)),
-  )(xs)
-  noneUnderIndex = pipe(
-    List.isEmpty,
-  )(under)
-  over = pipe(
-    List.filter(Fn.either(gt($, t), Fn.equals(t))),
-  )(xs)
-  someOverIndex = pipe(
-    complement(List.isEmpty),
-  )(over)
-  return if (someOverIndex || noneUnderIndex) do {
-    matches = List.any((o) => List.any(lt($, o), over))(under)
+gte = (a, b) => Fn.either(gt($, a), Fn.equals(a))(b)
 
-    return matches || someOverIndex && noneUnderIndex
-  } else {
-    someOverIndex && noneUnderIndex
+
+// we need to aggregate results across things?
+// yeah, because we're not comparing _all queries_
+// we're comparing a defined subset of queries
+// and the queries themselves don't have to be useful
+// though they have to be logically consistent
+anyTagMatches :: List Query -> Query -> Boolean
+export anyTagMatches = (_xs, t) => {
+  return if (t == AnyTag) {
+    IO.pTrace("ANY TAG", true)
+  } else if (t == NoTag) {
+    IO.pTrace("NO TAG", false)
+  } else if (List.includes(t, _xs)) {
+    IO.pTrace("MATCHES EXACTLY", true)
+  } else do {
+    // I think we can't guarantee the directionality of this problem at this level?
+    // maybe only under the same ref
+    xs = pipe(
+      List.filter(
+        pipe(
+          ref,
+          Fn.equals(ref(t)),
+        ),
+      ),
+      List.sortBy(compareQuery),
+    )(_xs)
+
+
+    under = pipe(
+      List.filter(lt($, t)),
+    )(xs)
+    noneUnderIndex = pipe(
+      List.isEmpty,
+    )(under)
+    over = pipe(
+      List.filter(gte(t)),
+    )(xs)
+    someOverIndex = pipe(
+      complement(List.isEmpty),
+    )(over)
+    magicNumber = pipe(
+      List.mapWithIndex((x, i) => #[x == t, i, x]),
+      List.filter((#[v, i, x]) => v),
+      where {
+        [#[_, i, x]] =>
+          i
+
+        _ =>
+          -1
+      },
+    )(xs)
+
+    IO.pTrace("does the tag", t)
+    IO.pTrace("match any tag in this list?", xs)
+    // IO.pTrace("THREE IS THE", magicNumber)
+    List.mapWithIndex(
+      (x, i) => IO.log(show(i) ++ ": " ++ (i == magicNumber ? "-->" : "") ++ show(x)),
+      xs,
+    )
+    IO.pTrace("   ^||>", under)
+    IO.pTrace("    ||>", t)
+    IO.pTrace("   $||>", over)
+    return if (someOverIndex || noneUnderIndex) do {
+      matches = List.any((o) => List.any(lt($, o), over))(under)
+
+      return matches || someOverIndex && noneUnderIndex
+    } else {
+      someOverIndex && noneUnderIndex
+    }
   }
 }
 
-// we need to aggregate results across things?
 checkEnvironment :: List Query -> Tag -> Boolean
 export checkEnvironment = (legend, t) => {
   return anyTagMatches(legend, Exact(t))

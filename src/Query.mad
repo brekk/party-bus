@@ -202,25 +202,18 @@ gte = (a, b) => Fn.either(gt($, a), Fn.equals(a))(b)
 // though they have to be logically consistent
 anyTagMatches :: List Query -> Query -> Boolean
 export anyTagMatches = (_xs, t) => {
+  xs = pipe(
+    List.sortBy(compareQuery),
+  )(_xs)
   return if (t == AnyTag) {
-    IO.pTrace("ANY TAG", true)
+    true
   } else if (t == NoTag) {
-    IO.pTrace("NO TAG", false)
+    false
   } else if (List.includes(t, _xs)) {
-    IO.pTrace("MATCHES EXACTLY", true)
+    true
   } else do {
     // I think we can't guarantee the directionality of this problem at this level?
     // maybe only under the same ref
-    xs = pipe(
-      List.filter(
-        pipe(
-          ref,
-          Fn.equals(ref(t)),
-        ),
-      ),
-      List.sortBy(compareQuery),
-    )(_xs)
-
 
     under = pipe(
       List.filter(lt($, t)),

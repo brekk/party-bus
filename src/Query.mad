@@ -3,6 +3,7 @@ import type { Comparison } from "Compare"
 import type { Tag } from "@/Tag"
 
 import { EQ, GT, LT, gt, lt } from "Compare"
+import Fn from "Function"
 import { complement, equals } from "Function"
 import List from "List"
 import { fromMaybe } from "Maybe"
@@ -16,11 +17,22 @@ import { NoScope, compareScopes, scopeFromList, scopeWithinScope } from "@/Tag/S
 export type Query = AnyTag | NoTag | Not(Tag) | Exact(Tag)
 
 
-compareSubScopes = (aName, aScope, bName, bScope) => {
+compareSubScopes = (aName, aScope, aNeg, bName, bScope, bNeg) => {
   // if they share the same name
-  return if (aName == bName) {
+  return if (aName == bName) do {
     // higher nested scope is higher
-    compareScopes(aScope, bScope)
+    comp = compareScopes(aScope, bScope)
+    return if (aNeg && !bNeg) {
+      if (comp == LT) {
+        GT
+      } else if (comp == GT) {
+        LT
+      } else {
+        EQ
+      }
+    } else {
+      comp
+    }
   } else {
     aName < bName ? LT : GT
   }
@@ -46,18 +58,18 @@ export compareQuery = (a, b) => where(#[a, b]) {
     aName == bName ? EQ : aName < bName ? LT : GT
 
   #[Exact(Tag(aName, aScope)), Exact(Tag(bName, bScope))] =>
-    compareSubScopes(aName, aScope, bName, bScope)
+    compareSubScopes(aName, aScope, false, bName, bScope, false)
 
   // we only care if the names match and one is negated
 
   #[Exact(Tag(aName, aScope)), Not(Tag(bName, bScope))] =>
-    compareSubScopes(aName, aScope, bName, bScope)
+    compareSubScopes(aName, aScope, false, bName, bScope, true)
 
   #[Not(Tag(aName, aScope)), Exact(Tag(bName, bScope))] =>
-    compareSubScopes(aName, aScope, bName, bScope)
+    compareSubScopes(aName, aScope, true, bName, bScope, false)
 
   #[Not(Tag(aName, aScope)), Not(Tag(bName, bScope))] =>
-    compareSubScopes(aName, aScope, bName, bScope)
+    compareSubScopes(aName, aScope, false, bName, bScope, false)
 }
 instance Comparable Query {
   compare = compareQuery
@@ -167,7 +179,7 @@ export anyTagMatches = (xs, t) => if (t == AnyTag) {
     List.isEmpty,
   )(under)
   over = pipe(
-    List.filter(gt($, t)),
+    List.filter(Fn.either(gt($, t), Fn.equals(t))),
   )(xs)
   someOverIndex = pipe(
     complement(List.isEmpty),
@@ -181,5 +193,8 @@ export anyTagMatches = (xs, t) => if (t == AnyTag) {
   }
 }
 
+// we need to aggregate results across things?
 checkEnvironment :: List Query -> Tag -> Boolean
-export checkEnvironment = (legend, t) => anyTagMatches(legend, Exact(t))
+export checkEnvironment = (legend, t) => {
+  return anyTagMatches(legend, Exact(t))
+}

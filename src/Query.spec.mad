@@ -70,7 +70,7 @@ testCompareQuery(
   [
     #[#[exactWithScope("a", ["b"]), not("a")], GT],
     #[#[exactWithScope("a", ["b"]), not("b")], LT],
-    #[#[notWithScope("a", ["b"]), exact("a")], GT],
+    #[#[notWithScope("a", ["b"]), exact("a")], LT],
     #[#[notWithScope("a", ["b"]), exact("b")], LT],
     #[#[notWithScope("ortho", ["split"]), exactWithScope("ortho", ["split", "camel"])], EQ],
   ],
@@ -102,7 +102,7 @@ report(
     #[#[[AnyTag], exact("blah")], true],
     #[#[[NoTag], exact("blah")], false],
     #[#[[exact("blah")], exact("blah")], true],
-    #[#[[exactWithScope("blah", ["blah"])], exact("blah")], false],
+    #[#[[exactWithScope("blah", ["blah"])], exact("blah")], true],
     #[#[[notWithScope("blah", ["blah"])], exact("blah")], false],
   ],
 )
@@ -114,7 +114,7 @@ report(
     #[#[[AnyTag], tag("blah")], true],
     #[#[[NoTag], tag("blah")], false],
     #[#[[exact("blah")], tag("blah")], true],
-    #[#[[exactWithScope("blah", ["blah"])], tag("blah")], false],
+    #[#[[exactWithScope("blah", ["blah"])], tag("blah")], true],
     #[#[[notWithScope("blah", ["blah"])], tag("blah")], false],
   ],
 )

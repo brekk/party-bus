@@ -185,3 +185,9 @@ export bus = keyedEnv("DEBUG")
  */
 env :: Show a => Tag -> String -> a -> a
 export env = bus(DATED_CONFIG)
+
+tap :: (String -> b -> b) -> String -> (a -> b) -> a -> a
+export tap = (spout, msg, taproot, x) => {
+  spout(msg, taproot(x))
+  return x
+}

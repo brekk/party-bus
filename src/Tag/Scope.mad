@@ -1,6 +1,4 @@
 import { EQ, GT, LT } from "Compare"
-import Fn from "Function"
-import IO from "IO"
 import { isEmpty } from "List"
 import List from "List"
 import String from "String"

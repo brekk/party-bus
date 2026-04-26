@@ -188,9 +188,19 @@ export isWild = where {
     false
 }
 
-import IO from "IO"
+/*
+magicNumber = pipe(
+  List.mapWithIndex((x, i) => #[x == t, i, x]),
+  List.filter((#[v, i, x]) => v),
+  where {
+    [#[_, i, x]] =>
+      i
 
-
+    _ =>
+      -1
+  },
+)(xs)
+*/
 
 gte = (a, b) => Fn.either(gt($, a), Fn.equals(a))(b)
 
@@ -227,28 +237,7 @@ export anyTagMatches = (_xs, t) => {
     someOverIndex = pipe(
       complement(List.isEmpty),
     )(over)
-    magicNumber = pipe(
-      List.mapWithIndex((x, i) => #[x == t, i, x]),
-      List.filter((#[v, i, x]) => v),
-      where {
-        [#[_, i, x]] =>
-          i
 
-        _ =>
-          -1
-      },
-    )(xs)
-
-    IO.pTrace("does the tag", t)
-    IO.pTrace("match any tag in this list?", xs)
-    // IO.pTrace("THREE IS THE", magicNumber)
-    List.mapWithIndex(
-      (x, i) => IO.log(show(i) ++ ": " ++ (i == magicNumber ? "-->" : "") ++ show(x)),
-      xs,
-    )
-    IO.pTrace("   ^||>", under)
-    IO.pTrace("    ||>", t)
-    IO.pTrace("   $||>", over)
     return if (someOverIndex || noneUnderIndex) do {
       matches = List.any((o) => List.any(lt($, o), over))(under)
 

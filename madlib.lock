@@ -1,0 +1,21 @@
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "https://github.com/brekk/dye/archive/refs/tags/v0.0.10.zip": {
+      "buildHash": "fbed1ef52bafc05de424c372d4cb244a",
+      "dependencies": [
+        "https://github.com/brekk/study/archive/refs/tags/v0.0.1.zip"
+      ],
+      "name": "dye",
+      "version": "0.0.10",
+      "versionHash": "4d3d03bfb040ab3e2b209e3c62ed614c"
+    },
+    "https://github.com/brekk/study/archive/refs/tags/v0.0.7.zip": {
+      "buildHash": "919dea83a7ccd0a2a11a03e011ecd52e",
+      "dependencies": [],
+      "name": "study",
+      "version": "0.0.7",
+      "versionHash": "18674886c733b8b107f76ff083ead6ea"
+    }
+  }
+}

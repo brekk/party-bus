@@ -12,9 +12,9 @@
       "minVersion": "0.0.10"
     },
     {
-      "url": "https://github.com/brekk/study/archive/refs/tags/v0.0.3.zip",
+      "url": "https://github.com/brekk/study/archive/refs/tags/v0.0.7.zip",
       "description": "Study",
-      "minVersion": "0.0.3"
+      "minVersion": "0.0.7"
     }
   ]
 }

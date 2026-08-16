@@ -5,3 +5,4 @@ build
 .module_cache
 madlib_modules
 src/*.mjs
+.DS_Store

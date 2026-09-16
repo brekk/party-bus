@@ -1,10 +1,11 @@
-import type { Tag } from "@/Tag"
+import type { Tag } from "freitag"
 
 import { now, toISOString } from "Date"
+import List from "List"
+import String from "String"
 
 import { colorize } from "Dye"
-
-import { Tag, serialize } from "@/Tag"
+import Tag from "freitag/Tag"
 
 
 
@@ -13,19 +14,16 @@ import { Tag, serialize } from "@/Tag"
  * @since 0.0.1
  */
 export alias PartyPredicate a = Tag -> String -> a -> Boolean
-
 /**
  * The side-effect to run
  * @since 0.0.1
  */
 export alias SideEffect b = String -> b -> b
-
 /**
  * The message decoration
  * @since 0.0.1
  */
 export alias Decorator a = String -> Tag -> String -> a -> String
-
 /**
  * The configuration of the signal
  * @since 0.0.1
@@ -37,9 +35,7 @@ export alias Config = {
   effect :: SideEffect b,
   seed :: String,
 }
-
 export alias Signal a = Tag -> String -> a -> a
-
 /**
  * The core function that does all the magic of PartyBus.
  * Conditionally call a side-effect with a specific tag, message and value.
@@ -60,22 +56,22 @@ export signalWithConfig = (conf, tag, message, x) => {
       }
   }
 }
-
 /**
  * A shorthand function to always fire the side-effect
  * @since 0.0.1
  */
 always :: PartyPredicate a
 export always = (_, _, _) => true
-
 /**
  * A shorthand function to pass the message unchanged
  * @since 0.0.1
  */
 decorateRaw :: Decorator a
 export decorateRaw = (_, _, m, _) => m
-
-
+serialize = pipe(
+  Tag.toList,
+  String.join(":"),
+)
 /**
  * A means of colorizing a message by tag
  * @since 0.0.1
@@ -85,7 +81,6 @@ export colorizeTag = (seed, x) => pipe(
   serialize,
   (tagId) => colorize(seed, " " ++ tagId ++ " "),
 )(x)
-
 /**
  * Color by tag and prepend to message
  * @since 0.0.1
@@ -95,7 +90,6 @@ export decorateWithStyle = (seed, tag, message, _) => {
   idWithColor = colorizeTag(seed, tag)
   return idWithColor ++ " " ++ message
 }
-
 /**
  * Color by tag, add current time and prepend to message
  * @since 0.0.1
@@ -105,7 +99,6 @@ export decorateWithStyleAndDate = (seed, tag, message, _) => {
   idWithColor = colorizeTag(seed, tag)
   return idWithColor ++ " " ++ toISOString(now()) ++ " ▸ " ++ message
 }
-
 // (this currently has an issue w/r/t partial application - it works but not as well as it should)
 /**
  * A sugar method to create a Config record, usually by partial application 
@@ -120,25 +113,19 @@ configurateWithSeed :: String
 export configurateWithSeed = (seed, decorate, effect, change, check) => (
   { seed, decorate, effect, change, check }
 )
-
 export configurate = configurateWithSeed("party-bus")
-
 export confSeed = (seed, conf) => (
   { seed, effect: conf.effect, change: conf.change, check: conf.check, decorate: conf.decorate }
 )
-
 export confDecorator = (decorate, conf) => (
   { decorate, effect: conf.effect, change: conf.change, check: conf.check, seed: conf.seed }
 )
-
 export confEffect = (effect, conf) => (
   { decorate: conf.decorate, effect, change: conf.change, check: conf.check, seed: conf.seed }
 )
-
 export confChange = (change, conf) => (
   { change, decorate: conf.decorate, effect: conf.effect, check: conf.check, seed: conf.seed }
 )
-
 export confCheck = (check, conf) => (
   { check, decorate: conf.decorate, effect: conf.effect, change: conf.change, seed: conf.seed }
 )

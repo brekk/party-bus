@@ -5,7 +5,6 @@ import { EQ, GT, LT } from "Compare"
 
 
 export alias Laws = { antisymmetric :: Boolean, reflexive :: Boolean, transitive :: Boolean }
-
 validateCompare :: (a -> a -> Comparison) -> a -> a -> a -> Laws
 export validateCompare = (check, a, b, c) => {
   aa = check(a, a)
@@ -36,7 +35,6 @@ export validateCompare = (check, a, b, c) => {
   }
   return { reflexive, antisymmetric, transitive }
 }
-
 checkCompare :: (a -> a -> Comparison) -> a -> a -> a -> Boolean
 export checkCompare = (check, a, b, c) => where(validateCompare(check, a, b, c)) {
   { reflexive, antisymmetric, transitive } =>

@@ -1,7 +1,4 @@
 import type { Config, Decorator, PartyPredicate, SideEffect } from "@/Core"
-import type { Query } from "@/Query"
-import type { Tag } from "@/Tag"
-import type { Scope } from "@/Tag/Scope"
 
 import { identity } from "Function"
 import IO from "IO"
@@ -36,7 +33,6 @@ export type Decorator
 export type PartyPredicate
 export type SideEffect
 export type Query
-
 // re-export the Core
 export always
 export colorizeTag
@@ -52,7 +48,6 @@ export decorateWithStyleAndDate
 export signalWithConfig
 export tag
 export tagWithScope
-
 /**
  * The default config to use when invoking the bus, shorthand for:
  * Call IO.pTrace unconditionally, with no change to the value passing through. 
@@ -65,7 +60,6 @@ export DEFAULT_CONFIG = {
   effect: IO.pTrace,
   change: identity,
 }
-
 // we don't test this because it's wired to IO
 /**
  * signalWithConfig minus the config
@@ -73,7 +67,6 @@ export DEFAULT_CONFIG = {
  */
 signal :: Show a => Tag -> String -> a -> a
 export signal = signalWithConfig(DEFAULT_CONFIG)
-
 /**
  * An alternative config based on the default config with a styled decorator
  * @since 0.0.1
@@ -85,14 +78,12 @@ export STYLED_CONFIG = {
   change: identity,
   check: always,
 }
-
 // we don't test this because it's wired to IO
 /**
  * Call signal with a colorized serialized tag prepended to the message
  * @since 0.0.1
  */
 export taggedSignal = signalWithConfig(STYLED_CONFIG)
-
 /**
  * An alternative config based on the default config with a styled and dated config
  * @since 0.0.1
@@ -104,14 +95,12 @@ export DATED_CONFIG = {
   change: identity,
   check: always,
 }
-
 // we don't test this because it's wired to IO
 /**
  * Call signal with a colorized serialized tag and date prepended to the message
  * @since 0.0.1
  */
 export dateTaggedSignal = signalWithConfig(DATED_CONFIG)
-
 /**
  * signalWithConfig, but wired to a list of queries
  * @since 0.0.1
@@ -126,7 +115,6 @@ export partyBus = (legend, config, t, msg, x) => signalWithConfig(
   msg,
   x,
 )
-
 /**
  * partyBus, but wired to a dictionary of string keys to parse
  * @since 0.0.1
@@ -139,7 +127,6 @@ export envFrom = (envDict, key, config, t, msg, x) => partyBus(
   msg,
   x,
 )
-
 /**
  * Create multiple tags with different scopes but the same base
  * @since 0.0.4
@@ -147,7 +134,6 @@ export envFrom = (envDict, key, config, t, msg, x) => partyBus(
 export createTags = (key, scopes) => pipe(
   map(tagWithScope(key)),
 )(scopes)
-
 /**
  * "Push" a new base onto an existing tag,
  * converting the extant base to the beginning of the scope
@@ -162,7 +148,6 @@ export pushTag = (parent, t) => where(t) {
       tagWithScope(parent),
     )(x)
 }
-
 // The following functions are untested because they rely upon Process.Env, which we can't guarantee from the test environment
 /**
  * partyBus, but wired to the environment
@@ -170,14 +155,12 @@ export pushTag = (parent, t) => where(t) {
  */
 keyedEnv :: String -> Config -> Tag -> String -> a -> a
 export keyedEnv = envFrom(Process.Env)
-
 /**
  * partyBus, but wired to the DEBUG value from the environment
  * @since 0.0.1
  */
 bus :: Config -> Tag -> String -> a -> a
 export bus = keyedEnv("DEBUG")
-
 /**
  * partyBus, but wired to the DEBUG value with the styled
  * and dated config
@@ -185,7 +168,6 @@ export bus = keyedEnv("DEBUG")
  */
 env :: Show a => Tag -> String -> a -> a
 export env = bus(DATED_CONFIG)
-
 tap :: (String -> b -> b) -> String -> (a -> b) -> a -> a
 export tap = (spout, msg, taproot, x) => {
   spout(msg, taproot(x))

@@ -1,6 +1,16 @@
 {
   "lockfileVersion": 1,
   "packages": {
+    "https://github.com/brekk/copyedit/archive/refs/tags/v0.0.2.zip": {
+      "buildHash": "28a2fbcefd34cf145bb2277e06284438",
+      "dependencies": [
+        "https://github.com/brekk/study/archive/refs/tags/v0.0.3.zip",
+        "https://github.com/brekk/party-bus/archive/refs/tags/v0.0.6.zip"
+      ],
+      "name": "copyedit",
+      "version": "0.0.2",
+      "versionHash": "f9df19c8ed7b93c9843bcaef9576a042"
+    },
     "https://github.com/brekk/dye/archive/refs/tags/v0.0.10.zip": {
       "buildHash": "fbed1ef52bafc05de424c372d4cb244a",
       "dependencies": [
@@ -9,6 +19,27 @@
       "name": "dye",
       "version": "0.0.10",
       "versionHash": "4d3d03bfb040ab3e2b209e3c62ed614c"
+    },
+    "https://github.com/brekk/freitag/archive/refs/tags/v0.0.1.zip": {
+      "buildHash": "c6b23e825ccd1030a6ab05bc11dbfe55",
+      "dependencies": [
+        "https://github.com/brekk/study/archive/refs/tags/v0.0.7.zip",
+        "https://github.com/brekk/party-bus/archive/refs/tags/v0.0.9.zip",
+        "https://github.com/brekk/copyedit/archive/refs/tags/v0.0.2.zip"
+      ],
+      "name": "freitag",
+      "version": "0.0.1",
+      "versionHash": "ee5597d6e8f925bb2a434f7e19ff8ca6"
+    },
+    "https://github.com/brekk/party-bus/archive/refs/tags/v0.0.9.zip": {
+      "buildHash": "19488e8e804f79e9328dc37802ce8d6a",
+      "dependencies": [
+        "https://github.com/brekk/dye/archive/refs/tags/v0.0.10.zip",
+        "https://github.com/brekk/study/archive/refs/tags/v0.0.7.zip"
+      ],
+      "name": "PartyBus",
+      "version": "0.0.9",
+      "versionHash": "0fe62b963ce472b48dfecf0855803fec"
     },
     "https://github.com/brekk/study/archive/refs/tags/v0.0.7.zip": {
       "buildHash": "919dea83a7ccd0a2a11a03e011ecd52e",

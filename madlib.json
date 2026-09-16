@@ -15,6 +15,11 @@
       "minVersion": "0.0.7",
       "url": "https://github.com/brekk/study/archive/refs/tags/v0.0.7.zip",
       "description": "Study"
+    },
+    {
+      "minVersion": "0.0.1",
+      "url": "https://github.com/brekk/freitag/archive/refs/tags/v0.0.1.zip",
+      "description": "freitag"
     }
   ]
 }

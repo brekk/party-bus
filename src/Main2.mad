@@ -2,9 +2,6 @@ import { EQ, GT, LT } from "Compare"
 import IO from "IO"
 import List from "List"
 
-import Q from "@/Query"
-import { Tag, tagWithScope } from "@/Tag"
-
 
 
 export main = () => {

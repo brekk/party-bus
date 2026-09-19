@@ -1,0 +1,22 @@
+import Freitag from "freitag"
+
+import PB from "@/PartyBus"
+
+
+
+// run this file with
+// DEBUG="!ortho:split,ortho:*" madlib run src/Issue3.main.mad
+ortho = Freitag.createTag(["ortho"])
+orthoSplitCamel = Freitag.createTag(["ortho", "split", "camel"])
+orthoDetail = Freitag.createTag(["ortho", "detail"])
+tags = { ortho, orthoSplitCamel, orthoDetail }
+env = {
+  ortho: PB.env(tags.ortho),
+  orthoSplitCamel: PB.env(tags.orthoSplitCamel),
+  orthoDetail: PB.env(tags.orthoDetail),
+}
+main = () => {
+  env.ortho("one", "prints")
+  env.orthoSplitCamel("two", "doesn't print")
+  env.orthoDetail("three", "prints")
+}

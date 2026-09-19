@@ -104,8 +104,8 @@ import Fn from "Function"
 
 export dateTaggedSignal = signalWithConfig(DATED_CONFIG)
 checkEnvironment :: List TagQuery -> Tag -> Boolean
-export checkEnvironment = (queries, tag) => pipe(
-  List.filter(Freitag.tagApplies(tag)),
+export checkEnvironment = (queries, tg) => pipe(
+  List.filter(Freitag.tagApplies(tg)),
   map(Freitag.queryAppliesTo),
   List.reduce((a, b) => a && b, true),
 )(queries)

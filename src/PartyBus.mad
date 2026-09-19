@@ -180,5 +180,5 @@ export tap = (spout, msg, taproot, x) => {
   spout(msg, taproot(x))
   return x
 }
-export tag = FTag.create
+export tag = (x) => FTag.create([x])
 export tagWithScope = (a, bs) => FTag.create([a, ...bs])

@@ -10,6 +10,7 @@ import Term from "Terminal"
 import Wish from "Wish"
 
 import Freitag from "freitag"
+import FTag from "freitag/Tag"
 
 import Core from "@/Core"
 import PB from "@/PartyBus"
@@ -34,9 +35,9 @@ GOODS = {
   cookies: cookie("Chocolate Chip", 4, 12),
 }
 TAGS = {
-  bakery: Freitag.createTag(["bakery"]),
-  sell: Freitag.createTag(["bakery", "sale"]),
-  nested: Freitag.createTag(["bakery", "nested", "deeply"]),
+  bakery: FTag.create(["bakery"]),
+  sell: FTag.create(["bakery", "sale"]),
+  nested: FTag.create(["bakery", "nested", "deeply"]),
 }
 solo = () => {
   sellLog = Core.signalWithConfig(

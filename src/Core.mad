@@ -1,4 +1,4 @@
-import type { Tag } from "freitag"
+import type { Tag } from "freitag/Tag"
 
 import { now, toISOString } from "Date"
 import String from "String"

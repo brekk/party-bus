@@ -2,8 +2,8 @@ import { EQ, GT, LT } from "Compare"
 import IO from "IO"
 import List from "List"
 
+import Freitag from "freitag"
 import F from "freitag/Tag"
-import Freitag from "freitag/Tagged"
 
 import PB from "@/PartyBus"
 

@@ -5,6 +5,7 @@ import String from "String"
 import { assertEquals, test } from "Test"
 
 import Freitag from "freitag"
+import FTag from "freitag/Tag"
 
 // import { report } from "Study"
 
@@ -27,7 +28,7 @@ import { DATED_CONFIG, DEFAULT_CONFIG, STYLED_CONFIG } from "@/PartyBus"
 
 tag = pipe(
   of,
-  Freitag.createTag,
+  FTag.create,
 )
 test("always", () => assertEquals(always(tag("unimportant"), "nothing", true), true))
 test(

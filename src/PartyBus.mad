@@ -1,4 +1,5 @@
-import type { Tag, TagQuery } from "freitag"
+import type { TagQuery } from "freitag"
+import type { Tag } from "freitag/Tag"
 
 import type { Config, Decorator, PartyPredicate, SideEffect } from "@/Core"
 
@@ -8,7 +9,7 @@ import List from "List"
 import Process from "Process"
 
 import Freitag from "freitag"
-import Tagged from "freitag/Tagged"
+import FTag from "freitag/Tag"
 
 import {
   always,
@@ -104,8 +105,8 @@ import Fn from "Function"
 export dateTaggedSignal = signalWithConfig(DATED_CONFIG)
 checkEnvironment :: List TagQuery -> Tag -> Boolean
 export checkEnvironment = (queries, tag) => pipe(
-  List.filter(Tagged.tagApplies(tag)),
-  map(Tagged.queryAppliesTo),
+  List.filter(Freitag.tagApplies(tag)),
+  map(Freitag.queryAppliesTo),
   List.reduce((a, b) => a && b, true),
 )(queries)
 /**
@@ -139,7 +140,7 @@ export envFrom = (envDict, key, config, t, msg, x) => partyBus(
  * @since 0.0.4
  */
 export createTags = (key, scopes) => pipe(
-  map((scope) => Freitag.createTag([key, ...scope])),
+  map((scope) => FTag.create([key, ...scope])),
 )(scopes)
 /**
  * "Push" a new base onto an existing tag,
@@ -148,8 +149,8 @@ export createTags = (key, scopes) => pipe(
  */
 pushTag :: String -> Tag -> Tag
 export pushTag = (parent, t) => where(t) {
-  Freitag.Tag(raw) =>
-    Freitag.createTag([parent, ...raw])
+  FTag.Tag(raw) =>
+    FTag.create([parent, ...raw])
 
   _ =>
     t

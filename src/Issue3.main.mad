@@ -1,4 +1,4 @@
-import Freitag from "freitag"
+import FTag from "freitag/Tag"
 
 import PB from "@/PartyBus"
 
@@ -7,9 +7,9 @@ import PB from "@/PartyBus"
 // run this file with
 // DEBUG="!ortho:split,ortho:*" madlib run src/Issue3.main.mad -- it should print one and three
 // DEBUG="!ortho:detail,*", madlib run src/Issue3.main.mad -- it should print one and two
-ortho = Freitag.createTag(["ortho"])
-orthoSplitCamel = Freitag.createTag(["ortho", "split", "camel"])
-orthoDetail = Freitag.createTag(["ortho", "detail"])
+ortho = FTag.create(["ortho"])
+orthoSplitCamel = FTag.create(["ortho", "split", "camel"])
+orthoDetail = FTag.create(["ortho", "detail"])
 tags = { ortho, orthoSplitCamel, orthoDetail }
 env = {
   ortho: PB.env(tags.ortho),

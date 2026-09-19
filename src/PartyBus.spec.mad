@@ -1,11 +1,12 @@
-import { createTag } from "Freitag"
 import { caseN3, report } from "Study"
+import { create } from "freitag/Tag"
 
 import { confEffect } from "@/Core"
 import { STYLED_CONFIG, createTags, envFrom, pushTag } from "@/PartyBus"
 
 
 
+createTag = create
 TEST_ENV = {{ "DEBUG": "test:scope:detail,check,-nice" }}
 report(
   caseN3(envFrom(TEST_ENV, "DEBUG", confEffect((_, x) => x, STYLED_CONFIG))),

@@ -1,5 +1,5 @@
 {
-  "buildHash": "78aabb904baff2eebd9a3e6163519b70",
+  "buildHash": "b30f63a6ffbe461fef10b0ce0b124388",
   "jsApi": {
     "apiInstances": [],
     "apiAliases": {
@@ -23,7 +23,7 @@
       "bus": "{ change :: a -> b, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b, seed :: String } -> Tag -> String -> a -> a",
       "signalWithConfig": "{ change :: a -> b, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b, seed :: String } -> Tag -> String -> a -> a",
       "taggedSignal": "Show a => Tag -> String -> a -> a",
-      "tag": "List String -> Tag",
+      "tag": "String -> Tag",
       "src/Core.mad#always": "Tag -> String -> a -> Boolean",
       "src/Core.mad#confChange": "a -> { ...base, check :: b, decorate :: c, effect :: d, seed :: e } -> { change :: a, check :: b, decorate :: c, effect :: d, seed :: e }",
       "DATED_CONFIG": "Show a => { change :: b -> b, check :: Tag -> String -> c -> Boolean, decorate :: String -> Tag -> String -> d -> String, effect :: String -> a -> a, seed :: String }",
@@ -80,7 +80,7 @@
       "bus": "{ change :: a -> b, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b, seed :: String } -> Tag -> String -> a -> a",
       "signalWithConfig": "{ change :: a -> b, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b, seed :: String } -> Tag -> String -> a -> a",
       "taggedSignal": "Show a => Tag -> String -> a -> a",
-      "tag": "List String -> Tag",
+      "tag": "String -> Tag",
       "src/Core.mad#always": "Tag -> String -> a -> Boolean",
       "src/Core.mad#confChange": "a -> { ...base, check :: b, decorate :: c, effect :: d, seed :: e } -> { change :: a, check :: b, decorate :: c, effect :: d, seed :: e }",
       "DATED_CONFIG": "Show a => { change :: b -> b, check :: Tag -> String -> c -> Boolean, decorate :: String -> Tag -> String -> d -> String, effect :: String -> a -> a, seed :: String }",

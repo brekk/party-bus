@@ -6,6 +6,7 @@ import type { Config, Decorator, PartyPredicate, SideEffect } from "@/Core"
 import { identity } from "Function"
 import IO from "IO"
 import List from "List"
+import { fromMaybe } from "Maybe"
 import Process from "Process"
 
 import Freitag from "freitag"
@@ -105,9 +106,9 @@ import Fn from "Function"
 export dateTaggedSignal = signalWithConfig(DATED_CONFIG)
 checkEnvironment :: List TagQuery -> Tag -> Boolean
 export checkEnvironment = (queries, tg) => pipe(
-  List.filter(Freitag.tagApplies(tg)),
+  List.find(Freitag.tagApplies(tg)),
   map(Freitag.queryAppliesTo),
-  List.reduce((a, b) => a && b, true),
+  fromMaybe(false),
 )(queries)
 /**
  * signalWithConfig, but wired to a list of queries

@@ -98,12 +98,16 @@ export DATED_CONFIG = {
  * Call signal with a colorized serialized tag and date prepended to the message
  * @since 0.0.1
  */
+import Fn from "Function"
+
+
+
 export dateTaggedSignal = signalWithConfig(DATED_CONFIG)
 checkEnvironment :: List TagQuery -> Tag -> Boolean
 export checkEnvironment = (queries, tag) => pipe(
-  List.find(Tagged.tagApplies(tag)),
+  List.filter(Tagged.tagApplies(tag)),
   map(Tagged.queryAppliesTo),
-  fromMaybe(false),
+  List.reduce((a, b) => a && b, true),
 )(queries)
 /**
  * signalWithConfig, but wired to a list of queries

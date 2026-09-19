@@ -9,6 +9,8 @@ import Random from "Random"
 import Term from "Terminal"
 import Wish from "Wish"
 
+import Freitag from "freitag"
+
 import Core from "@/Core"
 import PB from "@/PartyBus"
 
@@ -32,9 +34,9 @@ GOODS = {
   cookies: cookie("Chocolate Chip", 4, 12),
 }
 TAGS = {
-  bakery: tag("bakery"),
-  sell: tagWithScope("bakery", ["sale"]),
-  nested: tagWithScope("bakery", ["nested", "deeply"]),
+  bakery: Freitag.createTag(["bakery"]),
+  sell: Freitag.createTag(["bakery", "sale"]),
+  nested: Freitag.createTag(["bakery", "nested", "deeply"]),
 }
 solo = () => {
   sellLog = Core.signalWithConfig(

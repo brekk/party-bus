@@ -1,7 +1,6 @@
 import type { Tag } from "freitag"
 
 import { now, toISOString } from "Date"
-import List from "List"
 import String from "String"
 
 import { colorize } from "Dye"

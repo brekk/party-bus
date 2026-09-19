@@ -4,6 +4,8 @@ import List from "List"
 import String from "String"
 import { assertEquals, test } from "Test"
 
+import Freitag from "freitag"
+
 // import { report } from "Study"
 
 import {
@@ -20,23 +22,22 @@ import {
   signalWithConfig,
 } from "@/Core"
 import { DATED_CONFIG, DEFAULT_CONFIG, STYLED_CONFIG } from "@/PartyBus"
-import { tag } from "@/Tag"
 
 
 
+tag = pipe(
+  of,
+  Freitag.createTag,
+)
 test("always", () => assertEquals(always(tag("unimportant"), "nothing", true), true))
-
 test(
   "configurate",
   () => do {
     return assertEquals(configurate(decorateRaw, IO.pTrace, identity, always), DEFAULT_CONFIG)
   },
 )
-
 test("decorateRaw", () => assertEquals(decorateRaw("party-bus", tag("yo"), "cool", "blah"), "cool"))
-
 ANSI_ESCAPE = '\x1b'
-
 test(
   "decorateWithStyle",
   () => assertEquals(
@@ -96,14 +97,12 @@ test(
     ],
   ),
 )
-
 skipDateInStyledString = pipe(
   String.split(" "),
   map(String.toList),
   // we skip the third index because time is hard to test
   (raw) => List.concat(List.slice(0, 2, raw), List.slice(4, 5, raw)),
 )
-
 test(
   "decorateWithStyleAndDate",
   () => assertEquals(
@@ -151,9 +150,7 @@ test(
     ],
   ),
 )
-
 binaryIdentity = (_, b) => b
-
 test(
   "STYLED_CONFIG-ish / taggedSignal-ish",
   () => do {
@@ -172,7 +169,6 @@ test(
     )
   },
 )
-
 test(
   "DEFAULT_CONFIG-ish / signal-ish",
   () => do {
@@ -191,7 +187,6 @@ test(
     )
   },
 )
-
 test(
   "confDecorator + confChange + confSeed",
   () => do {
@@ -204,7 +199,6 @@ test(
     return assertEquals(conf.change("hello?"), "x")
   },
 )
-
 test(
   "DATED_CONFIG-ish / dateTaggedSignal-ish",
   () => do {
@@ -217,7 +211,6 @@ test(
     )
   },
 )
-
 test(
   "never",
   () => do {

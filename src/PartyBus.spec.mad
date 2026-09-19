@@ -1,23 +1,21 @@
+import { createTag } from "Freitag"
 import { caseN3, report } from "Study"
 
 import { confEffect } from "@/Core"
 import { STYLED_CONFIG, createTags, envFrom, pushTag } from "@/PartyBus"
-import { tag, tagWithScope } from "@/Tag"
 
 
 
 TEST_ENV = {{ "DEBUG": "test:scope:detail,check,-nice" }}
-
 report(
   caseN3(envFrom(TEST_ENV, "DEBUG", confEffect((_, x) => x, STYLED_CONFIG))),
   "partyBus",
   [
-    #[#[tag("check"), "message!", "raw"], "raw"],
-    #[#[tagWithScope("test", ["scope", "detail"]), "message!", "raw"], "raw"],
-    #[#[tag("nothing"), "message!", "raw"], "raw"],
+    #[#[createTag(["check"]), "message!", "raw"], "raw"],
+    #[#[createTag(["test", "scope", "detail"]), "message!", "raw"], "raw"],
+    #[#[createTag(["nothing"]), "message!", "raw"], "raw"],
   ],
 )
-
 report(
   createTags("test"),
   "createTags",
@@ -25,15 +23,14 @@ report(
     #[
       [["info"], ["warn"], ["detail"], ["detail", "nested"]],
       [
-        tagWithScope("test", ["info"]),
-        tagWithScope("test", ["warn"]),
-        tagWithScope("test", ["detail"]),
-        tagWithScope("test", ["detail", "nested"]),
+        createTag(["test", "info"]),
+        createTag(["test", "warn"]),
+        createTag(["test", "detail"]),
+        createTag(["test", "detail", "nested"]),
       ],
     ],
   ],
 )
-
 report(
   createTags("test"),
   "createTags - Dictionary",
@@ -46,21 +43,19 @@ report(
         "detailNested": ["detail", "nested"],
       }},
       {{
-        "info": tagWithScope("test", ["info"]),
-        "warn": tagWithScope("test", ["warn"]),
-        "detail": tagWithScope("test", ["detail"]),
-        "detailNested": tagWithScope("test", ["detail", "nested"]),
+        "info": createTag(["test", "info"]),
+        "warn": createTag(["test", "warn"]),
+        "detail": createTag(["test", "detail"]),
+        "detailNested": createTag(["test", "detail", "nested"]),
       }},
     ],
   ],
 )
-
-
 report(
   pushTag("test"),
   "pushTag",
   [
-    #[tag("hey"), tagWithScope("test", ["hey"])],
-    #[tagWithScope("hey", ["there"]), tagWithScope("test", ["hey", "there"])],
+    #[createTag(["hey"]), createTag(["test", "hey"])],
+    #[createTag(["hey", "there"]), createTag(["test", "hey", "there"])],
   ],
 )

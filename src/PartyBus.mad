@@ -1,9 +1,15 @@
+import type { Tag, TagQuery, Tagged } from "freitag"
+
 import type { Config, Decorator, PartyPredicate, SideEffect } from "@/Core"
 
 import { identity } from "Function"
 import IO from "IO"
 import List from "List"
+import { fromMaybe } from "Maybe"
 import Process from "Process"
+
+import Freitag from "freitag"
+import Tagged from "freitag/Tagged"
 
 import {
   always,
@@ -20,19 +26,13 @@ import {
   signalWithConfig,
 } from "@/Core"
 import { getEnvWithKey } from "@/Env"
-import { checkEnvironment } from "@/Query"
-import { Tag, tag, tagWithScope } from "@/Tag"
-import { scopeToList } from "@/Tag/Scope"
 
 
 
-export type Tag
-export type Scope
 export type Config
 export type Decorator
 export type PartyPredicate
 export type SideEffect
-export type Query
 // re-export the Core
 export always
 export colorizeTag
@@ -46,8 +46,6 @@ export decorateRaw
 export decorateWithStyle
 export decorateWithStyleAndDate
 export signalWithConfig
-export tag
-export tagWithScope
 /**
  * The default config to use when invoking the bus, shorthand for:
  * Call IO.pTrace unconditionally, with no change to the value passing through. 
@@ -101,11 +99,17 @@ export DATED_CONFIG = {
  * @since 0.0.1
  */
 export dateTaggedSignal = signalWithConfig(DATED_CONFIG)
+checkEnvironment :: List TagQuery -> Tag -> Boolean
+export checkEnvironment = (queries, tag) => pipe(
+  List.find(Tagged.tagApplies(tag)),
+  map(Tagged.queryAppliesTo),
+  fromMaybe(false),
+)(queries)
 /**
  * signalWithConfig, but wired to a list of queries
  * @since 0.0.1
  */
-partyBus :: List Query -> Config -> Tag -> String -> a -> a
+partyBus :: List TagQuery -> Config -> Tag -> String -> a -> a
 export partyBus = (legend, config, t, msg, x) => signalWithConfig(
   confCheck(
     (_tag, _msg, _x) => checkEnvironment(legend, _tag) && config.check(_tag, _msg, _x),
@@ -132,7 +136,7 @@ export envFrom = (envDict, key, config, t, msg, x) => partyBus(
  * @since 0.0.4
  */
 export createTags = (key, scopes) => pipe(
-  map(tagWithScope(key)),
+  map((scope) => Freitag.createTag([key, ...scope])),
 )(scopes)
 /**
  * "Push" a new base onto an existing tag,
@@ -141,12 +145,11 @@ export createTags = (key, scopes) => pipe(
  */
 pushTag :: String -> Tag -> Tag
 export pushTag = (parent, t) => where(t) {
-  Tag(a, x) =>
-    pipe(
-      scopeToList,
-      List.concat([a]),
-      tagWithScope(parent),
-    )(x)
+  Freitag.Tag(raw) =>
+    Freitag.createTag([parent, ...raw])
+
+  _ =>
+    t
 }
 // The following functions are untested because they rely upon Process.Env, which we can't guarantee from the test environment
 /**

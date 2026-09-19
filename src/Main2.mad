@@ -2,34 +2,32 @@ import { EQ, GT, LT } from "Compare"
 import IO from "IO"
 import List from "List"
 
+import F from "freitag/Tag"
+import Freitag from "freitag/Tagged"
+
+import PB from "@/PartyBus"
+
 
 
 export main = () => {
-  smokeTest = List.sortBy((a, _) => a % 2 == 0 ? GT : EQ, List.range(0, 40))
-  IO.pTrace("SMOKE", smokeTest)
-
-  legend = pipe(
-    IO.pTrace("before"),
-    List.sortBy(Q.compareQuery),
-    IO.pTrace("after"),
-  )([
-    Q.exact("weather"),
-    Q.exact("sunlight"),
-    Q.notWithScope("weather", ["sunny"]),
-    Q.notWithScope("mouse", ["scent"]),
-    Q.exact("plant"),
-    Q.notWithScope("plant", ["biology"]),
-    Q.exactWithScope("plant", ["biology", "spore"]),
-    Q.exact("mouse"),
-    Q.notWithScope("wolf", ["urine"]),
-    Q.exactWithScope("fox", ["cunning"]),
-    Q.exact("fox"),
-    Q.not("wolf"),
-    Q.exactWithScope("fox", ["hunger"]),
-  ])
+  legend = [
+    Freitag._createExact(["weather"]),
+    Freitag._createExact(["sunlight"]),
+    Freitag.InvertQuery(F.Tag(["weather", "sunny"])),
+    Freitag.InvertQuery(F.Tag(["mouse", "scent"])),
+    Freitag._createExact(["plant"]),
+    Freitag.InvertQuery(F.Tag(["plant", "biology"])),
+    Freitag._createExact(["biology", "spore"]),
+    Freitag._createExact(["mouse"]),
+    Freitag.InvertQuery(F.Tag(["wolf", "urine"])),
+    Freitag._createExact(["cunning"]),
+    Freitag._createExact(["fox"]),
+    Freitag.InvertQuery(F.Tag(["wolf"])),
+    Freitag._createExact(["hunger"]),
+  ]
   pipe(
     IO.pTrace("### would this tag"),
-    Q.checkEnvironment(legend),
+    PB.checkEnvironment(legend),
     IO.pTrace("### get run?"),
-  )(tagWithScope("fox", ["cunning"]))
+  )(F.Tag(["fox", "cunning"]))
 }

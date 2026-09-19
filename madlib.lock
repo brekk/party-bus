@@ -20,16 +20,16 @@
       "version": "0.0.10",
       "versionHash": "4d3d03bfb040ab3e2b209e3c62ed614c"
     },
-    "https://github.com/brekk/freitag/archive/refs/tags/v0.0.1.zip": {
-      "buildHash": "c6b23e825ccd1030a6ab05bc11dbfe55",
+    "https://github.com/brekk/freitag/archive/refs/tags/v1.0.0.zip": {
+      "buildHash": "28c12a36ea52c884fc06b4b5a5dff4ed",
       "dependencies": [
         "https://github.com/brekk/study/archive/refs/tags/v0.0.7.zip",
         "https://github.com/brekk/party-bus/archive/refs/tags/v0.0.9.zip",
         "https://github.com/brekk/copyedit/archive/refs/tags/v0.0.2.zip"
       ],
       "name": "freitag",
-      "version": "0.0.1",
-      "versionHash": "ee5597d6e8f925bb2a434f7e19ff8ca6"
+      "version": "1.0.0",
+      "versionHash": "f75e507a97674ba4e1a828c0ea086c55"
     },
     "https://github.com/brekk/party-bus/archive/refs/tags/v0.0.9.zip": {
       "buildHash": "19488e8e804f79e9328dc37802ce8d6a",

@@ -1,11 +1,10 @@
-import type { Tag, TagQuery, Tagged } from "freitag"
+import type { Tag, TagQuery } from "freitag"
 
 import type { Config, Decorator, PartyPredicate, SideEffect } from "@/Core"
 
 import { identity } from "Function"
 import IO from "IO"
 import List from "List"
-import { fromMaybe } from "Maybe"
 import Process from "Process"
 
 import Freitag from "freitag"

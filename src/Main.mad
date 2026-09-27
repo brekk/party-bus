@@ -12,7 +12,6 @@ import Wish from "Wish"
 import Freitag from "freitag"
 import FTag from "freitag/Tag"
 
-import Core from "@/Core"
 import PB from "@/PartyBus"
 
 
@@ -40,12 +39,12 @@ TAGS = {
   nested: FTag.create(["bakery", "nested", "deeply"]),
 }
 solo = () => {
-  sellLog = Core.signalWithConfig(
+  sellLog = PB.signalWithConfig(
     {
-      decorate: Core.decorateWithStyleAndDate,
+      decorate: PB.decorateWithStyleAndDate,
       effect: IO.pTrace,
       change: .name,
-      check: Core.always,
+      check: PB.always,
       seed: "my cool seed",
     },
     TAGS.sell,
@@ -55,11 +54,11 @@ solo = () => {
 
   sellTrace = PB.dateTaggedSignal(TAGS.sell)
   sellTrace("selling!", GOODS.rusticBread)
-  logWithStyle = Core.configurate(Core.decorateWithStyle, IO.pTrace)
-  bakeryLog = Core.signalWithConfig(logWithStyle(.price, Core.always), TAGS.bakery)
+  logWithStyle = PB.configurate(PB.decorateWithStyle, IO.pTrace)
+  bakeryLog = PB.signalWithConfig(logWithStyle(.price, PB.always), TAGS.bakery)
   bakeryLog("cost!", GOODS.painDuChocolat)
-  expensiveLog = Core.signalWithConfig(
-    Core.configurate(Core.decorateWithStyle, IO.pTrace, identity, (_, _, v) => v.price >= 8),
+  expensiveLog = PB.signalWithConfig(
+    PB.configurate(PB.decorateWithStyle, IO.pTrace, identity, (_, _, v) => v.price >= 8),
     TAGS.sell,
   )
   expensiveLog("single cookie doesn't log!", GOODS.cookie)

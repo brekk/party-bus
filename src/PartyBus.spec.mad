@@ -1,8 +1,15 @@
 import { caseN3, report } from "Study"
 import { create } from "freitag/Tag"
 
-import { confEffect } from "@/Core"
-import { STYLED_CONFIG, createTags, envFrom, pushTag, tag, tagWithScope } from "@/PartyBus"
+import {
+  STYLED_CONFIG,
+  confEffect,
+  createTags,
+  envFrom,
+  pushTag,
+  tag,
+  tagWithScope,
+} from "@/PartyBus"
 
 
 

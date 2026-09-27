@@ -1,52 +1,143 @@
 import type { TagQuery } from "freitag"
 import type { Tag } from "freitag/Tag"
 
-import type { Config, Decorator, PartyPredicate, SideEffect } from "@/Core"
-
+import { now, toISOString } from "Date"
 import { identity } from "Function"
 import IO from "IO"
 import List from "List"
 import { fromMaybe } from "Maybe"
 import Process from "Process"
+import String from "String"
 
+import { colorize } from "Dye"
 import Freitag from "freitag"
 import FTag from "freitag/Tag"
+import Tag from "freitag/Tag"
 
-import {
-  always,
-  colorizeTag,
-  confChange,
-  confCheck,
-  confDecorator,
-  confEffect,
-  confSeed,
-  configurate,
-  decorateRaw,
-  decorateWithStyle,
-  decorateWithStyleAndDate,
-  signalWithConfig,
-} from "@/Core"
 import { getEnvWithKey } from "@/Env"
 
 
 
-export type Config
-export type Decorator
-export type PartyPredicate
-export type SideEffect
-// re-export the Core
-export always
-export colorizeTag
-export confChange
-export confCheck
-export confDecorator
-export confEffect
-export confSeed
-export configurate
-export decorateRaw
-export decorateWithStyle
-export decorateWithStyleAndDate
-export signalWithConfig
+/**
+ * The condition of when a side-effect should run
+ * @since 0.0.1
+ */
+export alias PartyPredicate a = Tag -> String -> a -> Boolean
+/**
+ * The side-effect to run
+ * @since 0.0.1
+ */
+export alias SideEffect b = String -> b -> b
+/**
+ * The message decoration
+ * @since 0.0.1
+ */
+export alias Decorator a = String -> Tag -> String -> a -> String
+/**
+ * The configuration of the signal
+ * @since 0.0.1
+ */
+export alias Config = {
+  change :: a -> b,
+  check :: PartyPredicate a,
+  decorate :: Decorator a,
+  effect :: SideEffect b,
+  seed :: String,
+}
+export alias Signal a = Tag -> String -> a -> a
+/**
+ * The core function that does all the magic of PartyBus.
+ * Conditionally call a side-effect with a specific tag, message and value.
+ * @since 0.0.1
+ */
+signalWithConfig :: Config -> Signal a
+export signalWithConfig = (conf, tg, message, x) => {
+  return where(conf) {
+    { seed, decorate, effect, change, check } =>
+      do {
+        msg = decorate(seed, tg, message, x)
+        return if (check(tg, msg, x)) do {
+          effect(msg, change(x))
+          return x
+        } else {
+          x
+        }
+      }
+  }
+}
+/**
+ * A shorthand function to always fire the side-effect
+ * @since 0.0.1
+ */
+always :: PartyPredicate a
+export always = (_, _, _) => true
+/**
+ * A shorthand function to pass the message unchanged
+ * @since 0.0.1
+ */
+decorateRaw :: Decorator a
+export decorateRaw = (_, _, m, _) => m
+serialize = pipe(
+  Tag.toList,
+  String.join(":"),
+)
+/**
+ * A means of colorizing a message by tag
+ * @since 0.0.1
+ */
+colorizeTag :: String -> Tag -> String
+export colorizeTag = (seed, x) => pipe(
+  serialize,
+  (tagId) => colorize(seed, " " ++ tagId ++ " "),
+)(x)
+/**
+ * Color by tag and prepend to message
+ * @since 0.0.1
+ */
+decorateWithStyle :: Decorator a
+export decorateWithStyle = (seed, tg, message, _) => {
+  idWithColor = colorizeTag(seed, tg)
+  return idWithColor ++ " " ++ message
+}
+/**
+ * Color by tag, add current time and prepend to message
+ * @since 0.0.1
+ */
+decorateWithStyleAndDate :: Decorator a
+export decorateWithStyleAndDate = (seed, tg, message, _) => {
+  idWithColor = colorizeTag(seed, tg)
+  return idWithColor ++ " " ++ toISOString(now()) ++ " ▸ " ++ message
+}
+// (this currently has an issue w/r/t partial application - it works but not as well as it should)
+/**
+ * A sugar method to create a Config record, usually by partial application 
+ * @since 0.0.1
+ */
+configurateWithSeed :: String
+  -> Decorator a
+  -> SideEffect b
+  -> (a -> b)
+  -> PartyPredicate a
+  -> Config
+export configurateWithSeed = (seed, decorate, effect, change, check) => (
+  { seed, decorate, effect, change, check }
+)
+export configurate = configurateWithSeed("party-bus")
+export confSeed = (seed, conf) => (
+  { seed, effect: conf.effect, change: conf.change, check: conf.check, decorate: conf.decorate }
+)
+export confDecorator = (decorate, conf) => (
+  { decorate, effect: conf.effect, change: conf.change, check: conf.check, seed: conf.seed }
+)
+export confEffect = (effect, conf) => (
+  { decorate: conf.decorate, effect, change: conf.change, check: conf.check, seed: conf.seed }
+)
+export confChange = (change, conf) => (
+  { change, decorate: conf.decorate, effect: conf.effect, check: conf.check, seed: conf.seed }
+)
+export confCheck = (check, conf) => (
+  { check, decorate: conf.decorate, effect: conf.effect, change: conf.change, seed: conf.seed }
+)
 /**
  * The default config to use when invoking the bus, shorthand for:
  * Call IO.pTrace unconditionally, with no change to the value passing through. 
@@ -99,8 +190,6 @@ export DATED_CONFIG = {
  * Call signal with a colorized serialized tag and date prepended to the message
  * @since 0.0.1
  */
-import Fn from "Function"
-
 
 
 export dateTaggedSignal = signalWithConfig(DATED_CONFIG)

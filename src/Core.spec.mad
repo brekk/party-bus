@@ -4,12 +4,14 @@ import List from "List"
 import String from "String"
 import { assertEquals, test } from "Test"
 
-import Freitag from "freitag"
 import FTag from "freitag/Tag"
 
 // import { report } from "Study"
 
 import {
+  DATED_CONFIG,
+  DEFAULT_CONFIG,
+  STYLED_CONFIG,
   always,
   confChange,
   confCheck,
@@ -21,8 +23,7 @@ import {
   decorateWithStyle,
   decorateWithStyleAndDate,
   signalWithConfig,
-} from "@/Core"
-import { DATED_CONFIG, DEFAULT_CONFIG, STYLED_CONFIG } from "@/PartyBus"
+} from "@/PartyBus"
 
 
 

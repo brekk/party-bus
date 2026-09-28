@@ -1,20 +1,35 @@
+import type { DateTime } from "Date"
 import type { Wish } from "Wish"
 
 import type { Tag } from "freitag/Tag"
+
+import Date from "Date"
+import { append } from "List"
 
 import { Tag } from "freitag/Tag"
 
 
 
-// map these to Stream semantics
-
-export type Event a b = Event(a, Tag, b)
-export alias Predicate a = a -> Boolean
-export type Signal a b = Skipped(Event a b) | Called(Event a b) | ToCall(Predicate a, Event a b)
-export type EventDrain a b = EventDrain(List (Signal a b))
-export alias Produce a b = Event a b -> b
-export alias Consume e a b = Event a b -> Wish e (Signal a b)
-export alias Transform a b = a -> b
-export type EventPump e a b = EventPump(Produce a b, Consume e a b, Transform a b)
-export type StreamMode = EagerStream | LazyStream
-export type FlushMode = EagerFlush | LazyFlush
+export type PartyEvent a = PartyEvent(DateTime, Tag, String, a)
+export alias Pile = { get :: {} -> List b, send :: Tag -> String -> a }
+// lazyWithConfig :: Config -> Pile
+export lazyWithConfig = (conf) => {
+  pile = []
+  return where(conf) {
+    { decorate, effect, check, change } =>
+      (
+        {
+          send: (tag, message, x) => do {
+            msg = decorate(tag, message, x)
+            return if (check(tag, msg, x)) do {
+              pile := append(PartyEvent(Date.now(), tag, msg, x), pile)
+              return x
+            } else {
+              x
+            }
+          },
+          get: () => map(where { PartyEvent(time, tag, msg, x) => effect(msg, x) }, pile),
+        }
+      )
+  }
+}

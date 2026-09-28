@@ -1,0 +1,18 @@
+import type { CommandResult } from "Process"
+
+import File from "File"
+import FilePath from "FilePath"
+import Fn from "Function"
+import Wish from "Wish"
+
+import Shroud from "shroud"
+
+import Error from "@/Error"
+
+
+
+/**
+ * The side-effect to run
+ * @since 0.0.1
+ */
+export alias SideEffect a = String -> a -> a

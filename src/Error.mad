@@ -1,0 +1,6 @@
+// we got discrete error types
+export type PartyFoul
+  = ExecutableNotFound
+  | UnableToCreatePath
+  | UnableToWriteFile
+  | PathDoesNotExist

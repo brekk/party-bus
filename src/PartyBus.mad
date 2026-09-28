@@ -1,9 +1,13 @@
+import type { DateTime } from "Date"
+import type { Wish } from "Wish"
+
 import type { TagQuery } from "freitag"
 import type { Tag } from "freitag/Tag"
 
-import type { FlushMode, StreamMode } from "@/Stream"
+import type { SideEffect } from "@/SideEffect"
 
 import { now, toISOString } from "Date"
+import { DateTime } from "Date"
 import { identity } from "Function"
 import IO from "IO"
 import List from "List"
@@ -17,25 +21,23 @@ import FTag from "freitag/Tag"
 import Tag from "freitag/Tag"
 
 import { getEnvWithKey } from "@/Env"
-import { EagerFlush, EagerStream, LazyFlush, LazyStream } from "@/Stream"
 
 
 
-/**
- * The condition of when a side-effect should run
- * @since 0.0.1
- */
-export alias PartyPredicate a = Tag -> String -> a -> Boolean
-/**
- * The side-effect to run
- * @since 0.0.1
- */
-export alias SideEffect b = String -> b -> b
-/**
- * The message decoration
- * @since 0.0.1
- */
-export alias Decorator a = String -> Tag -> String -> a -> String
+// we got events
+export type PartyEvent a = PartyEvent(DateTime, Tag, a)
+// export alias Predicate a = a -> Boolean
+// export type SignalIndicator a b
+// = Skipped(PartyEvent a)
+// | Called(PartyEvent a)
+// | ToCall(Predicate a, PartyEvent a)
+// export type EventDrain a b = EventDrain(List (SignalIndicator a b))
+// export alias Produce a b = PartyEvent a -> b
+// export alias Consume e a b = PartyEvent a -> Wish e (SignalIndicator a b)
+// export alias Transform a b = a -> b
+// export type EventPump e a b = EventPump(Produce a b, Consume e a b, Transform a b)
+export type StreamMode = EagerStream | LazyStream
+export type FlushMode = EagerFlush | LazyFlush
 /**
  * The configuration of the signal
  * @since 0.0.1
@@ -49,6 +51,16 @@ export alias Config = {
   seed :: String,
   streamMode :: StreamMode,
 }
+/**
+ * The condition of when a side-effect should run
+ * @since 0.0.1
+ */
+export alias PartyPredicate a = Tag -> String -> a -> Boolean
+/**
+ * The message decoration
+ * @since 0.0.1
+ */
+export alias Decorator a = String -> Tag -> String -> a -> String
 export alias Signal a = Tag -> String -> a -> a
 /**
  * The core function that does all the magic of PartyBus.
@@ -202,6 +214,11 @@ export DATED_CONFIG = {
   flushMode: EagerFlush,
   streamMode: EagerStream,
 }
+/**
+ * Call signal with a colorized serialized tag and date prepended to the message
+ * @since 0.0.1
+ */
+export dateTaggedSignal = signalWithConfig(DATED_CONFIG)
 export DISCRETE_FILE_CONFIG = {
   seed: "party-bus",
   decorate: decorateWithDate,
@@ -211,12 +228,11 @@ export DISCRETE_FILE_CONFIG = {
   flushMode: EagerFlush,
   streamMode: EagerStream,
 }
-// we don't test this because it's wired to IO
 /**
- * Call signal with a colorized serialized tag and date prepended to the message
+ * Call signal with our discrete file config
  * @since 0.0.1
  */
-export dateTaggedSignal = signalWithConfig(DATED_CONFIG)
+export fileBackedSignal = signalWithConfig(DISCRETE_FILE_CONFIG)
 checkEnvironment :: List TagQuery -> Tag -> Boolean
 export checkEnvironment = (queries, tg) => pipe(
   List.find(Freitag.tagApplies(tg)),

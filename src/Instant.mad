@@ -1,0 +1,18 @@
+import type { DateTime } from "Date"
+
+
+
+export type Instant a = Instant(DateTime, String, a)
+derive Comparable Instant
+export time = where {
+  Instant(x, _, _) =>
+    x
+}
+export message = where {
+  Instant(_, x, _) =>
+    x
+}
+export value = where {
+  Instant(_, _, x) =>
+    x
+}

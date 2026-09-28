@@ -2,10 +2,6 @@ import Dict from "Dictionary"
 import { identity } from "Function"
 import IO from "IO"
 import List from "List"
-import Random from "Random"
-// import { Just, fromMaybe } from "Maybe"
-// import Process from "Process"
-// import String from "String"
 import Term from "Terminal"
 import Wish from "Wish"
 
@@ -13,6 +9,7 @@ import Freitag from "freitag"
 import FTag from "freitag/Tag"
 
 import PB from "@/PartyBus"
+import _Stream from "@/Stream"
 
 
 
@@ -46,6 +43,8 @@ solo = () => {
       change: .name,
       check: PB.always,
       seed: "my cool seed",
+      flushMode: _Stream.EagerFlush,
+      streamMode: _Stream.EagerStream,
     },
     TAGS.sell,
   )
@@ -73,6 +72,8 @@ soloWithCheck = () => {
       change: PB.DATED_CONFIG.change,
       check: (_, _, v) => v.price > 8,
       seed: "my cool seed",
+      flushMode: _Stream.EagerFlush,
+      streamMode: _Stream.EagerStream,
     },
     TAGS.sell,
     "cookies!!!",

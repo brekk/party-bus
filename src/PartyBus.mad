@@ -1,6 +1,8 @@
 import type { TagQuery } from "freitag"
 import type { Tag } from "freitag/Tag"
 
+import type { FlushMode, StreamMode } from "@/Stream"
+
 import { now, toISOString } from "Date"
 import { identity } from "Function"
 import IO from "IO"
@@ -15,6 +17,7 @@ import FTag from "freitag/Tag"
 import Tag from "freitag/Tag"
 
 import { getEnvWithKey } from "@/Env"
+import { EagerFlush, EagerStream, LazyFlush, LazyStream } from "@/Stream"
 
 
 
@@ -42,7 +45,9 @@ export alias Config = {
   check :: PartyPredicate a,
   decorate :: Decorator a,
   effect :: SideEffect b,
+  flushMode :: FlushMode,
   seed :: String,
+  streamMode :: StreamMode,
 }
 export alias Signal a = Tag -> String -> a -> a
 /**
@@ -108,47 +113,55 @@ export decorateWithStyleAndDate = (seed, tg, message, _) => {
   idWithColor = colorizeTag(seed, tg)
   return idWithColor ++ " " ++ toISOString(now()) ++ " ▸ " ++ message
 }
+decorateWithDate :: Decorator a
+export decorateWithDate = (_, tg, message, _) => {
+  return serialize(tg) ++ " " ++ toISOString(now()) ++ " ▸ " ++ message
+}
 // (this currently has an issue w/r/t partial application - it works but not as well as it should)
 /**
  * A sugar method to create a Config record, usually by partial application 
  * @since 0.0.1
  */
-configurateWithSeed :: String
+configurateWithSeedAndStreamConfig :: StreamMode
+  -> FlushMode
+  -> String
   -> Decorator a
   -> SideEffect b
   -> (a -> b)
   -> PartyPredicate a
   -> Config
-export configurateWithSeed = (seed, decorate, effect, change, check) => (
-  { seed, decorate, effect, change, check }
-)
+export configurateWithSeedAndStreamConfig = (
+  streamMode,
+  flushMode,
+  seed,
+  decorate,
+  effect,
+  change,
+  check
+) => ({ streamMode, flushMode, seed, decorate, effect, change, check })
+export configurateWithSeed = configurateWithSeedAndStreamConfig(EagerStream, EagerFlush)
 export configurate = configurateWithSeed("party-bus")
-export confSeed = (seed, conf) => (
-  { seed, effect: conf.effect, change: conf.change, check: conf.check, decorate: conf.decorate }
-)
-export confDecorator = (decorate, conf) => (
-  { decorate, effect: conf.effect, change: conf.change, check: conf.check, seed: conf.seed }
-)
-export confEffect = (effect, conf) => (
-  { decorate: conf.decorate, effect, change: conf.change, check: conf.check, seed: conf.seed }
-)
-export confChange = (change, conf) => (
-  { change, decorate: conf.decorate, effect: conf.effect, check: conf.check, seed: conf.seed }
-)
-export confCheck = (check, conf) => (
-  { check, decorate: conf.decorate, effect: conf.effect, change: conf.change, seed: conf.seed }
-)
+export confSeed = (seed, ext) => ({ ...ext, seed })
+export confDecorator = (decorator, ext) => ({ ...ext, decorator })
+export confEffect = (effect, ext) => ({ ...ext, effect })
+export confChange = (change, ext) => ({ ...ext, change })
+export confCheck = (check, ext) => ({ ...ext, check })
+export confFlushMode = (flushMode, ext) => ({ ...ext, flushMode })
+export confStreamMode = (streamMode, ext) => ({ ...ext, streamMode })
 /**
  * The default config to use when invoking the bus, shorthand for:
  * Call IO.pTrace unconditionally, with no change to the value passing through. 
  * @since 0.0.1
  */
+DEFAULT_CONFIG :: Show a => Config
 export DEFAULT_CONFIG = {
   seed: "party-bus",
   decorate: decorateRaw,
   check: always,
   effect: IO.pTrace,
   change: identity,
+  flushMode: EagerFlush,
+  streamMode: EagerStream,
 }
 // we don't test this because it's wired to IO
 /**
@@ -167,6 +180,8 @@ export STYLED_CONFIG = {
   effect: IO.pTrace,
   change: identity,
   check: always,
+  flushMode: EagerFlush,
+  streamMode: EagerStream,
 }
 // we don't test this because it's wired to IO
 /**
@@ -184,14 +199,23 @@ export DATED_CONFIG = {
   effect: IO.pTrace,
   change: identity,
   check: always,
+  flushMode: EagerFlush,
+  streamMode: EagerStream,
+}
+export DISCRETE_FILE_CONFIG = {
+  seed: "party-bus",
+  decorate: decorateWithDate,
+  effect: IO.pTrace,
+  change: identity,
+  check: always,
+  flushMode: EagerFlush,
+  streamMode: EagerStream,
 }
 // we don't test this because it's wired to IO
 /**
  * Call signal with a colorized serialized tag and date prepended to the message
  * @since 0.0.1
  */
-
-
 export dateTaggedSignal = signalWithConfig(DATED_CONFIG)
 checkEnvironment :: List TagQuery -> Tag -> Boolean
 export checkEnvironment = (queries, tg) => pipe(
@@ -226,11 +250,27 @@ export envFrom = (envDict, key, config, t, msg, x) => partyBus(
   x,
 )
 /**
+ * convenient shortcut to call Freitag's Tag.create
+ * @since 0.3.0
+ */
+export tag = pipe(
+  of,
+  FTag.create,
+)
+/**
+ * convenient shortcut to call Freitag's Tag.create with an extended scope
+ * @since 0.3.0
+ */
+export tagWithScope = (a, bs) => FTag.create([
+  a,
+  ...bs,
+/**
  * Create multiple tags with different scopes but the same base
  * @since 0.0.4
  */
+])
 export createTags = (key, scopes) => pipe(
-  map((scope) => FTag.create([key, ...scope])),
+  map(tagWithScope(key)),
 )(scopes)
 /**
  * "Push" a new base onto an existing tag,
@@ -265,10 +305,11 @@ export bus = keyedEnv("DEBUG")
  */
 env :: Show a => Tag -> String -> a -> a
 export env = bus(DATED_CONFIG)
+/**
+ * generic tap function, which allows you to specify a lambda for an ephemeral (non-mutating) / lens-like transformation at call time
+ */
 tap :: (String -> b -> b) -> String -> (a -> b) -> a -> a
 export tap = (spout, msg, taproot, x) => {
   spout(msg, taproot(x))
   return x
 }
-export tag = (x) => FTag.create([x])
-export tagWithScope = (a, bs) => FTag.create([a, ...bs])

@@ -1,7 +1,8 @@
 import type { CommandResult } from "Process"
 
+import Dir from "Directory"
 import File from "File"
-import FilePath from "FilePath"
+import Path from "FilePath"
 import Fn from "Function"
 import Wish from "Wish"
 
@@ -11,46 +12,17 @@ import Error from "@/Error"
 
 
 
-// make some folders
-_mkdirp :: Boolean -> String -> Wish Error.PartyFoul CommandResult
-_mkdirp = (safe, path) => pipe(
-  (safe ? Shroud.walk : Shroud.execute)("mkdir"),
+writeFileWithRecursivePath :: Boolean -> String -> String -> Wish Error.PartyFoul String
+export writeFileWithRecursivePath = (recursive, filePath, body) => pipe(
+  Path.parentPath,
+  Dir.create($, { recursive }),
   Wish.mapRej(Fn.always(Error.UnableToCreatePath)),
-)(["-p", path])
-// morphisms!
-export mkdirp = _mkdirp(true)
-export unsafeMkdirp = _mkdirp(false)
-// make some folders from a string,
-// ensure our error type,
-// return write success on the good path
-ensurePathWithSafety :: Boolean -> String -> Wish Error.PartyFoul Boolean
-ensurePathWithSafety = (safe, x) => pipe(
-  FilePath.parentPath,
-  _mkdirp(safe),
-  map(Fn.always(true)),
-)(x)
-// write a file, ensure it uses our error type, return the body on the good path
-unsafeWritePath :: String -> String -> Wish Error.PartyFoul String
-export unsafeWritePath = (path, body) => pipe(
-  File.write(path),
-  Wish.mapRej(Fn.always(Error.UnableToWriteFile)),
+  chain(
+    (_) => pipe(
+      File.write(filePath),
+      Wish.mapRej(Fn.always(Error.UnableToWriteFile)),
+    )(body),
+  ),
   map(Fn.always(body)),
-)(body)
-// write a file to a path,
-// optionally ensuring the path exists,
-// and that `mkdir` exists as a command
-writeFileToPathWithForceAndSafety :: Boolean
-  -> Boolean
-  -> String
-  -> String
-  -> Wish Error.PartyFoul String
-export writeFileToPathWithForceAndSafety = (expectMkdirpToExist, ensure, path, body) => pipe(
-  ensure ? ensurePathWithSafety(expectMkdirpToExist) : (_) => Wish.good(true),
-  chain((yes) => yes ? unsafeWritePath(path, body) : Wish.bad(Error.PathDoesNotExist)),
-)(path)
-// we have a means of ensuring that `mkdir` doesn't exist here,
-// but I feel like it's an unnecessary safety
-export writeFileToPathWithForce = writeFileToPathWithForceAndSafety(true)
-// morphisms!
-export safeWriteFileToPath = writeFileToPathWithForce(true)
-export unsafeWriteFileToPath = writeFileToPathWithForce(false)
+)(filePath)
+export writeFile = writeFileWithRecursivePath(true)

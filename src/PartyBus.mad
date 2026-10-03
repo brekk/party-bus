@@ -1,4 +1,5 @@
 import type { DateTime } from "Date"
+import type { Maybe } from "Maybe"
 import type { Wish } from "Wish"
 
 import type { TagQuery } from "freitag"
@@ -11,6 +12,7 @@ import { DateTime } from "Date"
 import { identity } from "Function"
 import IO from "IO"
 import List from "List"
+import { Just, Nothing } from "Maybe"
 import { fromMaybe } from "Maybe"
 import Process from "Process"
 import String from "String"
@@ -38,6 +40,7 @@ export type PartyEvent a = PartyEvent(DateTime, Tag, a)
 // export type EventPump e a b = EventPump(Produce a b, Consume e a b, Transform a b)
 export type StreamMode = EagerStream | LazyStream
 export type FlushMode = EagerFlush | LazyFlush
+alias Mirror a b = Maybe { decorate :: Decorator a, effect :: SideEffect b }
 /**
  * The configuration of the signal
  * @since 0.0.1
@@ -47,9 +50,8 @@ export alias Config = {
   check :: PartyPredicate a,
   decorate :: Decorator a,
   effect :: SideEffect b,
-  flushMode :: FlushMode,
+  mirror :: Mirror a b,
   seed :: String,
-  streamMode :: StreamMode,
 }
 /**
  * The condition of when a side-effect should run
@@ -65,20 +67,40 @@ export alias Signal a = Tag -> String -> a -> a
 /**
  * The core function that does all the magic of PartyBus.
  * Conditionally call a side-effect with a specific tag, message and value.
+ * Optionally set a specific file to target with the side-effect
  * @since 0.0.1
  */
 signalWithConfig :: Config -> Signal a
 export signalWithConfig = (conf, tg, message, x) => {
   return where(conf) {
-    { seed, decorate, effect, change, check } =>
-      do {
-        msg = decorate(seed, tg, message, x)
-        return if (check(tg, msg, x)) do {
-          effect(msg, change(x))
-          return x
-        } else {
-          x
-        }
+    { seed, decorate, effect, change, check, mirror } =>
+      where(mirror) {
+        Just({ effect: eff2, decorate: dec2 }) =>
+          do {
+            msg = decorate(seed, tg, message, x)
+            return if (check(tg, msg, x)) do {
+              changed = change(x)
+              msg2 = dec2(seed, tg, message, x)
+              pipe(
+                effect(msg),
+                eff2(msg2),
+              )(changed)
+              return x
+            } else {
+              x
+            }
+          }
+
+        Nothing =>
+          do {
+            msg = decorate(seed, tg, message, x)
+            return if (check(tg, msg, x)) do {
+              effect(msg, change(x))
+              return x
+            } else {
+              x
+            }
+          }
       }
   }
 }
@@ -129,37 +151,29 @@ decorateWithDate :: Decorator a
 export decorateWithDate = (_, tg, message, _) => {
   return serialize(tg) ++ " " ++ toISOString(now()) ++ " ▸ " ++ message
 }
-// (this currently has an issue w/r/t partial application - it works but not as well as it should)
 /**
  * A sugar method to create a Config record, usually by partial application 
  * @since 0.0.1
  */
-configurateWithSeedAndStreamConfig :: StreamMode
-  -> FlushMode
-  -> String
+configurateWithSeed :: String
   -> Decorator a
   -> SideEffect b
   -> (a -> b)
   -> PartyPredicate a
+  -> Mirror a b
   -> Config
-export configurateWithSeedAndStreamConfig = (
-  streamMode,
-  flushMode,
-  seed,
-  decorate,
-  effect,
-  change,
-  check
-) => ({ streamMode, flushMode, seed, decorate, effect, change, check })
-export configurateWithSeed = configurateWithSeedAndStreamConfig(EagerStream, EagerFlush)
+export configurateWithSeed = (seed, decorate, effect, change, check, mirror) => (
+  { seed, decorate, effect, change, check, mirror }
+)
+// export configurateWithSeed = configurateWithSeedAndStreamConfig(EagerStream, EagerFlush)
 export configurate = configurateWithSeed("party-bus")
 export confSeed = (seed, ext) => ({ ...ext, seed })
-export confDecorator = (decorator, ext) => ({ ...ext, decorator })
+export confDecorator = (decorate, ext) => ({ ...ext, decorate })
 export confEffect = (effect, ext) => ({ ...ext, effect })
 export confChange = (change, ext) => ({ ...ext, change })
 export confCheck = (check, ext) => ({ ...ext, check })
-export confFlushMode = (flushMode, ext) => ({ ...ext, flushMode })
-export confStreamMode = (streamMode, ext) => ({ ...ext, streamMode })
+// export confFlushMode = (flushMode, ext) => ({ ...ext, flushMode })
+// export confStreamMode = (streamMode, ext) => ({ ...ext, streamMode })
 /**
  * The default config to use when invoking the bus, shorthand for:
  * Call IO.pTrace unconditionally, with no change to the value passing through. 
@@ -172,8 +186,7 @@ export DEFAULT_CONFIG = {
   check: always,
   effect: IO.pTrace,
   change: identity,
-  flushMode: EagerFlush,
-  streamMode: EagerStream,
+  mirror: Nothing,
 }
 // we don't test this because it's wired to IO
 /**
@@ -186,14 +199,14 @@ export signal = signalWithConfig(DEFAULT_CONFIG)
  * An alternative config based on the default config with a styled decorator
  * @since 0.0.1
  */
+STYLED_CONFIG :: Show a => Config
 export STYLED_CONFIG = {
   seed: "party-bus",
   decorate: decorateWithStyle,
   effect: IO.pTrace,
   change: identity,
   check: always,
-  flushMode: EagerFlush,
-  streamMode: EagerStream,
+  mirror: Nothing,
 }
 // we don't test this because it's wired to IO
 /**
@@ -205,34 +218,20 @@ export taggedSignal = signalWithConfig(STYLED_CONFIG)
  * An alternative config based on the default config with a styled and dated config
  * @since 0.0.1
  */
+DATED_CONFIG :: Show a => Config
 export DATED_CONFIG = {
   seed: "party-bus",
   decorate: decorateWithStyleAndDate,
   effect: IO.pTrace,
   change: identity,
   check: always,
-  flushMode: EagerFlush,
-  streamMode: EagerStream,
+  mirror: Just({ decorate: decorateWithDate, effect: IO.pTrace }),
 }
 /**
  * Call signal with a colorized serialized tag and date prepended to the message
  * @since 0.0.1
  */
 export dateTaggedSignal = signalWithConfig(DATED_CONFIG)
-export DISCRETE_FILE_CONFIG = {
-  seed: "party-bus",
-  decorate: decorateWithDate,
-  effect: IO.pTrace,
-  change: identity,
-  check: always,
-  flushMode: EagerFlush,
-  streamMode: EagerStream,
-}
-/**
- * Call signal with our discrete file config
- * @since 0.0.1
- */
-export fileBackedSignal = signalWithConfig(DISCRETE_FILE_CONFIG)
 checkEnvironment :: List TagQuery -> Tag -> Boolean
 export checkEnvironment = (queries, tg) => pipe(
   List.find(Freitag.tagApplies(tg)),
@@ -257,8 +256,8 @@ export partyBus = (legend, config, t, msg, x) => signalWithConfig(
  * partyBus, but wired to a dictionary of string keys to parse
  * @since 0.0.1
  */
-envFrom :: Dictionary String String -> String -> Config -> Tag -> String -> a -> a
-export envFrom = (envDict, key, config, t, msg, x) => partyBus(
+envFrom :: Dictionary String String -> #[String, String] -> Config -> Tag -> String -> a -> a
+export envFrom = (envDict, #[key, fileHook], config, t, msg, x) => partyBus(
   getEnvWithKey(key, envDict),
   config,
   t,
@@ -306,19 +305,22 @@ export pushTag = (parent, t) => where(t) {
  * partyBus, but wired to the environment
  * @since 0.0.1
  */
-keyedEnv :: String -> Config -> Tag -> String -> a -> a
+keyedEnv :: #[String, String] -> Config -> Tag -> String -> a -> a
 export keyedEnv = envFrom(Process.Env)
 /**
  * partyBus, but wired to the DEBUG value from the environment
  * @since 0.0.1
  */
 bus :: Config -> Tag -> String -> a -> a
-export bus = keyedEnv("DEBUG")
+export bus = keyedEnv(#[
+  "DEBUG",
+  "DEBUG_LOG",
 /**
  * partyBus, but wired to the DEBUG value with the styled
  * and dated config
  * @since 0.0.1
  */
+])
 env :: Show a => Tag -> String -> a -> a
 export env = bus(DATED_CONFIG)
 /**

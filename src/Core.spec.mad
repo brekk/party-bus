@@ -1,6 +1,7 @@
 import { identity } from "Function"
 import IO from "IO"
 import List from "List"
+import { Just, Nothing } from "Maybe"
 import String from "String"
 import { assertEquals, test } from "Test"
 
@@ -35,7 +36,10 @@ test("always", () => assertEquals(always(tag("unimportant"), "nothing", true), t
 test(
   "configurate",
   () => do {
-    return assertEquals(configurate(decorateRaw, IO.pTrace, identity, always), DEFAULT_CONFIG)
+    return assertEquals(
+      IO.pTrace("RAW", configurate(decorateRaw, IO.pTrace, identity, always, Nothing)),
+      DEFAULT_CONFIG,
+    )
   },
 )
 test("decorateRaw", () => assertEquals(decorateRaw("party-bus", tag("yo"), "cool", "blah"), "cool"))
@@ -162,6 +166,7 @@ test(
       decorate: STYLED_CONFIG.decorate,
       change: STYLED_CONFIG.change,
       check: STYLED_CONFIG.check,
+      mirror: Nothing,
     }
     return assertEquals(
       pipe(
@@ -180,6 +185,7 @@ test(
       decorate: DEFAULT_CONFIG.decorate,
       change: DEFAULT_CONFIG.change,
       check: DEFAULT_CONFIG.check,
+      mirror: Nothing,
     }
     return assertEquals(
       pipe(

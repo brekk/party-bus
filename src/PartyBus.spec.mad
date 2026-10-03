@@ -18,7 +18,7 @@ TEST_ENV = {{ "DEBUG": "test:scope:detail,check,-nice" }}
 report(tag, "tag", [#["one", create(["one"])]])
 report(tagWithScope("one"), "tagWithScope", [#[["two"], create(["one", "two"])]])
 report(
-  caseN3(envFrom(TEST_ENV, "DEBUG", confEffect((_, x) => x, STYLED_CONFIG))),
+  caseN3(envFrom(TEST_ENV, #["DEBUG", "DEBUG_LOG"], confEffect((_, x) => x, STYLED_CONFIG))),
   "partyBus",
   [
     #[#[createTag(["check"]), "message!", "raw"], "raw"],

@@ -2,6 +2,7 @@ import Dict from "Dictionary"
 import { identity } from "Function"
 import IO from "IO"
 import List from "List"
+import Maybe from "Maybe"
 import Term from "Terminal"
 import Wish from "Wish"
 
@@ -43,8 +44,7 @@ solo = () => {
       change: .name,
       check: PB.always,
       seed: "my cool seed",
-      flushMode: _Stream.EagerFlush,
-      streamMode: _Stream.EagerStream,
+      mirror: Maybe.Nothing,
     },
     TAGS.sell,
   )
@@ -72,8 +72,7 @@ soloWithCheck = () => {
       change: PB.DATED_CONFIG.change,
       check: (_, _, v) => v.price > 8,
       seed: "my cool seed",
-      flushMode: _Stream.EagerFlush,
-      streamMode: _Stream.EagerStream,
+      mirror: Maybe.Nothing,
     },
     TAGS.sell,
     "cookies!!!",

@@ -1,0 +1,10 @@
+import _File from "@/File"
+
+
+
+main = () => {
+  faucet = _File.createSink("./raw.jsonl")
+  faucet.write(`{ "blah": true }`)
+  faucet.write(`{ "warn": false }`)
+  faucet.end()
+}

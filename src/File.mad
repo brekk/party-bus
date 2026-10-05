@@ -1,26 +1,41 @@
-import File from "File"
-import FilePath from "FilePath"
 import List from "List"
-import Wish from "Wish"
 
 
 
-#- import fs from "node:fs" -#
 alias Pourable = { end :: {} -> {}, write :: String -> {} }
+#iftarget js
+#- {Node} -#
+#- import fs from "node:fs" -#
 createSink :: String -> Pourable
 export createSink = (f) => {
   x = #- fs.createWriteStream(f, {flags: 'a'}) -#
   write = (w) => #- x.write(w + "\n") -#
-  end = () => #- x.end("\n") -#
+  end = () => #- x.end() -#
   return { write, end }
 }
+#- {/Node} -#
+#elseif llvm
+sinkOpen :: String -> {}
+sinkOpen = extern "partybus__sink__open"
+sinkWrite :: String -> String -> {}
+sinkWrite = extern "partybus__sink__write"
+sinkEnd :: String -> {}
+sinkEnd = extern "partybus__sink__end"
+createSink :: String -> Pourable
+export createSink = (f) => {
+  sinkOpen(f)
+  return { write: sinkWrite(f), end: () => sinkEnd(f) }
+}
+#endif
 export shout = (x, s) => {
   sink = createSink(x)
   sink.write(s)
   sink.end()
+  return s
 }
 export barrage = (x, ts) => {
   sink = createSink(x)
   List.forEach(sink.write, ts)
   sink.end()
+  return ts
 }

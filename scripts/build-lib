@@ -1,0 +1,22 @@
+#!/bin/sh
+# mkdir -p .buildlibs
+# mkdir -p lib/lib
+# mkdir -p lib/include
+
+# cd .buildlibs
+
+# wget https://github.com/SFML/SFML/archive/refs/tags/2.6.1.zip
+# unzip 2.6.1.zip
+# cd SFML-2.6.1
+# mkdir build
+# cd build
+# cmake -DBUILD_SHARED_LIBS=0 ..
+# cmake --build .
+
+# cp lib/* ../../../lib/lib
+# cd ..
+# cp -R include/* ../../lib/include
+# cd ../..
+
+# build sink.a
+make -C lib -j

@@ -1,0 +1,6 @@
+pizzeria
+- register
+- register:detail
+- menu
+- menu:special
+- menu:outage

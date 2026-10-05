@@ -1,0 +1,35 @@
+/* ★★★ PartyBus@0.3.1 ★★★
+ * THIS FILE AUTOMATICALLY GENERATED FROM SOURCE: example.clown-car
+ */
+
+import Party from "@/PartyBus"
+
+
+
+export tags = {
+  pizzeria: Party.tag("pizzeria"),
+  register: Party.tagWithScope("pizzeria", ["register"]),
+  registerDetail: Party.tagWithScope("pizzeria", ["register", "detail"]),
+  menu: Party.tagWithScope("pizzeria", ["menu"]),
+  menuSpecial: Party.tagWithScope("pizzeria", ["menu", "special"]),
+  menuOutage: Party.tagWithScope("pizzeria", ["menu", "outage"]),
+}
+export env = {
+  pizzeria: Party.env(tags.pizzeria),
+  register: Party.env(tags.register),
+  registerDetail: Party.env(tags.registerDetail),
+  menu: Party.env(tags.menu),
+  menuSpecial: Party.env(tags.menuSpecial),
+  menuOutage: Party.env(tags.menuOutage),
+}
+export tapped = {
+  pizzeria: Party.tap(env.pizzeria),
+  register: Party.tap(env.register),
+  registerDetail: Party.tap(env.registerDetail),
+  menu: Party.tap(env.menu),
+  menuSpecial: Party.tap(env.menuSpecial),
+  menuOutage: Party.tap(env.menuOutage),
+}
+main = () => {
+  env.pizzeria("Pizza Shop", "welcome")
+}

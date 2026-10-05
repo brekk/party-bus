@@ -8,12 +8,18 @@ import type { Tag } from "freitag/Tag"
 import type { SideEffect } from "@/SideEffect"
 
 import { now, toISOString } from "Date"
-import { DateTime } from "Date"
+import DateTime from "Date"
+import Dict from "Dictionary"
+import Either from "Either"
 import { identity } from "Function"
 import IO from "IO"
+import Json from "Json"
+import JP from "Json/Parse"
+import JV from "Json/Value"
 import List from "List"
 import { Just, Nothing } from "Maybe"
 import { fromMaybe } from "Maybe"
+import Parse from "Parse"
 import Process from "Process"
 import String from "String"
 
@@ -23,6 +29,7 @@ import FTag from "freitag/Tag"
 import Tag from "freitag/Tag"
 
 import { getEnvWithKey } from "@/Env"
+import _File from "@/File"
 
 
 
@@ -70,7 +77,7 @@ export alias Signal a = Tag -> String -> a -> a
  * Optionally set a specific file to target with the side-effect
  * @since 0.0.1
  */
-signalWithConfig :: Config -> Signal a
+signalWithConfig :: Show a => Config -> Signal a
 export signalWithConfig = (conf, tg, message, x) => {
   return where(conf) {
     { seed, decorate, effect, change, check, mirror } =>
@@ -151,6 +158,50 @@ decorateWithDate :: Decorator a
 export decorateWithDate = (_, tg, message, _) => {
   return serialize(tg) ++ " " ++ toISOString(now()) ++ " ▸ " ++ message
 }
+instance Json (FTag.Tag) {
+  fromJson = map(FTag.Tag, fromJson)
+
+  toJson = where {
+    FTag.Tag(ts) =>
+      toJson(ts)
+
+    FTag.NoTag =>
+      toJson([""])
+  }
+}
+/*
+alias SerializedLog a = { message :: String, tag :: Tag, value :: a }
+
+instance Json (SerializedLog a) {
+  fromJson = parseLog
+
+  toJson = ({ tag, message, value }) => Print.object([
+    #[
+      "tag",
+      pipe(
+        FTag.toList,
+        toJson,
+      )(tag),
+    ],
+    #["message", toJson(message)],
+    #["context", toJson(context)],
+  ])
+}
+parseLog :: (Show a, Eq a, Json a) => JP.Parser (SerializedLog a)
+parseLog = JP.map3(
+  (t, m, v) => ({ tag: t, message: m, value: v }),
+  JP.field("tag", fromJson),
+  JP.field("message", fromJson),
+  JP.field("value", fromJson),
+)
+*/
+// jsonL :: Json a => String -> Tag -> String -> a -> String
+export jsonL = (_, tg, m, v) => `{ "timestamp": "${DateTime.toISOString(DateTime.now())}", "tag": ${
+  pipe(
+    FTag.toList,
+    show,
+  )(tg)
+}, "message": "${m}", "value": ${show(v)} }`
 /**
  * A sugar method to create a Config record, usually by partial application 
  * @since 0.0.1
@@ -172,6 +223,7 @@ export confDecorator = (decorate, ext) => ({ ...ext, decorate })
 export confEffect = (effect, ext) => ({ ...ext, effect })
 export confChange = (change, ext) => ({ ...ext, change })
 export confCheck = (check, ext) => ({ ...ext, check })
+export confMirror = (mirror, ext) => ({ ...ext, mirror })
 // export confFlushMode = (flushMode, ext) => ({ ...ext, flushMode })
 // export confStreamMode = (streamMode, ext) => ({ ...ext, streamMode })
 /**
@@ -225,7 +277,7 @@ export DATED_CONFIG = {
   effect: IO.pTrace,
   change: identity,
   check: always,
-  mirror: Just({ decorate: decorateWithDate, effect: IO.pTrace }),
+  mirror: Nothing,
 }
 /**
  * Call signal with a colorized serialized tag and date prepended to the message
@@ -242,22 +294,35 @@ export checkEnvironment = (queries, tg) => pipe(
  * signalWithConfig, but wired to a list of queries
  * @since 0.0.1
  */
-partyBus :: List TagQuery -> Config -> Tag -> String -> a -> a
-export partyBus = (legend, config, t, msg, x) => signalWithConfig(
-  confCheck(
-    (_tag, _msg, _x) => checkEnvironment(legend, _tag) && config.check(_tag, _msg, _x),
-    config,
-  ),
-  t,
-  msg,
-  x,
-)
+partyBusWithLog :: Show a => Maybe String -> List TagQuery -> Config -> Tag -> String -> a -> a
+export partyBusWithLog = (logRef, legend, config, t, msg, x) => {
+  logFile = logRef ?? ""
+  mirrorFace = String.isEmpty(logFile)
+    ? (zz) => zz
+    : confMirror(Just({ decorate: jsonL, effect: (xy, _) => _File.shout(logFile, xy) }))
+  return signalWithConfig(
+    pipe(
+      mirrorFace,
+      confCheck((_tag, _msg, _x) => checkEnvironment(legend, _tag) && config.check(_tag, _msg, _x)),
+    )(config),
+    t,
+    msg,
+    x,
+  )
+}
 /**
  * partyBus, but wired to a dictionary of string keys to parse
  * @since 0.0.1
  */
-envFrom :: Dictionary String String -> #[String, String] -> Config -> Tag -> String -> a -> a
-export envFrom = (envDict, #[key, fileHook], config, t, msg, x) => partyBus(
+envFrom :: Show a => Dictionary String String
+  -> #[String, String]
+  -> Config
+  -> Tag
+  -> String
+  -> a
+  -> a
+export envFrom = (envDict, #[key, fileHook], config, t, msg, x) => partyBusWithLog(
+  Dict.get(fileHook, Process.Env),
   getEnvWithKey(key, envDict),
   config,
   t,
@@ -305,22 +370,24 @@ export pushTag = (parent, t) => where(t) {
  * partyBus, but wired to the environment
  * @since 0.0.1
  */
-keyedEnv :: #[String, String] -> Config -> Tag -> String -> a -> a
+keyedEnv :: Show a => #[String, String] -> Config -> Tag -> String -> a -> a
 export keyedEnv = envFrom(Process.Env)
+REFERENCE = #[
+  "DEBUG",
+  "DEBUG_LOG",
 /**
  * partyBus, but wired to the DEBUG value from the environment
  * @since 0.0.1
  */
-bus :: Config -> Tag -> String -> a -> a
-export bus = keyedEnv(#[
-  "DEBUG",
-  "DEBUG_LOG",
+]
+bus :: Show a => Config -> Tag -> String -> a -> a
+export bus = keyedEnv(REFERENCE)
+//////////////
 /**
  * partyBus, but wired to the DEBUG value with the styled
  * and dated config
  * @since 0.0.1
  */
-])
 env :: Show a => Tag -> String -> a -> a
 export env = bus(DATED_CONFIG)
 /**

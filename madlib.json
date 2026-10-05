@@ -5,6 +5,10 @@
   "importAliases": {
     ".": "src"
   },
+  "staticLibs": ["lib/build/sink.a"],
+  "hooks": {
+    "postInstall": "./scripts/build-lib"
+  },
   "dependencies": [
     {
       "minVersion": "0.0.2",

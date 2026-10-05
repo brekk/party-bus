@@ -1,13 +1,9 @@
 {
   "name": "PartyBus",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "main": "src/PartyBus.mad",
   "importAliases": {
     ".": "src"
-  },
-  "staticLibs": ["lib/build/sink.a"],
-  "hooks": {
-    "postInstall": "./scripts/build-lib"
   },
   "dependencies": [
     {
@@ -30,5 +26,9 @@
       "url": "https://github.com/brekk/freitag/archive/refs/tags/v3.0.0.zip",
       "description": "freitag"
     }
-  ]
+  ],
+  "hooks": {
+    "postInstall": "./scripts/build-lib"
+  },
+  "staticLibs": ["lib/build/sink.a"]
 }

@@ -20,6 +20,21 @@ It has several features which make it better than a simple `IO.pTrace`. All of t
  3. Loggers can be highly customized, but out-of-the-box PartyBus ships with a color-coded, date-annotated `message value` output
  4. There's an independent tool called `clown-car` which will automatically generate a standardized Log file from a sugar syntax
 
+### TL;DR
+
+> I'm unable to pay attention for contiguous blocks of time, sell it fast!
+
+`import PartyBus from "PartyBus"`
+
+ 1. Define a tag. `tag = Party.tag("pizzeria")`
+ 2. Wrap the tag with an `env` wrapper to get an environment aware logger. `pizzeria = Party.env(tag)`
+ 3. Use the wrapped logger for fun and profit: `pizzeria("information", {goes: {right: "here"}})`
+ 4. Run the program that contains those loggers with a `DEBUG` environment variable: `DEBUG="*" madlib run src/MyProgram.mad`
+ 5. Tune the logging by expressing more complex tag queries, e.g. `DEBUG="!a:b:c,a:b:*,!a,!*"` would enable all `a:b` loggers and under, and disable all others.
+ 6. Optionally use the `DEBUG_LOG` parameter to allow for logging to a file in addition to logging to console
+
+If you prefer, you can also just use [clown-car](//github.com/brekk/clown-car) to get 1-3 for free.
+
 ## Enabling and filtering logging
 
 `DEBUG` is the environment variable that `party-bus` listens for by default. It uses `freitag` under the hood, which allows for expressing ad-hoc nested chains of strings.

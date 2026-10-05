@@ -5,7 +5,7 @@ A conditional and tagged logger designed to be a near drop-in replacement for `I
 
 
 [![Madlib Project Badge](https://img.shields.io/badge/madlib-purple?logo=github&logoSize=auto)](//github.com/madlib-lang/madlib) <!-- $MADLIB.projectBadge -->
-[![PartyBus v0.3.1](https://img.shields.io/badge/v0.3.1-purple?label=version)](//github.com/brekk/party-bus) <!-- $MADLIB.json.version -->
+[![PartyBus v0.3.2](https://img.shields.io/badge/v0.3.2-purple?label=version)](//github.com/brekk/party-bus) <!-- $MADLIB.json.version -->
 
 ---
 

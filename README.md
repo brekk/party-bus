@@ -78,7 +78,7 @@ MY_CONFIG = {
 const env = PB.bus(MY_CONFIG)
 ```
 
-At this point, if you want to know even more, you should probably look at [the source](//github.com/brekk/party-bus/blob/main/bus/blob/main/src/PartyBus.mad), as most of PartyBus is really just one big partially applied function.
+At this point, if you want to know even more, you should probably look at [the source](//github.com/brekk/party-bus/blob/main/src/PartyBus.mad), as most of PartyBus is really just one big partially applied function.
 
 ## Using a standardized approach
 

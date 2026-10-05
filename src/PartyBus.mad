@@ -23,7 +23,8 @@ import Parse from "Parse"
 import Process from "Process"
 import String from "String"
 
-import { colorize } from "Dye"
+import { colorize } from "dye"
+import Dye from "dye"
 import Freitag from "freitag"
 import FTag from "freitag/Tag"
 import Tag from "freitag/Tag"
@@ -201,7 +202,7 @@ export jsonL = (_, tg, m, v) => `{ "timestamp": "${DateTime.toISOString(DateTime
     FTag.toList,
     show,
   )(tg)
-}, "message": "${m}", "value": ${show(v)} }`
+}, "message": "${Dye.stripAnsi(m)}", "value": ${show(v)} }`
 /**
  * A sugar method to create a Config record, usually by partial application 
  * @since 0.0.1

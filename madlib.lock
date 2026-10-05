@@ -1,14 +1,14 @@
 {
   "lockfileVersion": 1,
   "packages": {
-    "https://github.com/brekk/dye/archive/refs/tags/v0.0.11.zip": {
-      "buildHash": "05b74a50ac6c4456e174a345e8f134de",
+    "https://github.com/brekk/dye/archive/refs/tags/v0.0.12.zip": {
+      "buildHash": "fab3af92ab65115de7709f6f08cff7d7",
       "dependencies": [
         "https://github.com/brekk/study/archive/refs/tags/v0.0.7.zip"
       ],
       "name": "dye",
-      "version": "0.0.11",
-      "versionHash": "14745449d1263503a855f104b370e9ef"
+      "version": "0.0.12",
+      "versionHash": "c99de30e5c0b887bc1fe2f7bc115e5f0"
     },
     "https://github.com/brekk/freitag/archive/refs/tags/v3.0.0.zip": {
       "buildHash": "22971a48255f259498ca5785abb77cca",
@@ -29,16 +29,6 @@
       "name": "PartyBus",
       "version": "0.0.9",
       "versionHash": "0fe62b963ce472b48dfecf0855803fec"
-    },
-    "https://github.com/brekk/shroud/archive/refs/tags/v0.0.1.zip": {
-      "buildHash": "993cbed728c585d1cdb14aadd69a5238",
-      "dependencies": [
-        "https://github.com/brekk/study/archive/refs/tags/v0.0.6.zip",
-        "https://github.com/brekk/party-bus/archive/refs/tags/v0.0.8.zip"
-      ],
-      "name": "shroud",
-      "version": "0.0.1",
-      "versionHash": "ee5597d6e8f925bb2a434f7e19ff8ca6"
     },
     "https://github.com/brekk/study/archive/refs/tags/v0.0.7.zip": {
       "buildHash": "919dea83a7ccd0a2a11a03e011ecd52e",

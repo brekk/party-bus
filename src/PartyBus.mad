@@ -202,7 +202,7 @@ export jsonL = (_, tg, m, v) => `{ "timestamp": "${DateTime.toISOString(DateTime
     FTag.toList,
     show,
   )(tg)
-}, "message": "${Dye.stripAnsi(m)}", "value": ${show(v)} }`
+}, "message": "${Dye.stripAnsi(m)}", "value": ${v} }`
 /**
  * A sugar method to create a Config record, usually by partial application 
  * @since 0.0.1

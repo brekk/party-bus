@@ -46,19 +46,9 @@ type Ingredient
 type SoldIngredient = Sold(Integer, Ingredient)
 type Pizza = Pizza(String, List SoldIngredient)
 main = () => {
-  goodPizza = Pizza(
-    "Scharf Salami",
-    map(
-      Sold(1),
-      [
-        Corn,
-        Cheese(Mozzarella),
-        Tomato,
-      // env.pizzeria("Pizza Shop", goodPizza)
-      ],
-    ),
-  )
+  goodPizza = Pizza("Scharf Salami", map(Sold(1), [Corn, Cheese(Mozzarella), Tomato]))
 
+  env.pizzeria("Pizza Shop", goodPizza)
   env.register("Hungry!", "welcome")
   env.pizzeria("Pizza Shop", "welcome")
   env.register("buy sell", 2.0002)

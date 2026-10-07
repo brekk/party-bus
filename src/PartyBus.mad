@@ -1,39 +1,25 @@
-import type { DateTime } from "Date"
-import type { Maybe } from "Maybe"
-import type { Wish } from "Wish"
-
-import type { TagQuery } from "freitag"
-import type { Tag } from "freitag/Tag"
-
-import { now, toISOString } from "Date"
 import DateTime from "Date"
 import Dict from "Dictionary"
-import Either from "Either"
 import Fn from "Function"
-import { identity } from "Function"
 import IO from "IO"
-import Json from "Json"
-import JP from "Json/Parse"
 import Print from "Json/Print"
 import JV from "Json/Value"
 import List from "List"
-import { Just, Nothing } from "Maybe"
-import { fromMaybe } from "Maybe"
-import Parse from "Parse"
+import Maybe from "Maybe"
+import { Just } from "Maybe"
 import Process from "Process"
 import String from "String"
 
-import { colorize } from "dye"
 import Dye from "dye"
 import Freitag from "freitag"
-import FTag from "freitag/Tag"
 import Tag from "freitag/Tag"
 
-import { getEnvWithKey } from "@/Env"
+import Env from "@/Env"
 import _File from "@/File"
 
 
 
+export alias SideEffect a = String -> a -> a
 // we got events
 export type PartyEvent a = PartyEvent(DateTime, Tag, a)
 // export alias Predicate a = a -> Boolean
@@ -46,16 +32,9 @@ export type PartyEvent a = PartyEvent(DateTime, Tag, a)
 // export alias Consume e a b = PartyEvent a -> Wish e (SignalIndicator a b)
 // export alias Transform a b = a -> b
 // export type EventPump e a b = EventPump(Produce a b, Consume e a b, Transform a b)
-
-export alias SideEffect a = String -> a -> a
 export type StreamMode = EagerStream | LazyStream
 export type FlushMode = EagerFlush | LazyFlush
-export alias Decorator a = String -> Tag -> String -> a -> a
-alias MirrorRecord a = {
-  decorate :: String -> Tag -> String -> a -> JV.Value,
-  effect :: JV.Value -> String -> String,
-}
-alias Mirror a = Maybe (MirrorRecord a)
+alias Mirror a b = Maybe { decorate :: String -> Tag -> String -> a -> JV.Value, effect :: String -> b -> b }
 /**
  * The configuration of the signal
  * @since 0.0.1
@@ -65,7 +44,7 @@ export alias Config = {
   check :: PartyPredicate a,
   decorate :: Decorator a,
   effect :: SideEffect b,
-  mirror :: Mirror a,
+  mirror :: Mirror a b,
   seed :: String,
 }
 /**
@@ -77,6 +56,7 @@ export alias PartyPredicate a = Tag -> String -> a -> Boolean
  * The message decoration
  * @since 0.0.1
  */
+export alias Decorator a = String -> Tag -> String -> a -> String
 export alias Signal a = Tag -> String -> a -> a
 /**
  * The core function that does all the magic of PartyBus.
@@ -89,7 +69,7 @@ export signalWithConfig = (conf, tg, message, x) => {
   return where(conf) {
     { seed, decorate, effect, change, check, mirror } =>
       where(mirror) {
-        Just({ effect: eff2, decorate: dec2 }) =>
+        Maybe.Just({ effect: eff2, decorate: dec2 }) =>
           do {
             msg = decorate(seed, tg, message, x)
             return if (check(tg, msg, x)) do {
@@ -105,7 +85,7 @@ export signalWithConfig = (conf, tg, message, x) => {
             }
           }
 
-        Nothing =>
+        Maybe.Nothing =>
           do {
             msg = decorate(seed, tg, message, x)
             return if (check(tg, msg, x)) do {
@@ -141,7 +121,7 @@ serialize = pipe(
 colorizeTag :: String -> Tag -> String
 export colorizeTag = (seed, x) => pipe(
   serialize,
-  (tagId) => colorize(seed, " " ++ tagId ++ " "),
+  (tagId) => Dye.colorize(seed, " " ++ tagId ++ " "),
 )(x)
 /**
  * Color by tag and prepend to message
@@ -159,22 +139,11 @@ export decorateWithStyle = (seed, tg, message, _) => {
 decorateWithStyleAndDate :: Decorator a
 export decorateWithStyleAndDate = (seed, tg, message, _) => {
   idWithColor = colorizeTag(seed, tg)
-  return idWithColor ++ " " ++ toISOString(now()) ++ " ▸ " ++ message
+  return idWithColor ++ " " ++ DateTime.toISOString(DateTime.now()) ++ " ▸ " ++ message
 }
 decorateWithDate :: Decorator a
 export decorateWithDate = (_, tg, message, _) => {
-  return serialize(tg) ++ " " ++ toISOString(now()) ++ " ▸ " ++ message
-}
-instance Json (FTag.Tag) {
-  fromJson = map(FTag.Tag, fromJson)
-
-  toJson = where {
-    FTag.Tag(ts) =>
-      toJson(ts)
-
-    FTag.NoTag =>
-      toJson([""])
-  }
+  return serialize(tg) ++ " " ++ DateTime.toISOString(DateTime.now()) ++ " ▸ " ++ message
 }
 /*
 alias SerializedLog a = { message :: String, tag :: Tag, value :: a }
@@ -202,40 +171,7 @@ parseLog = JP.map3(
   JP.field("value", fromJson),
 )
 */
-// export jsonL = (_, tg, m, v) => `{ "timestamp": "${DateTime.toISOString(DateTime.now())}", "tag": ${
-//   pipe(
-//     FTag.toList,
-//     show,
-//   )(tg)
-// }, "message": "${Dye.stripAnsi(m)}", "value": ${v} }`
-
-tagToJsonList :: Tag -> JV.Value
-tagToJsonList = (t) => pipe(
-  Tag.toList,
-  Print.list(Print.string),
-)(t)
-jsonLX :: Json a => (a -> JV.Value) -> String -> Tag -> String -> a -> JV.Value
-export jsonLX = (valueTransformer, _, tg, m, v) => {
-  return Print.object([
-    #[
-      "timestamp",
-      pipe(
-        DateTime.toISOString,
-        Print.string,
-      )(DateTime.now()),
-    ],
-    #[
-      "message",
-      pipe(
-        Dye.stripAnsi,
-        Print.string,
-      )(m),
-    ],
-    #["tag", tagToJsonList(tg)],
-    #["value", valueTransformer(v)],
-  ])
-  ////////
-}
+// jsonL :: Json a => String -> Tag -> String -> a -> String
 /**
  * A sugar method to create a Config record, usually by partial application 
  * @since 0.0.1
@@ -245,7 +181,7 @@ configurateWithSeed :: String
   -> SideEffect b
   -> (a -> b)
   -> PartyPredicate a
-  -> Mirror a
+  -> Mirror a b
   -> Config
 export configurateWithSeed = (seed, decorate, effect, change, check, mirror) => (
   { seed, decorate, effect, change, check, mirror }
@@ -271,8 +207,8 @@ export DEFAULT_CONFIG = {
   decorate: decorateRaw,
   check: always,
   effect: IO.pTrace,
-  change: identity,
-  mirror: Nothing,
+  change: Fn.identity,
+  mirror: Maybe.Nothing,
 }
 // we don't test this because it's wired to IO
 /**
@@ -290,9 +226,9 @@ export STYLED_CONFIG = {
   seed: "party-bus",
   decorate: decorateWithStyle,
   effect: IO.pTrace,
-  change: identity,
+  change: Fn.identity,
   check: always,
-  mirror: Nothing,
+  mirror: Maybe.Nothing,
 }
 // we don't test this because it's wired to IO
 /**
@@ -309,36 +245,67 @@ export DATED_CONFIG = {
   seed: "party-bus",
   decorate: decorateWithStyleAndDate,
   effect: IO.pTrace,
-  change: identity,
+  change: Fn.identity,
   check: always,
-  mirror: Nothing,
+  mirror: Maybe.Nothing,
+}
+tagToJsonList :: Tag -> JV.Value
+tagToJsonList = (t) => {
+  return pipe(
+    Tag.toList,
+    Print.list(Print.string),
+  )(t)
 }
 /**
- * Call signal with a colorized serialized tag and date prepended to the message
- * @since 0.0.1
- */
+* Call signal with a colorized serialized tag and date prepended to the message
+* @since 0.0.1
+*/
 export dateTaggedSignal = signalWithConfig(DATED_CONFIG)
-checkEnvironment :: List TagQuery -> Tag -> Boolean
+checkEnvironment :: List Freitag.TagQuery -> Tag -> Boolean
 export checkEnvironment = (queries, tg) => pipe(
   List.find(Freitag.tagApplies(tg)),
   map(Freitag.queryAppliesTo),
-  fromMaybe(false),
+  Maybe.fromMaybe(false),
 )(queries)
-rawraw :: String -> MirrorRecord a
-rawraw = (logFile) => (
-  {
-    decorate: jsonLX(Print.string),
-    effect: (xy, _) => _File.shout(logFile, Print.printJson(100000000000000000, xy)),
-  }
-)
+export jsonLX = (valueTransformer, _, tg, m, v) => {
+  return Print.object([
+    #[
+      "timestamp",
+      pipe(
+        DateTime.toISOString,
+        Print.string,
+      )(DateTime.now()),
+    ],
+    #[
+      "message",
+      pipe(
+        Dye.stripAnsi,
+        Print.string,
+      )(m),
+    ],
+    #["tag", tagToJsonList(tg)],
+    #["value", valueTransformer(v)],
+  ])
+  ////////
+}
 /**
  * signalWithConfig, but wired to a list of queries
  * @since 0.0.1
  */
-partyBusWithLog :: Show a => Maybe String -> List TagQuery -> Config -> Tag -> String -> a -> a
+partyBusWithLog :: Show a => Maybe String
+  -> List Freitag.TagQuery
+  -> Config
+  -> Tag
+  -> String
+  -> a
+  -> a
 export partyBusWithLog = (logRef, legend, config, t, msg, x) => {
   logFile = logRef ?? ""
-  mirrorFace = String.isEmpty(logFile) ? Fn.identity : confMirror(Just(rawraw(logFile)))
+  mirrorFace = String.isEmpty(logFile)
+    ? (zz) => zz
+    : confMirror(
+      Just({ decorate: jsonLX(Print.string), effect: (xy, _) => _File.shout(logFile, xy) }),
+    )
   return signalWithConfig(
     pipe(
       mirrorFace,
@@ -362,7 +329,7 @@ envFrom :: Show a => Dictionary String String
   -> a
 export envFrom = (envDict, #[key, fileHook], config, t, msg, x) => partyBusWithLog(
   Dict.get(fileHook, Process.Env),
-  getEnvWithKey(key, envDict),
+  Env.getEnvWithKey(key, envDict),
   config,
   t,
   msg,
@@ -374,13 +341,13 @@ export envFrom = (envDict, #[key, fileHook], config, t, msg, x) => partyBusWithL
  */
 export tag = pipe(
   of,
-  FTag.create,
+  Tag.create,
 )
 /**
  * convenient shortcut to call Freitag's Tag.create with an extended scope
  * @since 0.3.0
  */
-export tagWithScope = (a, bs) => FTag.create([
+export tagWithScope = (a, bs) => Tag.create([
   a,
   ...bs,
 /**
@@ -398,8 +365,8 @@ export createTags = (key, scopes) => pipe(
  */
 pushTag :: String -> Tag -> Tag
 export pushTag = (parent, t) => where(t) {
-  FTag.Tag(raw) =>
-    FTag.create([parent, ...raw])
+  Tag.Tag(raw) =>
+    Tag.create([parent, ...raw])
 
   _ =>
     t

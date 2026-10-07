@@ -19,5 +19,5 @@ env = {
 main = () => {
   env.ortho("one", "prints")
   env.orthoSplitCamel("two", "doesn't print")
-  env.orthoDetail("three", "prints")
+  env.orthoDetail("three", { prints: "complex data" })
 }

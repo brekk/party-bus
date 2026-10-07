@@ -1,0 +1,19 @@
+import { Just, Nothing } from "Maybe"
+
+
+
+once :: (a -> b) -> a -> b
+export once = (fn) => {
+  known = Nothing
+  return (x) => where(known) {
+    Just(whatever) =>
+      whatever
+
+    Nothing =>
+      do {
+        y = fn(x)
+        known := Just(y)
+        return y
+      }
+  }
+}

@@ -36,6 +36,7 @@ export type PartyEvent a = PartyEvent(DateTime, Tag, a)
 export type StreamMode = EagerStream | LazyStream
 export type FlushMode = EagerFlush | LazyFlush
 alias Mirror a = Maybe { decorate :: String -> Tag -> String -> a -> JV.Value, pass :: JV.Value -> a -> {} }
+export alias SerialRecord a c = { change :: a -> c, effect :: JV.Value -> {} }
 /**
  * The configuration of the signal
  * @since 0.0.1
@@ -46,7 +47,7 @@ export alias Config a b c = {
   decorate :: Decorator a,
   effect :: SideEffect b,
   seed :: String,
-  serialize :: Serializer c,
+  serial :: Maybe (SerialRecord a c),
 }
 /**
  * The condition of when a side-effect should run
@@ -65,11 +66,16 @@ export alias Signal a = Tag -> String -> a -> a
  * Optionally set a specific file to target with the side-effect
  * @since 0.0.1
  */
-_sig :: Show a => Config a b c -> Signal a
-export _sig = ({ seed, decorate, effect, change, check }, tg, message, x) => {
+// radioWithConfig :: Config a b c -> c
+export radioWithConfig = (
+  { serialize, serializeEffect, seed, decorate, check },
+  tg,
+  message,
+  x
+) => {
   msg = decorate(seed, tg, message, x)
   return if (check(tg, msg, x)) do {
-    effect(msg, change(x))
+    serializeEffect(msg, serialize(x))
     return x
   } else {
     x
@@ -170,10 +176,10 @@ configurateWithSeed :: String
   -> SideEffect b
   -> (a -> b)
   -> PartyPredicate a
-  -> Serializer c
+  -> Maybe (SerialRecord a c)
   -> Config a b c
-export configurateWithSeed = (seed, decorate, effect, change, check, serialize) => (
-  { seed, decorate, effect, change, check, serialize }
+export configurateWithSeed = (seed, decorate, effect, change, check, serial) => (
+  { seed, decorate, effect, change, check, serial }
 )
 export configurate = configurateWithSeed("party-bus")
 export confSeed = (seed, ext) => ({ ...ext, seed })
@@ -182,6 +188,7 @@ export confEffect = (effect, ext) => ({ ...ext, effect })
 export confChange = (change, ext) => ({ ...ext, change })
 export confCheck = (check, ext) => ({ ...ext, check })
 export confSerializer = (serialize, ext) => ({ ...ext, serialize })
+export confSerialEffect = (serializeEffect, ext) => ({ ...ext, serializeEffect })
 // export confMirror = (mirror, ext) => ({ ...ext, mirror })
 /**
  * The default config to use when invoking the bus, shorthand for:
@@ -195,7 +202,7 @@ export DEFAULT_CONFIG = {
   check: always,
   effect: IO.pTrace,
   change: Fn.identity,
-  serialize: Print.string,
+  serial: Maybe.Nothing,
 }
 // mirror: Maybe.Nothing,
 
@@ -217,7 +224,7 @@ export STYLED_CONFIG = {
   effect: IO.pTrace,
   change: Fn.identity,
   check: always,
-  serialize: Print.string,
+  serial: Maybe.Nothing,
 }
 // mirror: Maybe.Nothing,
 
@@ -238,7 +245,7 @@ export DATED_CONFIG = {
   effect: IO.pTrace,
   change: Fn.identity,
   check: always,
-  serialize: Print.string,
+  serial: Maybe.Nothing,
 }
 /**
 * Call signal with a colorized serialized tag and date prepended to the message
@@ -253,25 +260,16 @@ export checkEnvironment = (queries, tg) => pipe(
 )(queries)
 checkConfFirstPass = (config, legend, _tag, _msg, _x) => checkEnvironment(legend, _tag)
     && config.check(_tag, _msg, _x)
-alias MirrorRecord a = {
-  decorate :: String -> Tag -> String -> a -> JV.Value,
-  pass :: JV.Value -> a -> {},
-}
-jsonPrint :: Show a => Serializer a -> String -> MirrorRecord a
-jsonPrint = (doIt, logFile) => (
-  {
-    decorate: jsonLX(doIt),
-    pass: (j, _) => pipe(
-      Print.printJson(100000000000000000),
-      _File.shout(logFile),
-      Fn.always({}),
-    )(j),
-  }
-)
-/**
- * signalWithConfig, but wired to a list of queries
- * @since 0.0.1
- */
+// alias MirrorRecord a = {
+//   decorate :: String -> Tag -> String -> a -> JV.Value,
+//   pass :: JV.Value -> a -> {},
+// }
+// jsonPrint :: Show a => Serializer a -> String -> b
+jsonPrint = (logFile, j, _) => pipe(
+  Print.printJson(100000000000000000),
+  _File.shout(logFile),
+  Fn.always({}),
+)(/**  * signalWithConfig, but wired to a list of queries  * @since 0.0.1  */ j)
 partyBusWithLog :: Show a => Maybe String
   -> List Freitag.TagQuery
   -> Config a b c
@@ -281,15 +279,22 @@ partyBusWithLog :: Show a => Maybe String
   -> a
 export partyBusWithLog = (logRef, legend, config, t, msg, x) => {
   logFile = logRef ?? ""
-  // mirrorFace = String.isEmpty(logFile) ? Fn.identity : confDecorator(jsonPrint(logFile))
+  mirrorFace = String.isEmpty(logFile) ? (_, y) => y : jsonPrint(logFile)
+  config2 = pipe(
+    confCheck(checkConfFirstPass(config, legend)),
+  )(config)
+  // // /*
+  // y = radioWithConfig(
+  //   pipe(
+  //     confSerialEffect(mirrorFace),
+  //   )(config2),
+  //   t,
+  //   msg,
+  // )(x)
+  // IO.pTrace("@Y@Y@", y)
+  // */
   return pipe(
-    signalWithConfig(
-      pipe(
-        confCheck(checkConfFirstPass(config, legend)),
-      )(config),
-      t,
-      msg,
-    ),
+    signalWithConfig(config2, t, msg),
   )(x)
 }
 /**

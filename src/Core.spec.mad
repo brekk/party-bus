@@ -25,6 +25,7 @@ import {
   decorateWithStyleAndDate,
   signalWithConfig,
 } from "@/PartyBus"
+import PB from "@/PartyBus"
 
 
 
@@ -37,7 +38,7 @@ test(
   "configurate",
   () => do {
     return assertEquals(
-      IO.pTrace("RAW", configurate(decorateRaw, IO.pTrace, identity, always)),
+      IO.pTrace("RAW", configurate(decorateRaw, IO.pTrace, identity, always, Nothing)),
       DEFAULT_CONFIG,
     )
   },
@@ -163,6 +164,7 @@ MY_CONF = {
   decorate: STYLED_CONFIG.decorate,
   change: STYLED_CONFIG.change,
   check: STYLED_CONFIG.check,
+  mirror: Nothing,
 }
 test(
   "STYLED_CONFIG-ish / taggedSignal-ish",

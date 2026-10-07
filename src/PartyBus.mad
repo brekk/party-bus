@@ -34,7 +34,7 @@ export type PartyEvent a = PartyEvent(DateTime, Tag, a)
 // export type EventPump e a b = EventPump(Produce a b, Consume e a b, Transform a b)
 export type StreamMode = EagerStream | LazyStream
 export type FlushMode = EagerFlush | LazyFlush
-// alias Mirror a b = Maybe { decorate :: String -> Tag -> String -> a -> JV.Value, effect :: String -> b -> b }
+alias Mirror a b = Maybe { decorate :: String -> Tag -> String -> a -> JV.Value, pass :: JV.Value -> String }
 /**
  * The configuration of the signal
  * @since 0.0.1
@@ -44,6 +44,7 @@ export alias Config = {
   check :: PartyPredicate a,
   decorate :: Decorator a,
   effect :: SideEffect b,
+  mirror :: Mirror a c,
   seed :: String,
 }
 /**
@@ -63,20 +64,43 @@ export alias Signal a = Tag -> String -> a -> a
  * Optionally set a specific file to target with the side-effect
  * @since 0.0.1
  */
-signalWithConfig :: Show a => Config -> Signal a
-export signalWithConfig = (conf, tg, message, x) => {
+signalWithConfigAndLog :: Show a => Maybe String -> Config -> Signal a
+export signalWithConfigAndLog = (fileRef, conf, tg, message, x) => {
   return where(conf) {
-    { seed, decorate, effect, change, check } =>
-      do {
-        msg = decorate(seed, tg, message, x)
-        return if (check(tg, msg, x)) do {
-          effect(msg, change(x))
-          return x
-        } else {
-          x
-        }
+    { seed, decorate, effect, change, check, mirror } =>
+      where(#[fileRef, mirror]) {
+        #[Just(filePath), Just({ decorate: dec2, pass })] =>
+          do {
+            msg = decorate(seed, tg, message, x)
+            return if (check(tg, msg, x)) do {
+              effect(msg, change(x))
+              pass(dec2(seed, tg, message, x))
+              return x
+            } else {
+              x
+            }
+          }
+
+        _ =>
+          do {
+            msg = decorate(seed, tg, message, x)
+            return if (check(tg, msg, x)) do {
+              effect(msg, change(x))
+              return x
+            } else {
+              x
+            }
+          }
       }
   }
+}
+export signalWithConfig = signalWithConfigAndLog(Maybe.Nothing)
+tagToJsonList :: Tag -> JV.Value
+tagToJsonList = (t) => {
+  return pipe(
+    Tag.toList,
+    Print.list(Print.string),
+  )(t)
 }
 export jsonLX = (valueTransformer, _, tg, m, v) => {
   return Print.object([
@@ -99,11 +123,6 @@ export jsonLX = (valueTransformer, _, tg, m, v) => {
   ])
   ////////
 }
-export _loggify = (finalType, conf, logFile) => pipe(
-  confDecorator(jsonLX(finalType)),
-  confEffect((xy, _) => _File.shout(logFile, xy)),
-  confChange(Print.string),
-)(conf)
 /**
  * A shorthand function to always fire the side-effect
  * @since 0.0.1
@@ -160,9 +179,10 @@ configurateWithSeed :: String
   -> SideEffect b
   -> (a -> b)
   -> PartyPredicate a
+  -> Mirror a b
   -> Config
-export configurateWithSeed = (seed, decorate, effect, change, check) => (
-  { seed, decorate, effect, change, check }
+export configurateWithSeed = (seed, decorate, effect, change, check, mirror) => (
+  { seed, decorate, effect, change, check, mirror }
 )
 export configurate = configurateWithSeed("party-bus")
 export confSeed = (seed, ext) => ({ ...ext, seed })
@@ -170,6 +190,7 @@ export confDecorator = (decorate, ext) => ({ ...ext, decorate })
 export confEffect = (effect, ext) => ({ ...ext, effect })
 export confChange = (change, ext) => ({ ...ext, change })
 export confCheck = (check, ext) => ({ ...ext, check })
+export confMirror = (mirror, ext) => ({ ...ext, mirror })
 /**
  * The default config to use when invoking the bus, shorthand for:
  * Call IO.pTrace unconditionally, with no change to the value passing through. 
@@ -182,6 +203,7 @@ export DEFAULT_CONFIG = {
   check: always,
   effect: IO.pTrace,
   change: Fn.identity,
+  mirror: Maybe.Nothing,
 }
 // we don't test this because it's wired to IO
 /**
@@ -201,6 +223,7 @@ export STYLED_CONFIG = {
   effect: IO.pTrace,
   change: Fn.identity,
   check: always,
+  mirror: Maybe.Nothing,
 }
 // we don't test this because it's wired to IO
 /**
@@ -219,13 +242,7 @@ export DATED_CONFIG = {
   effect: IO.pTrace,
   change: Fn.identity,
   check: always,
-}
-tagToJsonList :: Tag -> JV.Value
-tagToJsonList = (t) => {
-  return pipe(
-    Tag.toList,
-    Print.list(Print.string),
-  )(t)
+  mirror: Maybe.Nothing,
 }
 /**
 * Call signal with a colorized serialized tag and date prepended to the message
@@ -240,6 +257,20 @@ export checkEnvironment = (queries, tg) => pipe(
 )(queries)
 checkConfFirstPass = (config, legend, _tag, _msg, _x) => checkEnvironment(legend, _tag)
     && config.check(_tag, _msg, _x)
+alias MirrorRecord a = {
+  decorate :: String -> Tag -> String -> a -> JV.Value,
+  pass :: JV.Value -> String -> String,
+}
+// rawraw :: String -> MirrorRecord a
+rawraw = (logFile) => (
+  {
+    decorate: jsonLX(Print.string),
+    pass: pipe(
+      Print.printJson(100000000000000000),
+      _File.shout(logFile),
+    ),
+  }
+)
 /**
  * signalWithConfig, but wired to a list of queries
  * @since 0.0.1
@@ -252,15 +283,19 @@ partyBusWithLog :: Show a => Maybe String
   -> a
   -> a
 export partyBusWithLog = (logRef, legend, config, t, msg, x) => {
-  signalWithConfig(
-    pipe(
-      confCheck(checkConfFirstPass(config, legend)),
-    )(config),
-    t,
-    msg,
-    x,
-  )
-  return x
+  logFile = logRef ?? ""
+  mirrorFace = String.isEmpty(logFile) ? Fn.identity : confMirror(Just(rawraw(logFile)))
+  return pipe(
+    signalWithConfigAndLog(
+      logRef,
+      pipe(
+        mirrorFace,
+        confCheck(checkConfFirstPass(config, legend)),
+      )(config),
+      t,
+      msg,
+    ),
+  )(x)
 }
 /**
  * partyBus, but wired to a dictionary of string keys to parse

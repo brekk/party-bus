@@ -32,4 +32,5 @@ export tapped = {
 }
 main = () => {
   env.pizzeria("Pizza Shop", "welcome")
+  env.register("buy sell", 2.0002)
 }

@@ -50,12 +50,12 @@ export type PartyEvent a = PartyEvent(DateTime, Tag, a)
 export alias SideEffect a = String -> a -> a
 export type StreamMode = EagerStream | LazyStream
 export type FlushMode = EagerFlush | LazyFlush
-export alias Decorator a b = String -> Tag -> String -> a -> b
-alias MirrorRecord a b = {
-  decorate :: Decorator a JV.Value,
+export alias Decorator a = String -> Tag -> String -> a -> a
+alias MirrorRecord a = {
+  decorate :: String -> Tag -> String -> a -> JV.Value,
   effect :: JV.Value -> String -> String,
 }
-alias Mirror a b = Maybe (MirrorRecord a b)
+alias Mirror a = Maybe (MirrorRecord a)
 /**
  * The configuration of the signal
  * @since 0.0.1
@@ -63,9 +63,9 @@ alias Mirror a b = Maybe (MirrorRecord a b)
 export alias Config = {
   change :: a -> b,
   check :: PartyPredicate a,
-  decorate :: Decorator a a,
+  decorate :: Decorator a,
   effect :: SideEffect b,
-  mirror :: Mirror a b,
+  mirror :: Mirror a,
   seed :: String,
 }
 /**
@@ -128,7 +128,7 @@ export always = (_, _, _) => true
  * A shorthand function to pass the message unchanged
  * @since 0.0.1
  */
-decorateRaw :: Decorator a b
+decorateRaw :: Decorator a
 export decorateRaw = (_, _, m, _) => m
 serialize = pipe(
   Tag.toList,
@@ -147,7 +147,7 @@ export colorizeTag = (seed, x) => pipe(
  * Color by tag and prepend to message
  * @since 0.0.1
  */
-decorateWithStyle :: Decorator a b
+decorateWithStyle :: Decorator a
 export decorateWithStyle = (seed, tg, message, _) => {
   idWithColor = colorizeTag(seed, tg)
   return idWithColor ++ " " ++ message
@@ -156,12 +156,12 @@ export decorateWithStyle = (seed, tg, message, _) => {
  * Color by tag, add current time and prepend to message
  * @since 0.0.1
  */
-decorateWithStyleAndDate :: Decorator a b
+decorateWithStyleAndDate :: Decorator a
 export decorateWithStyleAndDate = (seed, tg, message, _) => {
   idWithColor = colorizeTag(seed, tg)
   return idWithColor ++ " " ++ toISOString(now()) ++ " ▸ " ++ message
 }
-decorateWithDate :: Decorator a b
+decorateWithDate :: Decorator a
 export decorateWithDate = (_, tg, message, _) => {
   return serialize(tg) ++ " " ++ toISOString(now()) ++ " ▸ " ++ message
 }
@@ -241,11 +241,11 @@ export jsonLX = (valueTransformer, _, tg, m, v) => {
  * @since 0.0.1
  */
 configurateWithSeed :: String
-  -> Decorator a b
+  -> Decorator a
   -> SideEffect b
   -> (a -> b)
   -> PartyPredicate a
-  -> Mirror a b
+  -> Mirror a
   -> Config
 export configurateWithSeed = (seed, decorate, effect, change, check, mirror) => (
   { seed, decorate, effect, change, check, mirror }
@@ -324,7 +324,7 @@ export checkEnvironment = (queries, tg) => pipe(
   map(Freitag.queryAppliesTo),
   fromMaybe(false),
 )(queries)
-rawraw :: String -> MirrorRecord a JV.Value
+rawraw :: String -> MirrorRecord a
 rawraw = (logFile) => (
   {
     decorate: jsonLX(Print.string),

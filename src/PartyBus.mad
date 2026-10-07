@@ -34,7 +34,7 @@ export type PartyEvent a = PartyEvent(DateTime, Tag, a)
 // export type EventPump e a b = EventPump(Produce a b, Consume e a b, Transform a b)
 export type StreamMode = EagerStream | LazyStream
 export type FlushMode = EagerFlush | LazyFlush
-alias Mirror a b = Maybe { decorate :: String -> Tag -> String -> a -> JV.Value, effect :: String -> b -> b }
+// alias Mirror a b = Maybe { decorate :: String -> Tag -> String -> a -> JV.Value, effect :: String -> b -> b }
 /**
  * The configuration of the signal
  * @since 0.0.1
@@ -44,7 +44,6 @@ export alias Config = {
   check :: PartyPredicate a,
   decorate :: Decorator a,
   effect :: SideEffect b,
-  mirror :: Mirror a b,
   seed :: String,
 }
 /**
@@ -67,37 +66,44 @@ export alias Signal a = Tag -> String -> a -> a
 signalWithConfig :: Show a => Config -> Signal a
 export signalWithConfig = (conf, tg, message, x) => {
   return where(conf) {
-    { seed, decorate, effect, change, check, mirror } =>
-      where(mirror) {
-        Maybe.Just({ effect: eff2, decorate: dec2 }) =>
-          do {
-            msg = decorate(seed, tg, message, x)
-            return if (check(tg, msg, x)) do {
-              changed = change(x)
-              msg2 = dec2(seed, tg, message, x)
-              pipe(
-                effect(msg),
-                eff2(msg2),
-              )(changed)
-              return x
-            } else {
-              x
-            }
-          }
-
-        Maybe.Nothing =>
-          do {
-            msg = decorate(seed, tg, message, x)
-            return if (check(tg, msg, x)) do {
-              effect(msg, change(x))
-              return x
-            } else {
-              x
-            }
-          }
+    { seed, decorate, effect, change, check } =>
+      do {
+        msg = decorate(seed, tg, message, x)
+        return if (check(tg, msg, x)) do {
+          effect(msg, change(x))
+          return x
+        } else {
+          x
+        }
       }
   }
 }
+export jsonLX = (valueTransformer, _, tg, m, v) => {
+  return Print.object([
+    #[
+      "timestamp",
+      pipe(
+        DateTime.toISOString,
+        Print.string,
+      )(DateTime.now()),
+    ],
+    #[
+      "message",
+      pipe(
+        Dye.stripAnsi,
+        Print.string,
+      )(m),
+    ],
+    #["tag", tagToJsonList(tg)],
+    #["value", valueTransformer(v)],
+  ])
+  ////////
+}
+export _loggify = (finalType, conf, logFile) => pipe(
+  confDecorator(jsonLX(finalType)),
+  confEffect((xy, _) => _File.shout(logFile, xy)),
+  confChange(Print.string),
+)(conf)
 /**
  * A shorthand function to always fire the side-effect
  * @since 0.0.1
@@ -145,33 +151,6 @@ decorateWithDate :: Decorator a
 export decorateWithDate = (_, tg, message, _) => {
   return serialize(tg) ++ " " ++ DateTime.toISOString(DateTime.now()) ++ " ▸ " ++ message
 }
-/*
-alias SerializedLog a = { message :: String, tag :: Tag, value :: a }
-
-instance Json (SerializedLog a) {
-  fromJson = parseLog
-
-  toJson = ({ tag, message, value }) => Print.object([
-    #[
-      "tag",
-      pipe(
-        FTag.toList,
-        toJson,
-      )(tag),
-    ],
-    #["message", toJson(message)],
-    #["context", toJson(context)],
-  ])
-}
-parseLog :: (Show a, Eq a, Json a) => JP.Parser (SerializedLog a)
-parseLog = JP.map3(
-  (t, m, v) => ({ tag: t, message: m, value: v }),
-  JP.field("tag", fromJson),
-  JP.field("message", fromJson),
-  JP.field("value", fromJson),
-)
-*/
-// jsonL :: Json a => String -> Tag -> String -> a -> String
 /**
  * A sugar method to create a Config record, usually by partial application 
  * @since 0.0.1
@@ -181,21 +160,16 @@ configurateWithSeed :: String
   -> SideEffect b
   -> (a -> b)
   -> PartyPredicate a
-  -> Mirror a b
   -> Config
-export configurateWithSeed = (seed, decorate, effect, change, check, mirror) => (
-  { seed, decorate, effect, change, check, mirror }
+export configurateWithSeed = (seed, decorate, effect, change, check) => (
+  { seed, decorate, effect, change, check }
 )
-// export configurateWithSeed = configurateWithSeedAndStreamConfig(EagerStream, EagerFlush)
 export configurate = configurateWithSeed("party-bus")
 export confSeed = (seed, ext) => ({ ...ext, seed })
 export confDecorator = (decorate, ext) => ({ ...ext, decorate })
 export confEffect = (effect, ext) => ({ ...ext, effect })
 export confChange = (change, ext) => ({ ...ext, change })
 export confCheck = (check, ext) => ({ ...ext, check })
-export confMirror = (mirror, ext) => ({ ...ext, mirror })
-// export confFlushMode = (flushMode, ext) => ({ ...ext, flushMode })
-// export confStreamMode = (streamMode, ext) => ({ ...ext, streamMode })
 /**
  * The default config to use when invoking the bus, shorthand for:
  * Call IO.pTrace unconditionally, with no change to the value passing through. 
@@ -208,7 +182,6 @@ export DEFAULT_CONFIG = {
   check: always,
   effect: IO.pTrace,
   change: Fn.identity,
-  mirror: Maybe.Nothing,
 }
 // we don't test this because it's wired to IO
 /**
@@ -228,7 +201,6 @@ export STYLED_CONFIG = {
   effect: IO.pTrace,
   change: Fn.identity,
   check: always,
-  mirror: Maybe.Nothing,
 }
 // we don't test this because it's wired to IO
 /**
@@ -247,7 +219,6 @@ export DATED_CONFIG = {
   effect: IO.pTrace,
   change: Fn.identity,
   check: always,
-  mirror: Maybe.Nothing,
 }
 tagToJsonList :: Tag -> JV.Value
 tagToJsonList = (t) => {
@@ -267,27 +238,8 @@ export checkEnvironment = (queries, tg) => pipe(
   map(Freitag.queryAppliesTo),
   Maybe.fromMaybe(false),
 )(queries)
-export jsonLX = (valueTransformer, _, tg, m, v) => {
-  return Print.object([
-    #[
-      "timestamp",
-      pipe(
-        DateTime.toISOString,
-        Print.string,
-      )(DateTime.now()),
-    ],
-    #[
-      "message",
-      pipe(
-        Dye.stripAnsi,
-        Print.string,
-      )(m),
-    ],
-    #["tag", tagToJsonList(tg)],
-    #["value", valueTransformer(v)],
-  ])
-  ////////
-}
+checkConfFirstPass = (config, legend, _tag, _msg, _x) => checkEnvironment(legend, _tag)
+    && config.check(_tag, _msg, _x)
 /**
  * signalWithConfig, but wired to a list of queries
  * @since 0.0.1
@@ -300,21 +252,15 @@ partyBusWithLog :: Show a => Maybe String
   -> a
   -> a
 export partyBusWithLog = (logRef, legend, config, t, msg, x) => {
-  logFile = logRef ?? ""
-  mirrorFace = String.isEmpty(logFile)
-    ? (zz) => zz
-    : confMirror(
-      Just({ decorate: jsonLX(Print.string), effect: (xy, _) => _File.shout(logFile, xy) }),
-    )
-  return signalWithConfig(
+  signalWithConfig(
     pipe(
-      mirrorFace,
-      confCheck((_tag, _msg, _x) => checkEnvironment(legend, _tag) && config.check(_tag, _msg, _x)),
+      confCheck(checkConfFirstPass(config, legend)),
     )(config),
     t,
     msg,
     x,
   )
+  return x
 }
 /**
  * partyBus, but wired to a dictionary of string keys to parse

@@ -37,7 +37,7 @@ test(
   "configurate",
   () => do {
     return assertEquals(
-      IO.pTrace("RAW", configurate(decorateRaw, IO.pTrace, identity, always, Nothing)),
+      IO.pTrace("RAW", configurate(decorateRaw, IO.pTrace, identity, always)),
       DEFAULT_CONFIG,
     )
   },
@@ -157,39 +157,25 @@ test(
   ),
 )
 binaryIdentity = (_, b) => b
+MY_CONF = {
+  seed: "party-bus",
+  effect: binaryIdentity,
+  decorate: STYLED_CONFIG.decorate,
+  change: STYLED_CONFIG.change,
+  check: STYLED_CONFIG.check,
+}
 test(
   "STYLED_CONFIG-ish / taggedSignal-ish",
-  () => do {
-    conf = {
-      seed: "party-bus",
-      effect: binaryIdentity,
-      decorate: STYLED_CONFIG.decorate,
-      change: STYLED_CONFIG.change,
-      check: STYLED_CONFIG.check,
-      mirror: Nothing,
-    }
-    return assertEquals(
-      pipe(
-        signalWithConfig(conf, tag("yo"), "blah"),
-      )("raw"),
-      "raw",
-    )
+  () => {
+    return assertEquals(signalWithConfig(MY_CONF, tag("yo"), "blah", "raw"), "raw")
   },
 )
 test(
   "DEFAULT_CONFIG-ish / signal-ish",
   () => do {
-    conf = {
-      seed: "party-bus",
-      effect: binaryIdentity,
-      decorate: DEFAULT_CONFIG.decorate,
-      change: DEFAULT_CONFIG.change,
-      check: DEFAULT_CONFIG.check,
-      mirror: Nothing,
-    }
     return assertEquals(
       pipe(
-        signalWithConfig(conf, tag("yo"), "blah"),
+        signalWithConfig(MY_CONF, tag("yo"), "blah"),
       )("raw"),
       "raw",
     )
@@ -213,7 +199,7 @@ test(
     conf = confEffect(binaryIdentity, DATED_CONFIG)
     return assertEquals(
       pipe(
-        signalWithConfig(conf, tag("yo"), "blah"),
+        signalWithConfig(MY_CONF, tag("yo"), "blah"),
       )("raw"),
       "raw",
     )
@@ -228,7 +214,7 @@ test(
     )(DATED_CONFIG)
     return assertEquals(
       pipe(
-        signalWithConfig(conf, tag("yo"), "blah"),
+        signalWithConfig(MY_CONF, tag("yo"), "blah"),
       )("raw"),
       "raw",
     )

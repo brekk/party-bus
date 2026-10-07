@@ -19,6 +19,7 @@ import _File from "@/File"
 
 
 
+export alias Encoder a = a -> JV.Value
 export alias SideEffect a = String -> a -> a
 // we got events
 export type PartyEvent a = PartyEvent(DateTime, Tag, a)
@@ -44,7 +45,6 @@ export alias Config a b = {
   check :: PartyPredicate a,
   decorate :: Decorator a,
   effect :: SideEffect b,
-  mirror :: Mirror a,
   seed :: String,
 }
 /**
@@ -64,37 +64,27 @@ export alias Signal a = Tag -> String -> a -> a
  * Optionally set a specific file to target with the side-effect
  * @since 0.0.1
  */
-signalWithConfigAndLog :: Show a => Maybe String -> Config a b -> Signal a
-export signalWithConfigAndLog = (fileRef, conf, tg, message, x) => {
-  return where(conf) {
-    { seed, decorate, effect, change, check, mirror } =>
-      where(#[fileRef, mirror]) {
-        #[Just(filePath), Just({ decorate: dec2, pass })] =>
-          do {
-            msg = decorate(seed, tg, message, x)
-            return if (check(tg, msg, x)) do {
-              effect(msg, change(x))
-              pass(dec2(seed, tg, message, x), x)
-              return x
-            } else {
-              x
-            }
-          }
-
-        _ =>
-          do {
-            msg = decorate(seed, tg, message, x)
-            return if (check(tg, msg, x)) do {
-              effect(msg, change(x))
-              return x
-            } else {
-              x
-            }
-          }
-      }
+_sig :: Show a => Config a b -> Signal a
+export _sig = ({ seed, decorate, effect, change, check }, tg, message, x) => {
+  msg = decorate(seed, tg, message, x)
+  return if (check(tg, msg, x)) do {
+    effect(msg, change(x))
+    return x
+  } else {
+    x
   }
 }
-export signalWithConfig = signalWithConfigAndLog(Maybe.Nothing)
+signalWithConfig :: Show a => Config a b -> Signal a
+export signalWithConfig = ({ seed, decorate, effect, change, check }, tg, message, x) => {
+  msg = decorate(seed, tg, message, x)
+  return if (check(tg, msg, x)) do {
+    effect(msg, change(x))
+    return x
+  } else {
+    x
+  }
+}
+// export signalWithConfig = signalWithConfigAndLog(Maybe.Nothing)
 tagToJsonList :: Tag -> JV.Value
 tagToJsonList = (t) => {
   return pipe(
@@ -179,10 +169,9 @@ configurateWithSeed :: String
   -> SideEffect b
   -> (a -> b)
   -> PartyPredicate a
-  -> Mirror a
   -> Config a b
-export configurateWithSeed = (seed, decorate, effect, change, check, mirror) => (
-  { seed, decorate, effect, change, check, mirror }
+export configurateWithSeed = (seed, decorate, effect, change, check) => (
+  { seed, decorate, effect, change, check }
 )
 export configurate = configurateWithSeed("party-bus")
 export confSeed = (seed, ext) => ({ ...ext, seed })
@@ -190,7 +179,7 @@ export confDecorator = (decorate, ext) => ({ ...ext, decorate })
 export confEffect = (effect, ext) => ({ ...ext, effect })
 export confChange = (change, ext) => ({ ...ext, change })
 export confCheck = (check, ext) => ({ ...ext, check })
-export confMirror = (mirror, ext) => ({ ...ext, mirror })
+// export confMirror = (mirror, ext) => ({ ...ext, mirror })
 /**
  * The default config to use when invoking the bus, shorthand for:
  * Call IO.pTrace unconditionally, with no change to the value passing through. 
@@ -203,8 +192,9 @@ export DEFAULT_CONFIG = {
   check: always,
   effect: IO.pTrace,
   change: Fn.identity,
-  mirror: Maybe.Nothing,
 }
+// mirror: Maybe.Nothing,
+
 // we don't test this because it's wired to IO
 /**
  * signalWithConfig minus the config
@@ -223,8 +213,9 @@ export STYLED_CONFIG = {
   effect: IO.pTrace,
   change: Fn.identity,
   check: always,
-  mirror: Maybe.Nothing,
 }
+// mirror: Maybe.Nothing,
+
 // we don't test this because it's wired to IO
 /**
  * Call signal with a colorized serialized tag prepended to the message
@@ -242,7 +233,6 @@ export DATED_CONFIG = {
   effect: IO.pTrace,
   change: Fn.identity,
   check: always,
-  mirror: Maybe.Nothing,
 }
 /**
 * Call signal with a colorized serialized tag and date prepended to the message
@@ -261,20 +251,17 @@ alias MirrorRecord a = {
   decorate :: String -> Tag -> String -> a -> JV.Value,
   pass :: JV.Value -> a -> {},
 }
-jsonPrint :: Show a => String -> Maybe (MirrorRecord a)
-jsonPrint = (logFile) => Just({
-  decorate: jsonLX(
-    pipe(
-      show,
-      Print.string,
-    ),
-  ),
-  pass: (j, _) => pipe(
-    Print.printJson(100000000000000000),
-    _File.shout(logFile),
-    Fn.always({}),
-  )(j),
-})
+jsonPrint :: Show a => Encoder a -> String -> MirrorRecord a
+jsonPrint = (doIt, logFile) => (
+  {
+    decorate: jsonLX(doIt),
+    pass: (j, _) => pipe(
+      Print.printJson(100000000000000000),
+      _File.shout(logFile),
+      Fn.always({}),
+    )(j),
+  }
+)
 /**
  * signalWithConfig, but wired to a list of queries
  * @since 0.0.1
@@ -288,12 +275,10 @@ partyBusWithLog :: Show a => Maybe String
   -> a
 export partyBusWithLog = (logRef, legend, config, t, msg, x) => {
   logFile = logRef ?? ""
-  mirrorFace = String.isEmpty(logFile) ? Fn.identity : confMirror(jsonPrint(logFile))
+  // mirrorFace = String.isEmpty(logFile) ? Fn.identity : confDecorator(jsonPrint(logFile))
   return pipe(
-    signalWithConfigAndLog(
-      logRef,
+    signalWithConfig(
       pipe(
-        mirrorFace,
         confCheck(checkConfFirstPass(config, legend)),
       )(config),
       t,

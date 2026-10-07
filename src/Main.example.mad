@@ -30,7 +30,36 @@ export tapped = {
   menuSpecial: Party.tap(env.menuSpecial),
   menuOutage: Party.tap(env.menuOutage),
 }
+type PepperKind = Habanero | Bell | Anaheim | Thai
+type CheeseKind = Mozzarella | Jack | Cheddar | Feta
+type Ingredient
+  = Pepperoni
+  | Cheese(CheeseKind)
+  | Pepper(PepperKind)
+  | Onion
+  | Sausage
+  | Chicken
+  | Corn
+  | Potato
+  | Bacon
+  | Tomato
+type SoldIngredient = Sold(Integer, Ingredient)
+type Pizza = Pizza(String, List SoldIngredient)
 main = () => {
+  goodPizza = Pizza(
+    "Scharf Salami",
+    map(
+      Sold(1),
+      [
+        Corn,
+        Cheese(Mozzarella),
+        Tomato,
+      // env.pizzeria("Pizza Shop", goodPizza)
+      ],
+    ),
+  )
+
+  env.register("Hungry!", "welcome")
   env.pizzeria("Pizza Shop", "welcome")
   env.register("buy sell", 2.0002)
 }

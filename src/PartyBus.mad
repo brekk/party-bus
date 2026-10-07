@@ -19,7 +19,7 @@ import _File from "@/File"
 
 
 
-export alias Encoder a = a -> JV.Value
+export alias Serializer a = a -> JV.Value
 export alias SideEffect a = String -> a -> a
 // we got events
 export type PartyEvent a = PartyEvent(DateTime, Tag, a)
@@ -40,12 +40,13 @@ alias Mirror a = Maybe { decorate :: String -> Tag -> String -> a -> JV.Value, p
  * The configuration of the signal
  * @since 0.0.1
  */
-export alias Config a b = {
+export alias Config a b c = {
   change :: a -> b,
   check :: PartyPredicate a,
   decorate :: Decorator a,
   effect :: SideEffect b,
   seed :: String,
+  serialize :: Serializer c,
 }
 /**
  * The condition of when a side-effect should run
@@ -64,7 +65,7 @@ export alias Signal a = Tag -> String -> a -> a
  * Optionally set a specific file to target with the side-effect
  * @since 0.0.1
  */
-_sig :: Show a => Config a b -> Signal a
+_sig :: Show a => Config a b c -> Signal a
 export _sig = ({ seed, decorate, effect, change, check }, tg, message, x) => {
   msg = decorate(seed, tg, message, x)
   return if (check(tg, msg, x)) do {
@@ -74,7 +75,7 @@ export _sig = ({ seed, decorate, effect, change, check }, tg, message, x) => {
     x
   }
 }
-signalWithConfig :: Show a => Config a b -> Signal a
+signalWithConfig :: Show a => Config a b c -> Signal a
 export signalWithConfig = ({ seed, decorate, effect, change, check }, tg, message, x) => {
   msg = decorate(seed, tg, message, x)
   return if (check(tg, msg, x)) do {
@@ -125,7 +126,7 @@ export always = (_, _, _) => true
  */
 decorateRaw :: Decorator a
 export decorateRaw = (_, _, m, _) => m
-serialize = pipe(
+serializeTag = pipe(
   Tag.toList,
   String.join(":"),
 )
@@ -135,7 +136,7 @@ serialize = pipe(
  */
 colorizeTag :: String -> Tag -> String
 export colorizeTag = (seed, x) => pipe(
-  serialize,
+  serializeTag,
   (tagId) => Dye.colorize(seed, " " ++ tagId ++ " "),
 )(x)
 /**
@@ -158,7 +159,7 @@ export decorateWithStyleAndDate = (seed, tg, message, _) => {
 }
 decorateWithDate :: Decorator a
 export decorateWithDate = (_, tg, message, _) => {
-  return serialize(tg) ++ " " ++ DateTime.toISOString(DateTime.now()) ++ " ▸ " ++ message
+  return serializeTag(tg) ++ " " ++ DateTime.toISOString(DateTime.now()) ++ " ▸ " ++ message
 }
 /**
  * A sugar method to create a Config record, usually by partial application 
@@ -169,9 +170,10 @@ configurateWithSeed :: String
   -> SideEffect b
   -> (a -> b)
   -> PartyPredicate a
-  -> Config a b
-export configurateWithSeed = (seed, decorate, effect, change, check) => (
-  { seed, decorate, effect, change, check }
+  -> Serializer c
+  -> Config a b c
+export configurateWithSeed = (seed, decorate, effect, change, check, serialize) => (
+  { seed, decorate, effect, change, check, serialize }
 )
 export configurate = configurateWithSeed("party-bus")
 export confSeed = (seed, ext) => ({ ...ext, seed })
@@ -179,19 +181,21 @@ export confDecorator = (decorate, ext) => ({ ...ext, decorate })
 export confEffect = (effect, ext) => ({ ...ext, effect })
 export confChange = (change, ext) => ({ ...ext, change })
 export confCheck = (check, ext) => ({ ...ext, check })
+export confSerializer = (serialize, ext) => ({ ...ext, serialize })
 // export confMirror = (mirror, ext) => ({ ...ext, mirror })
 /**
  * The default config to use when invoking the bus, shorthand for:
  * Call IO.pTrace unconditionally, with no change to the value passing through. 
  * @since 0.0.1
  */
-DEFAULT_CONFIG :: Show a => Config a b
+DEFAULT_CONFIG :: Show a => Config a b c
 export DEFAULT_CONFIG = {
   seed: "party-bus",
   decorate: decorateRaw,
   check: always,
   effect: IO.pTrace,
   change: Fn.identity,
+  serialize: Print.string,
 }
 // mirror: Maybe.Nothing,
 
@@ -206,13 +210,14 @@ export signal = signalWithConfig(DEFAULT_CONFIG)
  * An alternative config based on the default config with a styled decorator
  * @since 0.0.1
  */
-STYLED_CONFIG :: Show a => Config a b
+STYLED_CONFIG :: Show a => Config a b c
 export STYLED_CONFIG = {
   seed: "party-bus",
   decorate: decorateWithStyle,
   effect: IO.pTrace,
   change: Fn.identity,
   check: always,
+  serialize: Print.string,
 }
 // mirror: Maybe.Nothing,
 
@@ -226,13 +231,14 @@ export taggedSignal = signalWithConfig(STYLED_CONFIG)
  * An alternative config based on the default config with a styled and dated config
  * @since 0.0.1
  */
-DATED_CONFIG :: Show a => Config a b
+DATED_CONFIG :: Show a => Config a b c
 export DATED_CONFIG = {
   seed: "party-bus",
   decorate: decorateWithStyleAndDate,
   effect: IO.pTrace,
   change: Fn.identity,
   check: always,
+  serialize: Print.string,
 }
 /**
 * Call signal with a colorized serialized tag and date prepended to the message
@@ -251,7 +257,7 @@ alias MirrorRecord a = {
   decorate :: String -> Tag -> String -> a -> JV.Value,
   pass :: JV.Value -> a -> {},
 }
-jsonPrint :: Show a => Encoder a -> String -> MirrorRecord a
+jsonPrint :: Show a => Serializer a -> String -> MirrorRecord a
 jsonPrint = (doIt, logFile) => (
   {
     decorate: jsonLX(doIt),
@@ -268,7 +274,7 @@ jsonPrint = (doIt, logFile) => (
  */
 partyBusWithLog :: Show a => Maybe String
   -> List Freitag.TagQuery
-  -> Config a b
+  -> Config a b c
   -> Tag
   -> String
   -> a
@@ -292,7 +298,7 @@ export partyBusWithLog = (logRef, legend, config, t, msg, x) => {
  */
 envFrom :: Show a => Dictionary String String
   -> #[String, String]
-  -> Config a b
+  -> Config a b c
   -> Tag
   -> String
   -> a
@@ -346,7 +352,7 @@ export pushTag = (parent, t) => where(t) {
  * partyBus, but wired to the environment
  * @since 0.0.1
  */
-keyedEnv :: Show a => #[String, String] -> Config a b -> Tag -> String -> a -> a
+keyedEnv :: Show a => #[String, String] -> Config a b c -> Tag -> String -> a -> a
 export keyedEnv = envFrom(Process.Env)
 REFERENCE = #[
   "DEBUG",
@@ -356,7 +362,7 @@ REFERENCE = #[
  * @since 0.0.1
  */
 ]
-bus :: Show a => Config a b -> Tag -> String -> a -> a
+bus :: Show a => Config a b c -> Tag -> String -> a -> a
 export bus = keyedEnv(REFERENCE)
 //////////////
 /**

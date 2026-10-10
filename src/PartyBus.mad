@@ -30,44 +30,17 @@ export alias PartyPredicate a = Tag -> String -> a -> Boolean
  */
 export alias Decorator a = String -> Tag -> String -> a -> String
 export alias Signal a = Tag -> String -> a -> a
-export alias Serializer a = a -> JV.Value
 export alias SideEffect a = String -> a -> a
-export alias SerialRecord raw = {
-  change :: Tag -> String -> raw -> JV.Value,
-  effect :: JV.Value -> {},
-}
 /**
  * The configuration of the signal
  * @since 0.0.1
  */
 export alias Config raw mod = {
-  // change :: raw -> mod,
+  change :: raw -> mod,
   check :: PartyPredicate raw,
   decorate :: Decorator raw,
   effect :: SideEffect mod,
   seed :: String,
-  serial :: Maybe (SerialRecord raw),
-}
-/**
- * The core function that does all the magic of PartyBus.
- * Conditionally call a side-effect with a specific tag, message and value.
- * Optionally set a specific file to target with the side-effect
- * @since 0.0.1
- */
-fileSignalWithConfig :: Config a b -> Tag -> String -> a -> a
-export fileSignalWithConfig = ({ serial, seed, check }, tg, message, x) => where(serial) {
-  Just({ effect, change }) =>
-    do {
-      return if (check(tg, message, x)) do {
-        effect(change(tg, message, x))
-        return x
-      } else {
-        x
-      }
-    }
-
-  _ =>
-    x
 }
 signalWithConfig :: Show a => Config a b -> Signal a
 export signalWithConfig = ({ seed, decorate, effect, check }, tg, message, x) => {
@@ -78,36 +51,6 @@ export signalWithConfig = ({ seed, decorate, effect, check }, tg, message, x) =>
   } else {
     x
   }
-}
-// export signalWithConfig = signalWithConfigAndLog(Maybe.Nothing)
-tagToJsonList :: Tag -> JV.Value
-tagToJsonList = (t) => {
-  return pipe(
-    Tag.toList,
-    Print.list(Print.string),
-  )(t)
-}
-jsonLWithSerializer :: Serializer a -> Tag -> String -> a -> JV.Value
-export jsonLWithSerializer = (valueTransformer, tg, m, v) => {
-  return Print.object([
-    #[
-      "timestamp",
-      pipe(
-        DateTime.toISOString,
-        Print.string,
-      )(DateTime.now()),
-    ],
-    #[
-      "message",
-      pipe(
-        Dye.stripAnsi,
-        Print.string,
-      )(m),
-    ],
-    #["tag", tagToJsonList(tg)],
-    #["value", valueTransformer(v)],
-  ])
-  ////////
 }
 /**
  * A shorthand function to always fire the side-effect
@@ -164,20 +107,17 @@ configurateWithSeed :: String
   -> Decorator a
   -> SideEffect a
   -> PartyPredicate a
-  -> Maybe (SerialRecord a)
+  -> (a -> b)
   -> Config a b
-export configurateWithSeed = (seed, decorate, effect, check, serial) => (
-  { seed, decorate, effect, check, serial }
+export configurateWithSeed = (seed, decorate, effect, check, change) => (
+  { seed, decorate, effect, check, change }
 )
 export configurate = configurateWithSeed("party-bus")
 export confSeed = (seed, ext) => ({ ...ext, seed })
 export confDecorator = (decorate, ext) => ({ ...ext, decorate })
 export confEffect = (effect, ext) => ({ ...ext, effect })
-// export confChange = (change, ext) => ({ ...ext, change })
+export confChange = (change, ext) => ({ ...ext, change })
 export confCheck = (check, ext) => ({ ...ext, check })
-confSerial :: Maybe (SerialRecord a) -> Config a b -> Config a b
-export confSerial = (serial, ext) => ({ ...ext, serial })
-// export confMirror = (mirror, ext) => ({ ...ext, mirror })
 /**
  * The default config to use when invoking the bus, shorthand for:
  * Call IO.pTrace unconditionally, with no change to the value passing through. 
@@ -189,8 +129,7 @@ export DEFAULT_CONFIG = {
   decorate: decorateRaw,
   check: always,
   effect: IO.pTrace,
-  // change: Fn.identity,
-  serial: Maybe.Nothing,
+  change: Fn.identity,
 }
 // mirror: Maybe.Nothing,
 
@@ -210,9 +149,8 @@ export DATED_CONFIG = {
   seed: "party-bus",
   decorate: decorateWithStyleAndDate,
   effect: IO.pTrace,
-  // change: Fn.identity,
+  change: Fn.identity,
   check: always,
-  serial: Maybe.Nothing,
 }
 /**
 * Call signal with a colorized serialized tag and date prepended to the message
@@ -225,64 +163,31 @@ export checkEnvironment = (queries, tg) => pipe(
   map(Freitag.queryAppliesTo),
   Maybe.fromMaybe(false),
 )(queries)
-checkConfFirstPass = (config, legend, _tag, _msg, _x) => checkEnvironment(legend, _tag)
-    && config.check(_tag, _msg, _x)
-jsonPrint :: String -> JV.Value -> {}
-jsonPrint = (logFile, jjjjjjj) => pipe(
-  Print.printJson(100000000000000000),
-  _File.shout(logFile),
-  Fn.always({}),
-)(jjjjjjj)
-/**  * signalWithConfig, but wired to a list of queries  * @since 0.0.1  */
-partyBusWithLogAndSerializer :: Show a => (a -> JV.Value)
-  -> Maybe String
-  -> List Freitag.TagQuery
-  -> Config a b
-  -> Tag
-  -> String
-  -> a
-  -> a
-export partyBusWithLogAndSerializer = (serious, logRef, legend, config, t, msg, x) => {
-  logFile = logRef ?? ""
-  mirrorFace = String.isEmpty(logFile) ? (_) => {} : jsonPrint(logFile)
-  config2 = pipe(
-    confCheck(checkConfFirstPass(config, legend)),
-  )(config)
-  y = fileSignalWithConfig(
-    pipe(
-      confSerial(Just({ change: jsonLWithSerializer(serious), effect: mirrorFace })),
-    )(config2),
-    t,
-    msg,
-  )(x)
-  IO.pTrace("BARFO?", y)
-  return pipe(
-    signalWithConfig(config2, t, msg),
-  )(x)
-}
+export checkAgainstEnvironmentAlso = (check, legend, _tag, _msg, _x) => (
+  checkEnvironment(legend, _tag) && check(_tag, _msg, _x)
+)
+partyBus :: Show a => List Freitag.TagQuery -> Config a b -> Tag -> String -> a -> a
+export partyBus = (legend, config, t, msg, x) => signalWithConfig(
+  confCheck(checkAgainstEnvironmentAlso(config.check, legend), config),
+  t,
+  msg,
+  x,
+)
+////////////////////////////////
+
+
 /**
  * partyBus, but wired to a dictionary of string keys to parse
  * @since 0.0.1
  */
-envFromWithSerializer :: Show a => Dictionary String String
+envFrom :: Show a => Dictionary String String
   -> #[String, String]
   -> Config a b
-  -> Serializer a
   -> Tag
   -> String
   -> a
   -> a
-export envFromWithSerializer = (
-  envDict,
-  #[key, fileHook],
-  config,
-  ser,
-  t,
-  msg,
-  x
-) => partyBusWithLogAndSerializer(
-  ser,
-  Dict.get(fileHook, Process.Env),
+export envFrom = (envDict, #[key, fileHook], config, t, msg, x) => partyBus(
   Env.getEnvWithKey(key, envDict),
   config,
   t,
@@ -330,9 +235,9 @@ export pushTag = (parent, t) => where(t) {
  * partyBus, but wired to the environment
  * @since 0.0.1
  */
-keyedEnv :: Show a => #[String, String] -> Config a b -> Serializer a -> Tag -> String -> a -> a
-export keyedEnv = envFromWithSerializer(Process.Env)
-REFERENCE = #[
+keyedEnv :: Show a => #[String, String] -> Config a b -> Tag -> String -> a -> a
+export keyedEnv = envFrom(Process.Env)
+export ENV_VARS = #[
   "DEBUG",
   "DEBUG_LOG",
 /**
@@ -340,14 +245,14 @@ REFERENCE = #[
  * @since 0.0.1
  */
 ]
-busWithSerializer :: Show a => Config a b -> Serializer a -> Tag -> String -> a -> a
-export busWithSerializer = keyedEnv(REFERENCE)
-envWithSerializer :: Show a => Serializer a -> Tag -> String -> a -> a
-export envWithSerializer = busWithSerializer(DATED_CONFIG)
+bus :: Show a => Config a b -> Tag -> String -> a -> a
+export bus = keyedEnv(ENV_VARS)
+env :: Show a => Tag -> String -> a -> a
+export env = bus(DATED_CONFIG)
 /**
  * generic tap function, which allows you to specify a lambda for an ephemeral (non-mutating) / lens-like transformation at call time
  */
-tap :: (String -> b -> b) -> String -> (a -> b) -> a -> a
+// tap :: (String -> b -> b) -> String -> (a -> b) -> a -> a
 export tap = (spout, msg, taproot, x) => {
   spout(msg, taproot(x))
   return x

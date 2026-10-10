@@ -1,9 +1,10 @@
-/* ★★★ PartyBus@0.3.1 ★★★
- * THIS FILE AUTOMATICALLY GENERATED FROM SOURCE: example.clown-car
- */
-import Print from "Json/Print"
+import Printer from "Json/Print"
+
+import {} from "Json"
+import Parser from "Json/Parse"
 
 import Party from "@/PartyBus"
+import PartyCabinet from "@/PartyCabinet"
 
 
 
@@ -22,12 +23,12 @@ export tags = {
     ],
   ),
 }
-pizzeria = Party.envWithSerializer(Print.string, tags.pizzeria)
-register = Party.envWithSerializer(Print.string, tags.register)
-registerDetail = Party.envWithSerializer(Print.string, tags.registerDetail)
-menu = Party.envWithSerializer(Print.string, tags.menu)
-menuSpecial = Party.envWithSerializer(Print.string, tags.menuSpecial)
-menuOutage = Party.envWithSerializer(Print.string, tags.menuOutage)
+pizzeria = PartyCabinet.env(tags.pizzeria)
+register = PartyCabinet.env(tags.register)
+registerDetail = PartyCabinet.env(tags.registerDetail)
+menu = PartyCabinet.env(tags.menu)
+menuSpecial = PartyCabinet.env(tags.menuSpecial)
+menuOutage = PartyCabinet.env(tags.menuOutage)
 // }
 // export tapped = {
 pizzeriaTapped = Party.tap(pizzeria)
@@ -36,9 +37,55 @@ registerDetailTapped = Party.tap(registerDetail)
 menuTapped = Party.tap(menu)
 menuSpecialTapped = Party.tap(menuSpecial)
 menuOutageTapped = Party.tap(menuOutage)
+// we're encoding our constructor name as "tag" fields in JSON
+singletonToTaggedJson = (t) => Printer.object([
+  #[
+    "tag",
+    pipe(
+      show,
+      Printer.string,
+    )(t),
+  ],
+])
 // }
 type PepperKind = Habanero | Bell | Anaheim | Thai
+pepperFromTag = (x) => Parser.succeed(
+  if (x == "Habanero") {
+    Habanero
+  } else if (x == "Bell") {
+    Bell
+  } else if (x == "Anaheim") {
+    Anaheim
+  } else {
+    Thai
+  },
+)
+taggedFromJson = (construct) => pipe(
+  Parser.field("tag"),
+  chain(construct),
+)(Parser.string)
+instance Json PepperKind {
+  fromJson = taggedFromJson(pepperFromTag)
+
+  toJson = singletonToTaggedJson
+}
 type CheeseKind = Mozzarella | Jack | Cheddar | Feta
+cheeseFromTag = (x) => Parser.succeed(
+  if (x == "Jack") {
+    Jack
+  } else if (x == "Cheddar") {
+    Cheddar
+  } else if (x == "Feta") {
+    Feta
+  } else {
+    Mozzarella
+  },
+)
+instance Json CheeseKind {
+  fromJson = taggedFromJson(cheeseFromTag)
+
+  toJson = singletonToTaggedJson
+}
 type Ingredient
   = Pepperoni
   | Cheese(CheeseKind)
@@ -50,13 +97,100 @@ type Ingredient
   | Potato
   | Bacon
   | Tomato
-type SoldIngredient = Sold(Integer, Ingredient)
-type Pizza = Pizza(String, List SoldIngredient)
+  | Garlic
+ingredientFromTag = (x) => if (x == "Cheese") {
+  Parser.map1(Cheese, Parser.field("kind", fromJson))
+} else if (x == "Pepper") {
+  Parser.map1(Pepper, Parser.field("kind", fromJson))
+} else if (x == "Pepperoni") {
+  Parser.succeed(Pepperoni)
+} else if (x == "Onion") {
+  Parser.succeed(Onion)
+} else if (x == "Sausage") {
+  Parser.succeed(Sausage)
+} else if (x == "Chicken") {
+  Parser.succeed(Chicken)
+} else if (x == "Corn") {
+  Parser.succeed(Corn)
+} else if (x == "Tomato") {
+  Parser.succeed(Tomato)
+} else if (x == "Potato") {
+  Parser.succeed(Potato)
+} else if (x == "Bacon") {
+  Parser.succeed(Bacon)
+} else {
+  Parser.succeed(Garlic)
+}
+instance Json Ingredient {
+  fromJson = taggedFromJson(ingredientFromTag)
+
+  toJson = (t) => where(t) {
+    Cheese(k) =>
+      Printer.object([#["tag", Printer.string("Cheese")], #["kind", singletonToTaggedJson(k)]])
+
+    Pepper(k) =>
+      Printer.object([#["tag", Printer.string("Pepper")], #["kind", singletonToTaggedJson(k)]])
+
+    _ =>
+      singletonToTaggedJson(t)
+  }
+}
+type Pizza = Pizza(String, Float, List Ingredient)
+instance Json Pizza {
+  fromJson = pizzaParser
+
+  toJson = pizzaToJson
+}
+// squad goals
+pizzaParser = Parser.map3(
+  Pizza,
+  Parser.field("name", fromJson),
+  Parser.field("cost", fromJson),
+  Parser.field("ingredients", fromJson),
+)
+name = where {
+  Pizza(n, _, _) =>
+    n
+}
+price = where {
+  Pizza(_, p, _) =>
+    p
+}
+ingredients = where {
+  Pizza(_, _, i) =>
+    i
+}
+pizzaToJson = (x) => Printer.object([
+  #[
+    "name",
+    pipe(
+      name,
+      Printer.string,
+    )(x),
+  ],
+  #[
+    "age",
+    pipe(
+      price,
+      Printer.float,
+    )(x),
+  ],
+  #[
+    "age",
+    pipe(
+      ingredients,
+      Printer.list(toJson),
+    )(x),
+  ],
+])
+// /*
 main = () => {
-  goodPizza = Pizza("Scharf Salami", map(Sold(1), [Corn, Cheese(Mozzarella), Tomato]))
+  goodPizza = Pizza("Scharf Salami", 14.95, [Corn, Cheese(Mozzarella), Tomato])
 
   pizzeria("Pizza Shop", goodPizza)
-  register("Hungry!", "welcome")
-  pizzeria("Pizza Shop", "welcome")
-  register("buy sell", 2.0002)
+  // register("Hungry!", "welcome")
+  // pizzeria("Pizza Shop", "welcome")
+  // register("buy sell", 2.0002)
 }
+
+// */

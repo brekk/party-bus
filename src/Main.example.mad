@@ -1,7 +1,11 @@
 import Printer from "Json/Print"
 
+import Fn from "Function"
 import {} from "Json"
 import Parser from "Json/Parse"
+import List from "List"
+import Maybe from "Maybe"
+import String from "String"
 
 import Party from "@/PartyBus"
 import PartyCabinet from "@/PartyCabinet"
@@ -23,20 +27,10 @@ export tags = {
     ],
   ),
 }
-pizzeria = PartyCabinet.env(tags.pizzeria)
-register = PartyCabinet.env(tags.register)
-registerDetail = PartyCabinet.env(tags.registerDetail)
-menu = PartyCabinet.env(tags.menu)
-menuSpecial = PartyCabinet.env(tags.menuSpecial)
-menuOutage = PartyCabinet.env(tags.menuOutage)
-// }
-// export tapped = {
-pizzeriaTapped = Party.tap(pizzeria)
-registerTapped = Party.tap(register)
-registerDetailTapped = Party.tap(registerDetail)
-menuTapped = Party.tap(menu)
-menuSpecialTapped = Party.tap(menuSpecial)
-menuOutageTapped = Party.tap(menuOutage)
+pizzeria = Party.env(tags.pizzeria)
+pizzeriaJson = PartyCabinet.env(tags.pizzeria)
+//// CONVERT OUR PIZZA TYPES TO AND FROM JSON
+
 // we're encoding our constructor name as "tag" fields in JSON
 singletonToTaggedJson = (t) => Printer.object([
   #[
@@ -49,16 +43,26 @@ singletonToTaggedJson = (t) => Printer.object([
 ])
 // }
 type PepperKind = Habanero | Bell | Anaheim | Thai
-pepperFromTag = (x) => Parser.succeed(
-  if (x == "Habanero") {
-    Habanero
-  } else if (x == "Bell") {
-    Bell
-  } else if (x == "Anaheim") {
-    Anaheim
-  } else {
-    Thai
-  },
+instance Scan PepperKind {
+  scan = pipe(
+    String.toLower,
+    (x) => if (x == "habanero") {
+      of(Habanero)
+    } else if (x == "bell") {
+      of(Bell)
+    } else if (x == "anaheim") {
+      of(Anaheim)
+    } else if (x == "thai") {
+      of(Thai)
+    } else {
+      Maybe.Nothing
+    },
+  )
+}
+pepperFromTag = pipe(
+  scan,
+  map(Parser.succeed),
+  Maybe.fromMaybe(Parser.fail("Unknown Pepper")),
 )
 taggedFromJson = (construct) => pipe(
   Parser.field("tag"),
@@ -70,16 +74,26 @@ instance Json PepperKind {
   toJson = singletonToTaggedJson
 }
 type CheeseKind = Mozzarella | Jack | Cheddar | Feta
-cheeseFromTag = (x) => Parser.succeed(
-  if (x == "Jack") {
-    Jack
-  } else if (x == "Cheddar") {
-    Cheddar
-  } else if (x == "Feta") {
-    Feta
-  } else {
-    Mozzarella
-  },
+instance Scan CheeseKind {
+  scan = pipe(
+    String.toLower,
+    (x) => if (x == "jack") {
+      of(Jack)
+    } else if (x == "cheddar") {
+      of(Cheddar)
+    } else if (x == "feta") {
+      of(Feta)
+    } else if (x == "mozzarella") {
+      of(Mozzarella)
+    } else {
+      Maybe.Nothing
+    },
+  )
+}
+cheeseFromTag = pipe(
+  scan,
+  map(Parser.succeed),
+  Maybe.fromMaybe(Parser.fail("Unknown Cheese")),
 )
 instance Json CheeseKind {
   fromJson = taggedFromJson(cheeseFromTag)
@@ -98,28 +112,61 @@ type Ingredient
   | Bacon
   | Tomato
   | Garlic
+hasParens = Fn.both(String.match("\\("), String.endsWith(")"))
+instance Scan Ingredient {
+  scan = pipe(
+    String.toLower,
+    (x) => if (String.startsWith("cheese", x)) {
+      if (hasParens(x)) {
+        pipe(
+          String.dropLast(1),
+          scan,
+        )(x)
+      } else {
+        of(Cheese(Mozzarella))
+      }
+    } else if (x == "pepperoni") {
+      of(Pepperoni)
+    } else if (String.startsWith("pepper", x) && !String.match("pepperoni", x)) {
+      if (hasParens(x)) {
+        pipe(
+          String.dropLast(1),
+          scan,
+        )(x)
+      } else {
+        of(Pepper(Habanero))
+      }
+    } else if (x == "onion") {
+      of(Onion)
+    } else if (x == "sausage") {
+      of(Sausage)
+    } else if (x == "chicken") {
+      of(Chicken)
+    } else if (x == "corn") {
+      of(Corn)
+    } else if (x == "tomato") {
+      of(Tomato)
+    } else if (x == "potato") {
+      of(Potato)
+    } else if (x == "bacon") {
+      of(Bacon)
+    } else if (x == "garlic") {
+      of(Garlic)
+    } else {
+      Maybe.Nothing
+    },
+  )
+}
 ingredientFromTag = (x) => if (x == "Cheese") {
   Parser.map1(Cheese, Parser.field("kind", fromJson))
 } else if (x == "Pepper") {
   Parser.map1(Pepper, Parser.field("kind", fromJson))
-} else if (x == "Pepperoni") {
-  Parser.succeed(Pepperoni)
-} else if (x == "Onion") {
-  Parser.succeed(Onion)
-} else if (x == "Sausage") {
-  Parser.succeed(Sausage)
-} else if (x == "Chicken") {
-  Parser.succeed(Chicken)
-} else if (x == "Corn") {
-  Parser.succeed(Corn)
-} else if (x == "Tomato") {
-  Parser.succeed(Tomato)
-} else if (x == "Potato") {
-  Parser.succeed(Potato)
-} else if (x == "Bacon") {
-  Parser.succeed(Bacon)
 } else {
-  Parser.succeed(Garlic)
+  pipe(
+    scan,
+    map(Parser.succeed),
+    Maybe.fromMaybe(Parser.fail("Unknown ingredient")),
+  )(x)
 }
 instance Json Ingredient {
   fromJson = taggedFromJson(ingredientFromTag)
@@ -176,7 +223,7 @@ pizzaToJson = (x) => Printer.object([
     )(x),
   ],
   #[
-    "age",
+    "ingredients",
     pipe(
       ingredients,
       Printer.list(toJson),
@@ -186,8 +233,8 @@ pizzaToJson = (x) => Printer.object([
 // /*
 main = () => {
   goodPizza = Pizza("Scharf Salami", 14.95, [Corn, Cheese(Mozzarella), Tomato])
-
-  pizzeria("Pizza Shop", goodPizza)
+  pizzeria("Write this to console please", goodPizza)
+  pizzeriaJson("Write to json and file", goodPizza)
   // register("Hungry!", "welcome")
   // pizzeria("Pizza Shop", "welcome")
   // register("buy sell", 2.0002)

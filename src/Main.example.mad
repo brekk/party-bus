@@ -7,8 +7,8 @@ import List from "List"
 import Maybe from "Maybe"
 import String from "String"
 
+import PartyCabinet from "@/Json"
 import Party from "@/PartyBus"
-import PartyCabinet from "@/PartyCabinet"
 
 
 
@@ -18,19 +18,17 @@ export tags = {
   registerDetail: Party.tagWithScope("pizzeria", ["register", "detail"]),
   menu: Party.tagWithScope("pizzeria", ["menu"]),
   menuSpecial: Party.tagWithScope("pizzeria", ["menu", "special"]),
-  menuOutage: Party.tagWithScope(
-    "pizzeria",
-    [
-      "menu",
-      "outage",
-    // export env = {
-    ],
-  ),
+  menuOutage: Party.tagWithScope("pizzeria", ["menu", "outage"]),
 }
 pizzeria = Party.env(tags.pizzeria)
 pizzeriaJson = PartyCabinet.env(tags.pizzeria)
+doubleStuffedCrust = (msg, x) => pipe(
+  pizzeria(msg),
+  pizzeriaJson(msg),
+)(x)
+// this should barf
+record = { doubleStuffedCrust }
 //// CONVERT OUR PIZZA TYPES TO AND FROM JSON
-
 // we're encoding our constructor name as "tag" fields in JSON
 singletonToTaggedJson = (t) => Printer.object([
   #[
@@ -42,7 +40,7 @@ singletonToTaggedJson = (t) => Printer.object([
   ],
 ])
 // }
-type PepperKind = Habanero | Bell | Anaheim | Thai
+type PepperKind = Habanero | Bell | Jalapeno | Thai
 instance Scan PepperKind {
   scan = pipe(
     String.toLower,
@@ -50,8 +48,8 @@ instance Scan PepperKind {
       of(Habanero)
     } else if (x == "bell") {
       of(Bell)
-    } else if (x == "anaheim") {
-      of(Anaheim)
+    } else if (x == "jalapeno") {
+      of(Jalapeno)
     } else if (x == "thai") {
       of(Thai)
     } else {
@@ -107,6 +105,7 @@ type Ingredient
   | Onion
   | Sausage
   | Chicken
+  | Olive
   | Corn
   | Potato
   | Bacon
@@ -127,7 +126,7 @@ instance Scan Ingredient {
       }
     } else if (x == "pepperoni") {
       of(Pepperoni)
-    } else if (String.startsWith("pepper", x) && !String.match("pepperoni", x)) {
+    } else if (String.startsWith("pepper", x)) {
       if (hasParens(x)) {
         pipe(
           String.dropLast(1),
@@ -142,6 +141,8 @@ instance Scan Ingredient {
       of(Sausage)
     } else if (x == "chicken") {
       of(Chicken)
+    } else if (x == "olive") {
+      of(Olive)
     } else if (x == "corn") {
       of(Corn)
     } else if (x == "tomato") {
@@ -232,9 +233,18 @@ pizzaToJson = (x) => Printer.object([
 ])
 // /*
 main = () => {
-  goodPizza = Pizza("Scharf Salami", 14.95, [Corn, Cheese(Mozzarella), Tomato])
+  goodPizza = Pizza("Scharf Salami", 14.95, [Corn, Cheese(Mozzarella), Pepper(Habanero)])
+
   pizzeria("Write this to console please", goodPizza)
   pizzeriaJson("Write to json and file", goodPizza)
+
+  supremePizza = Pizza(
+    "Supremo",
+    22.17,
+    [Cheese(Mozzarella), Olive, Pepper(Bell), Pepper(Jalapeno), Onion, Garlic],
+  )
+
+  record.doubleStuffedCrust("write to both console and json!", supremePizza)
   // register("Hungry!", "welcome")
   // pizzeria("Pizza Shop", "welcome")
   // register("buy sell", 2.0002)

@@ -1,259 +1,57 @@
-import DateTime from "Date"
-import Dict from "Dictionary"
-import Fn from "Function"
-import IO from "IO"
-import Print from "Json/Print"
-import JV from "Json/Value"
+import type { PartyBusConfig } from "@/Configuration"
+
 import List from "List"
 import Maybe from "Maybe"
-import { Just } from "Maybe"
 import Process from "Process"
 import String from "String"
 
-import Dye from "dye"
 import Freitag from "freitag"
 import Tag from "freitag/Tag"
 
+import Config from "@/Configuration"
 import Env from "@/Env"
-import _File from "@/File"
+import Predicate from "@/Predicate"
 
 
 
-/**
- * The condition of when a side-effect should run
- * @since 0.0.1
- */
-export alias PartyPredicate a = Tag -> String -> a -> Boolean
-/**
- * The message decoration
- * @since 0.0.1
- */
-export alias Decorator a = String -> Tag -> String -> a -> String
-export alias Signal a = Tag -> String -> a -> a
-export alias SideEffect a = String -> a -> a
-/**
- * The configuration of the signal
- * @since 0.0.1
- */
-export alias Config raw mod = {
-  change :: raw -> mod,
-  check :: PartyPredicate raw,
-  decorate :: Decorator raw,
-  effect :: SideEffect mod,
-  seed :: String,
-}
-signalWithConfig :: Show a => Config a b -> Signal a
-export signalWithConfig = ({ seed, decorate, effect, check }, tg, message, x) => {
-  msg = decorate(seed, tg, message, x)
-  return if (check(tg, msg, x)) do {
-    effect(msg, x)
-    return x
-  } else {
-    x
-  }
-}
-/**
- * A shorthand function to always fire the side-effect
- * @since 0.0.1
- */
-always :: PartyPredicate a
-export always = (_, _, _) => true
-/**
- * A shorthand function to pass the message unchanged
- * @since 0.0.1
- */
-decorateRaw :: Decorator a
-export decorateRaw = (_, _, m, _) => m
-serializeTag = pipe(
-  Tag.toList,
-  String.join(":"),
-)
-/**
- * A means of colorizing a message by tag
- * @since 0.0.1
- */
-colorizeTag :: String -> Tag -> String
-export colorizeTag = (seed, x) => pipe(
-  serializeTag,
-  (tagId) => Dye.colorize(seed, " " ++ tagId ++ " "),
-)(x)
-/**
- * Color by tag and prepend to message
- * @since 0.0.1
- */
-decorateWithStyle :: Decorator a
-export decorateWithStyle = (seed, tg, message, _) => {
-  idWithColor = colorizeTag(seed, tg)
-  return idWithColor ++ " " ++ message
-}
-/**
- * Color by tag, add current time and prepend to message
- * @since 0.0.1
- */
-decorateWithStyleAndDate :: Decorator a
-export decorateWithStyleAndDate = (seed, tg, message, _) => {
-  idWithColor = colorizeTag(seed, tg)
-  return idWithColor ++ " " ++ DateTime.toISOString(DateTime.now()) ++ " ▸ " ++ message
-}
-decorateWithDate :: Decorator a
-export decorateWithDate = (_, tg, message, _) => {
-  return serializeTag(tg) ++ " " ++ DateTime.toISOString(DateTime.now()) ++ " ▸ " ++ message
-}
-/**
- * A sugar method to create a Config record, usually by partial application 
- * @since 0.0.1
- */
-configurateWithSeed :: String
-  -> Decorator a
-  -> SideEffect a
-  -> PartyPredicate a
-  -> (a -> b)
-  -> Config a b
-export configurateWithSeed = (seed, decorate, effect, check, change) => (
-  { seed, decorate, effect, check, change }
-)
-export configurate = configurateWithSeed("party-bus")
-export confSeed = (seed, ext) => ({ ...ext, seed })
-export confDecorator = (decorate, ext) => ({ ...ext, decorate })
-export confEffect = (effect, ext) => ({ ...ext, effect })
-export confChange = (change, ext) => ({ ...ext, change })
-export confCheck = (check, ext) => ({ ...ext, check })
-/**
- * The default config to use when invoking the bus, shorthand for:
- * Call IO.pTrace unconditionally, with no change to the value passing through. 
- * @since 0.0.1
- */
-DEFAULT_CONFIG :: Show b => Config a b
-export DEFAULT_CONFIG = {
-  seed: "party-bus",
-  decorate: decorateRaw,
-  check: always,
-  effect: IO.pTrace,
-  change: Fn.identity,
-}
-// mirror: Maybe.Nothing,
-
-// we don't test this because it's wired to IO
-/**
- * signalWithConfig minus the config
- * @since 0.0.1
- */
-signal :: Show a => Tag -> String -> a -> a
-export signal = signalWithConfig(DEFAULT_CONFIG)
-/**
- * An alternative config based on the default config with a styled and dated config
- * @since 0.0.1
- */
-DATED_CONFIG :: Show b => Config a b
-export DATED_CONFIG = {
-  seed: "party-bus",
-  decorate: decorateWithStyleAndDate,
-  effect: IO.pTrace,
-  change: Fn.identity,
-  check: always,
-}
-/**
-* Call signal with a colorized serialized tag and date prepended to the message
-* @since 0.0.1
-*/
-export dateTaggedSignal = signalWithConfig(DATED_CONFIG)
-checkEnvironment :: List Freitag.TagQuery -> Tag -> Boolean
-export checkEnvironment = (queries, tg) => pipe(
-  List.find(Freitag.tagApplies(tg)),
-  map(Freitag.queryAppliesTo),
-  Maybe.fromMaybe(false),
-)(queries)
-export checkAgainstEnvironmentAlso = (check, legend, _tag, _msg, _x) => (
-  checkEnvironment(legend, _tag) && check(_tag, _msg, _x)
-)
-partyBus :: Show a => List Freitag.TagQuery -> Config a b -> Tag -> String -> a -> a
-export partyBus = (legend, config, t, msg, x) => signalWithConfig(
-  confCheck(checkAgainstEnvironmentAlso(config.check, legend), config),
-  t,
-  msg,
-  x,
-)
-////////////////////////////////
-
-
-/**
- * partyBus, but wired to a dictionary of string keys to parse
- * @since 0.0.1
- */
-envFrom :: Show a => Dictionary String String
-  -> #[String, String]
-  -> Config a b
-  -> Tag
-  -> String
-  -> a
-  -> a
-export envFrom = (envDict, #[key, fileHook], config, t, msg, x) => partyBus(
-  Env.getEnvWithKey(key, envDict),
-  config,
-  t,
-  msg,
-  x,
-)
-/**
- * convenient shortcut to call Freitag's Tag.create
- * @since 0.3.0
- */
+// sugar atop Freitag
 export tag = pipe(
   of,
   Tag.create,
 )
-/**
- * convenient shortcut to call Freitag's Tag.create with an extended scope
- * @since 0.3.0
- */
-export tagWithScope = (a, bs) => {
-  return Tag.create([a, ...bs])
-  ///////////////
-}
-/**
- * Create multiple tags with different scopes but the same base
- * @since 0.0.4
- */
-export createTags = (key, scopes) => pipe(
-  map(tagWithScope(key)),
-)(scopes)
-/**
- * "Push" a new base onto an existing tag,
- * converting the extant base to the beginning of the scope
- * @since 0.0.5
- */
-pushTag :: String -> Tag -> Tag
-export pushTag = (parent, t) => where(t) {
-  Tag.Tag(raw) =>
-    Tag.create([parent, ...raw])
-
-  _ =>
-    t
-}
-// The following functions are untested because they rely upon Process.Env, which we can't guarantee from the test environment
-/**
- * partyBus, but wired to the environment
- * @since 0.0.1
- */
-keyedEnv :: Show a => #[String, String] -> Config a b -> Tag -> String -> a -> a
-export keyedEnv = envFrom(Process.Env)
-export ENV_VARS = #[
-  "DEBUG",
-  "DEBUG_LOG",
-/**
- * partyBus, but wired to the DEBUG value from the environment
- * @since 0.0.1
- */
-]
-bus :: Show a => Config a b -> Tag -> String -> a -> a
-export bus = keyedEnv(ENV_VARS)
-env :: Show a => Tag -> String -> a -> a
-export env = bus(DATED_CONFIG)
-/**
- * generic tap function, which allows you to specify a lambda for an ephemeral (non-mutating) / lens-like transformation at call time
- */
-// tap :: (String -> b -> b) -> String -> (a -> b) -> a -> a
+export tagWithScope = (a, bs) => Tag.create([a, ...bs])
+export createTags = (key) => map(tagWithScope(key))
+export alias Signal a = Tag -> String -> a -> a
+export alias SideEffect a = String -> a -> a
 export tap = (spout, msg, taproot, x) => {
   spout(msg, taproot(x))
   return x
 }
+///////// The main thing that PartyBus offers, in a tiny form
+signalWithConfig :: Show a => PartyBusConfig a b -> Signal a
+export signalWithConfig = ({ seed, decorate, effect, check, change }, tg, message, x) => (
+  !check(tg, message, x) ? x : tap(effect, decorate(seed, tg, message, x), change, x)
+)
+signal :: Show a => Tag -> String -> a -> a
+export signal = signalWithConfig(Config.DEFAULT_CONFIG)
+export dateTaggedSignal = signalWithConfig(Config.STYLED_CONFIG)
+partyBus :: Show a => List Freitag.TagQuery -> PartyBusConfig a b -> Tag -> String -> a -> a
+export partyBus = (legend, config) => pipe(
+  Config.setCheck(Predicate.checkAgainstEnvironmentAlso(config.check, legend)),
+  signalWithConfig,
+)(config)
+envFrom :: Show a => Dictionary String String
+  -> #[String, String]
+  -> PartyBusConfig a b
+  -> Tag
+  -> String
+  -> a
+  -> a
+export envFrom = (envDict, #[key, _]) => partyBus(Env.getEnvWithKey(key, envDict))
+keyedEnv :: Show a => #[String, String] -> PartyBusConfig a b -> Tag -> String -> a -> a
+export keyedEnv = envFrom(Process.Env)
+export ENV_VARS = #["DEBUG", "DEBUG_LOG"]
+bus :: Show a => PartyBusConfig a b -> Tag -> String -> a -> a
+export bus = keyedEnv(ENV_VARS)
+env :: Show a => Tag -> String -> a -> a
+export env = bus(Config.STYLED_CONFIG)

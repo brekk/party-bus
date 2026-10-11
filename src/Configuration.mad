@@ -1,0 +1,47 @@
+import Fn from "Function"
+import IO from "IO"
+
+import Dec from "@/Decorator"
+import Pred from "@/Predicate"
+
+
+
+export alias SideEffect a = String -> a -> a
+export alias PartyBusConfig raw mod = {
+  change :: raw -> mod,
+  check :: Pred.PartyPredicate raw,
+  decorate :: Dec.Decorator raw,
+  effect :: SideEffect mod,
+  seed :: String,
+}
+configurateWithSeed :: String
+  -> Dec.Decorator a
+  -> SideEffect a
+  -> (a -> b)
+  -> Pred.PartyPredicate a
+  -> PartyBusConfig a b
+export configurateWithSeed = (seed, decorate, effect, change, check) => (
+  { seed, decorate, effect, check, change }
+)
+export configurate = configurateWithSeed("party-bus")
+export setSeed = (seed, ext) => ({ ...ext, seed })
+export setDecorator = (decorate, ext) => ({ ...ext, decorate })
+export setEffect = (effect, ext) => ({ ...ext, effect })
+export setChange = (change, ext) => ({ ...ext, change })
+export setCheck = (check, ext) => ({ ...ext, check })
+DEFAULT_CONFIG :: Show b => PartyBusConfig a b
+export DEFAULT_CONFIG = {
+  change: Fn.identity,
+  check: Pred.always,
+  decorate: Dec.none,
+  effect: IO.pTrace,
+  seed: "party-bus",
+}
+STYLED_CONFIG :: Show b => PartyBusConfig a b
+export STYLED_CONFIG = {
+  change: Fn.identity,
+  check: Pred.always,
+  decorate: Dec.withColorAndDate,
+  effect: IO.pTrace,
+  seed: "party-bus",
+}

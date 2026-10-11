@@ -30,12 +30,12 @@
       "version": "0.0.9",
       "versionHash": "0fe62b963ce472b48dfecf0855803fec"
     },
-    "https://github.com/brekk/study/archive/refs/tags/v0.0.7.zip": {
-      "buildHash": "919dea83a7ccd0a2a11a03e011ecd52e",
+    "https://github.com/brekk/study/archive/refs/tags/v0.0.8.zip": {
+      "buildHash": "26036373971967d8901f3af3c43d0c49",
       "dependencies": [],
       "name": "study",
-      "version": "0.0.7",
-      "versionHash": "18674886c733b8b107f76ff083ead6ea"
+      "version": "0.0.8",
+      "versionHash": "03afcd24d3b7852bdef203bc34360409"
     }
   }
 }

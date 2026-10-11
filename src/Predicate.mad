@@ -1,0 +1,22 @@
+import List from "List"
+import Maybe from "Maybe"
+
+import Freitag from "freitag"
+import Tag from "freitag/Tag"
+
+
+
+export alias PartyPredicate a = Tag -> String -> a -> Boolean
+always :: PartyPredicate a
+export always = (_, _, _) => true
+never :: PartyPredicate a
+export never = (_, _, _) => false
+checkEnvironment :: List Freitag.TagQuery -> Tag -> Boolean
+export checkEnvironment = (queries, tg) => pipe(
+  List.find(Freitag.tagApplies(tg)),
+  map(Freitag.queryAppliesTo),
+  Maybe.fromMaybe(false),
+)(queries)
+export checkAgainstEnvironmentAlso = (check, legend, _tag, _msg, _x) => (
+  checkEnvironment(legend, _tag) && check(_tag, _msg, _x)
+)

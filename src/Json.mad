@@ -1,7 +1,6 @@
 import DateTime from "Date"
 import Dict from "Dictionary"
 import Fn from "Function"
-import IO from "IO"
 import Print from "Json/Print"
 import JV from "Json/Value"
 import List from "List"
@@ -23,83 +22,72 @@ import PartyBus from "@/PartyBus"
 export alias Serializer a = a -> JV.Value
 export alias SerialConverter a = Tag -> String -> a -> JV.Value
 export alias JsonEffect = JV.Value -> {}
-export alias SerialRecord raw = {
+export alias JsonConfig raw = {
   check :: PartyBus.PartyPredicate raw,
   convert :: SerialConverter raw,
   effect :: JsonEffect,
 }
-fileSignalWithConfig :: SerialRecord a -> Tag -> String -> a -> a
-export fileSignalWithConfig = ({ convert, effect, check }, tg, message, x) => {
-  return if (check(tg, message, x)) do {
-    effect(convert(tg, message, x))
-    return x
-  } else {
-    x
-  }
+signalWithConfig :: JsonConfig a -> Tag -> String -> a -> a
+export signalWithConfig = ({ convert, effect, check }, tg, message, x) => if (
+  check(tg, message, x)
+) do {
+  effect(convert(tg, message, x))
+  return x
+} else {
+  x
 }
-// export signalWithConfig = signalWithConfigAndLog(Maybe.Nothing)
 tagToJsonList :: Tag -> JV.Value
-tagToJsonList = (t) => {
-  return pipe(
-    Tag.toList,
-    Print.list(Print.string),
-  )(t)
-}
+export tagToJsonList = pipe(
+  Tag.toList,
+  Print.list(Print.string),
+)
 jsonL :: Json a => Tag -> String -> a -> JV.Value
-export jsonL = (tg, m, v) => {
-  return Print.object([
-    #[
-      "timestamp",
-      pipe(
-        DateTime.toISOString,
-        Print.string,
-      )(DateTime.now()),
-    ],
-    #[
-      "message",
-      pipe(
-        Dye.stripAnsi,
-        Print.string,
-      )(m),
-    ],
-    #["tag", tagToJsonList(tg)],
-    #["value", toJson(v)],
-  ])
-  ////////
-}
-///////////////
+export jsonL = (tg, m, v) => Print.object([
+  #[
+    "timestamp",
+    pipe(
+      DateTime.toISOString,
+      Print.string,
+    )(DateTime.now()),
+  ],
+  #[
+    "message",
+    pipe(
+      Dye.stripAnsi,
+      Print.string,
+    )(m),
+  ],
+  #["tag", tagToJsonList(tg)],
+  #["value", toJson(v)],
+])
+// our primary effect, shouting values into a json file
 jsonPrint :: String -> JV.Value -> {}
-jsonPrint = (logFile, jjjjjjj) => pipe(
+export jsonPrint = (logFile, jjjjjjj) => pipe(
+  // we need long ass lines as newlines aren't allowed in JSONL
   Print.printJson(100000000000000000),
   _File.shout(logFile),
   Fn.always({}),
 )(jjjjjjj)
-///////////////
+// the analog to `partyBus` in `PartyBus.mad`
 partyCabinet :: Json a => Maybe String
   -> List Freitag.TagQuery
-  -> SerialRecord a
+  -> JsonConfig a
   -> Tag
   -> String
   -> a
   -> a
 export partyCabinet = (logRef, legend, config, t, msg, x) => {
   logFile = logRef ?? ""
-  mirrorFace = String.isEmpty(logFile) ? (_) => {} : jsonPrint(logFile)
-  y = fileSignalWithConfig(
-    {
-      convert: jsonL,
-      check: PartyBus.checkAgainstEnvironmentAlso(config.check, legend),
-      effect: mirrorFace,
-    },
+  effect = String.isEmpty(logFile) ? (_) => {} : jsonPrint(logFile)
+  return signalWithConfig(
+    { convert: jsonL, check: PartyBus.checkAgainstEnvironmentAlso(config.check, legend), effect },
     t,
     msg,
   )(x)
-  // IO.pTrace("BARFO?", y)
-  return y
 }
 envFrom :: Json a => Dictionary String String
   -> #[String, String]
-  -> SerialRecord a
+  -> JsonConfig a
   -> Tag
   -> String
   -> a
@@ -112,19 +100,14 @@ export envFrom = (envDict, #[key, fileHook], config, t, msg, x) => partyCabinet(
   msg,
   x,
 )
-keyedEnv :: Json a => #[String, String] -> SerialRecord a -> Tag -> String -> a -> a
+keyedEnv :: Json a => #[String, String] -> JsonConfig a -> Tag -> String -> a -> a
 export keyedEnv = envFrom(Process.Env)
-/**
- * partyBus, but wired to the DEBUG value from the environment
- * @since 0.0.1
- */
-DEFAULT_CONFIG :: Json a => SerialRecord a
+DEFAULT_CONFIG :: Json a => JsonConfig a
 export DEFAULT_CONFIG = {
   check: PartyBus.always,
   effect: (_) => {},
   convert: (_, _, a) => toJson(a),
 }
-bus :: Json a => SerialRecord a -> Tag -> String -> a -> a
+bus :: Json a => JsonConfig a -> Tag -> String -> a -> a
 export bus = keyedEnv(PartyBus.ENV_VARS)
-// envWithSerializer :: Json a => Serializer a -> Tag -> String -> a -> a
 export env = bus(DEFAULT_CONFIG)

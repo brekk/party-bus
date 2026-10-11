@@ -1,0 +1,32 @@
+digraph dependencies {
+
+  Config
+  Config -> PartyBus
+  Decorators
+  Decorators -> PartyBus
+  Env
+  Env -> PartyBus
+  Env -> Query
+  Lazy
+  PartyBus
+  Predicate
+  Predicate -> PartyBus
+  Query
+  Query -> PartyBus
+  Scope
+  Scope -> Query
+  Scope -> Tag
+  Tag
+  Tag -> Core
+  Tag -> Decorators
+  Tag -> PartyBus
+  Tag -> Query
+  Tag -> Types
+  Types
+  Types -> Config
+  Types -> Core
+  Types -> Decorators
+  Types -> PartyBus
+  Types -> Predicate
+
+}

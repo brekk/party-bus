@@ -1,0 +1,42 @@
+import DateTime from "Date"
+import String from "String"
+
+import Dye from "dye"
+import Tag from "freitag/Tag"
+
+
+
+spaceWrap = pipe(
+  mappend(" "),
+  mappend($, " "),
+)
+export ARROW = "➔"
+export SPACE_ARROW = spaceWrap(ARROW)
+export alias Decorator a = String -> Tag -> String -> a -> String
+none :: Decorator a
+export none = (_, _, m, _) => m
+serializeTag = pipe(
+  Tag.toList,
+  String.join(":"),
+)
+colorizeTag :: String -> Tag -> String
+export colorizeTag = (seed, x) => pipe(
+  serializeTag,
+  spaceWrap,
+  Dye.colorize(seed),
+)(x)
+withColor :: Decorator a
+export withColor = (seed, tg, message, _) => colorizeTag(seed, tg) ++ " " ++ message
+isonow = () => DateTime.toISOString(DateTime.now())
+withColorAndDate :: Decorator a
+export withColorAndDate = (seed, tg, message, _) => colorizeTag(seed, tg)
+    ++ " "
+    ++ isonow()
+    ++ SPACE_ARROW
+    ++ message
+withDate :: Decorator a
+export withDate = (_, tg, message, _) => serializeTag(tg)
+    ++ " "
+    ++ isonow()
+    ++ SPACE_ARROW
+    ++ message

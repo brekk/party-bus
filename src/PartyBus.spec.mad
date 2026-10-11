@@ -1,15 +1,8 @@
 import { caseN3, report } from "Study"
 import { create } from "freitag/Tag"
 
-import {
-  STYLED_CONFIG,
-  confEffect,
-  createTags,
-  envFrom,
-  pushTag,
-  tag,
-  tagWithScope,
-} from "@/PartyBus"
+import Config from "@/Configuration"
+import { createTags, envFrom, tag, tagWithScope } from "@/PartyBus"
 
 
 
@@ -18,7 +11,9 @@ TEST_ENV = {{ "DEBUG": "test:scope:detail,check,-nice" }}
 report(tag, "tag", [#["one", create(["one"])]])
 report(tagWithScope("one"), "tagWithScope", [#[["two"], create(["one", "two"])]])
 report(
-  caseN3(envFrom(TEST_ENV, #["DEBUG", "DEBUG_LOG"], confEffect((_, x) => x, STYLED_CONFIG))),
+  caseN3(
+    envFrom(TEST_ENV, #["DEBUG", "DEBUG_LOG"], Config.setEffect((_, x) => x, Config.STYLED_CONFIG)),
+  ),
   "partyBus",
   [
     #[#[createTag(["check"]), "message!", "raw"], "raw"],
@@ -59,13 +54,5 @@ report(
         "detailNested": createTag(["test", "detail", "nested"]),
       }},
     ],
-  ],
-)
-report(
-  pushTag("test"),
-  "pushTag",
-  [
-    #[createTag(["hey"]), createTag(["test", "hey"])],
-    #[createTag(["hey", "there"]), createTag(["test", "hey", "there"])],
   ],
 )

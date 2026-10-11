@@ -25,5 +25,5 @@
   "hooks": {
     "postInstall": "./scripts/build-lib"
   },
-  "staticLibs": ["lib/build/sink.a"]
+  "staticLibs": ["./lib/build/sink.a"]
 }

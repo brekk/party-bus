@@ -5,7 +5,7 @@ A conditional and tagged logger designed to be a near drop-in replacement for `I
 
 
 [![Madlib Project Badge](https://img.shields.io/badge/madlib-purple?logo=github&logoSize=auto)](//github.com/madlib-lang/madlib) <!-- $MADLIB.projectBadge -->
-[![PartyBus v0.3.3](https://img.shields.io/badge/v0.3.3-purple?label=version)](//github.com/brekk/party-bus) <!-- $MADLIB.json.version -->
+[![PartyBus v0.4.0](https://img.shields.io/badge/v0.4.0-purple?label=version)](//github.com/brekk/party-bus) <!-- $MADLIB.json.version -->
 
 ---
 
@@ -93,7 +93,7 @@ MY_CONFIG = {
 const env = PB.bus(MY_CONFIG)
 ```
 
-At this point, if you want to know even more, you should probably look at [the source](//github.com/brekk/party-bus/blob/main/src/PartyBus.mad), as most of PartyBus is really just one big partially applied function.
+At this point, if you want to know even more, you should probably look at [the source](//github.comPartyBus/blob/main/github.comPartyBus/blob/main/bus/blob/main/src/PartyBus.mad), as most of PartyBus is really just one big partially applied function.
 
 ## Using a standardized approach
 

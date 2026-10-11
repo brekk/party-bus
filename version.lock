@@ -1,146 +1,100 @@
 {
-  "buildHash": "a46416519f9d7ce5fef9dfc3c2175bcc",
+  "buildHash": "3a78087768cea7b07c33c88fd03ac08c",
   "jsApi": {
-    "apiInstances": [
-      "Json Tag"
-    ],
+    "apiInstances": [],
     "apiAliases": {
-      "src/SideEffect.mad#SideEffect a": "(String -> a -> a)",
+      "src/Configuration.mad#PartyBusConfig raw mod": "{ change :: raw -> mod, check :: PartyPredicate raw, decorate :: Decorator raw, effect :: SideEffect mod, seed :: String }",
+      "src/Configuration.mad#SideEffect a": "(String -> a -> a)",
       "Signal a": "(Tag -> String -> a -> a)",
-      "Decorator a": "(String -> Tag -> String -> a -> String)",
-      "PartyPredicate a": "(Tag -> String -> a -> Boolean)",
-      "Config": "{ change :: a -> b, check :: PartyPredicate a, decorate :: Decorator a, effect :: SideEffect b, mirror :: Mirror a b, seed :: String }"
+      "src/Predicate.mad#PartyPredicate a": "(Tag -> String -> a -> Boolean)",
+      "src/Decorator.mad#Decorator a": "(String -> Tag -> String -> a -> String)",
+      "SideEffect a": "(String -> a -> a)"
     },
     "apiInterfaces": {},
     "apiNames": {
-      "decorateWithStyleAndDate": "String -> Tag -> String -> a -> String",
-      "keyedEnv": "Show String => #[String, String] -> { change :: String -> String, check :: Tag -> String -> String -> Boolean, decorate :: String -> Tag -> String -> String -> String, effect :: String -> String -> String, mirror :: Maybe { decorate :: String -> Tag -> String -> String -> String, effect :: String -> String -> String }, seed :: String } -> Tag -> String -> String -> String",
+      "src/Decorator.mad#colorizeTag": "String -> Tag -> String",
+      "src/Decorator.mad#SPACE_ARROW": "String",
+      "keyedEnv": "Show a => #[String, String] -> { change :: a -> b, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b, seed :: String } -> Tag -> String -> a -> a",
+      "src/Decorator.mad#none": "String -> Tag -> String -> a -> String",
       "src/Env.mad#getEnvWithKey": "String -> Dictionary String String -> List TagQuery",
-      "configurate": "(String -> Tag -> String -> a -> String) -> (String -> b -> b) -> (a -> b) -> (Tag -> String -> a -> Boolean) -> Maybe { decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b } -> { change :: a -> b, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b, mirror :: Maybe { decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b }, seed :: String }",
-      "decorateWithDate": "String -> Tag -> String -> a -> String",
-      "partyBusWithLog": "Show String => Maybe String -> List TagQuery -> { change :: String -> String, check :: Tag -> String -> String -> Boolean, decorate :: String -> Tag -> String -> String -> String, effect :: String -> String -> String, mirror :: Maybe { decorate :: String -> Tag -> String -> String -> String, effect :: String -> String -> String }, seed :: String } -> Tag -> String -> String -> String",
-      "src/File.mad#barrage": "String -> List String -> List String",
-      "confMirror": "a -> { ...base, mirror :: a } -> { ...base, mirror :: a }",
-      "colorizeTag": "String -> Tag -> String",
-      "DEFAULT_CONFIG": "Show a => { change :: a -> a, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> a -> a, mirror :: Maybe { decorate :: String -> Tag -> String -> a -> String, effect :: String -> a -> a }, seed :: String }",
-      "bus": "Show String => { change :: String -> String, check :: Tag -> String -> String -> Boolean, decorate :: String -> Tag -> String -> String -> String, effect :: String -> String -> String, mirror :: Maybe { decorate :: String -> Tag -> String -> String -> String, effect :: String -> String -> String }, seed :: String } -> Tag -> String -> String -> String",
-      "signalWithConfig": "Show a => { change :: a -> b, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b, mirror :: Maybe { decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b }, seed :: String } -> Tag -> String -> a -> a",
-      "taggedSignal": "Show a => Tag -> String -> a -> a",
+      "src/Configuration.mad#setChange": "a -> { ...base, change :: a } -> { ...base, change :: a }",
+      "src/Decorator.mad#withColor": "String -> Tag -> String -> a -> String",
+      "src/Configuration.mad#DEFAULT_CONFIG": "Show a => { change :: a -> a, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> a -> a, seed :: String }",
+      "src/Predicate.mad#checkAgainstEnvironmentAlso": "(Tag -> a -> b -> Boolean) -> List TagQuery -> Tag -> a -> b -> Boolean",
+      "src/Predicate.mad#always": "Tag -> String -> a -> Boolean",
+      "bus": "Show a => { change :: a -> b, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b, seed :: String } -> Tag -> String -> a -> a",
+      "src/Predicate.mad#never": "Tag -> String -> a -> Boolean",
+      "signalWithConfig": "Show a => { change :: a -> b, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b, seed :: String } -> Tag -> String -> a -> a",
+      "src/Configuration.mad#setSeed": "a -> { ...base, seed :: a } -> { ...base, seed :: a }",
       "tag": "String -> Tag",
-      "DATED_CONFIG": "Show a => { change :: a -> a, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> a -> a, mirror :: Maybe { decorate :: String -> Tag -> String -> a -> String, effect :: String -> a -> a }, seed :: String }",
-      "configurateWithSeed": "String -> (String -> Tag -> String -> a -> String) -> (String -> b -> b) -> (a -> b) -> (Tag -> String -> a -> Boolean) -> Maybe { decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b } -> { change :: a -> b, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b, mirror :: Maybe { decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b }, seed :: String }",
-      "pushTag": "String -> Tag -> Tag",
-      "decorateRaw": "String -> Tag -> String -> a -> String",
       "createTags": "Functor m => String -> m (List String) -> m Tag",
+      "src/Configuration.mad#setEffect": "a -> { ...base, effect :: a } -> { ...base, effect :: a }",
       "signal": "Show a => Tag -> String -> a -> a",
-      "STYLED_CONFIG": "Show a => { change :: a -> a, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> a -> a, mirror :: Maybe { decorate :: String -> Tag -> String -> a -> String, effect :: String -> a -> a }, seed :: String }",
-      "confCheck": "a -> { ...base, check :: a } -> { ...base, check :: a }",
-      "envFrom": "Show String => Dictionary String String -> #[String, String] -> { change :: String -> String, check :: Tag -> String -> String -> Boolean, decorate :: String -> Tag -> String -> String -> String, effect :: String -> String -> String, mirror :: Maybe { decorate :: String -> Tag -> String -> String -> String, effect :: String -> String -> String }, seed :: String } -> Tag -> String -> String -> String",
-      "confSeed": "a -> { ...base, seed :: a } -> { ...base, seed :: a }",
-      "checkEnvironment": "List TagQuery -> Tag -> Boolean",
-      "src/File.mad#shout": "String -> String -> String",
-      "confEffect": "a -> { ...base, effect :: a } -> { ...base, effect :: a }",
-      "jsonL": "a -> Tag -> String -> String -> String",
-      "confDecorator": "a -> { ...base, decorate :: a } -> { ...base, decorate :: a }",
-      "decorateWithStyle": "String -> Tag -> String -> a -> String",
+      "src/Decorator.mad#withColorAndDate": "String -> Tag -> String -> a -> String",
+      "envFrom": "Show a => Dictionary String String -> #[String, String] -> { change :: a -> b, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b, seed :: String } -> Tag -> String -> a -> a",
+      "src/Decorator.mad#withDate": "String -> Tag -> String -> a -> String",
+      "ENV_VARS": "#[String, String]",
+      "src/Configuration.mad#setCheck": "a -> { ...base, check :: a } -> { ...base, check :: a }",
+      "partyBus": "Show a => List TagQuery -> { change :: a -> b, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b, seed :: String } -> Tag -> String -> a -> a",
       "tagWithScope": "String -> List String -> Tag",
-      "dateTaggedSignal": "Show a => Tag -> String -> a -> a",
-      "env": "Show String => Tag -> String -> String -> String",
-      "tap": "(String -> a -> a) -> String -> (b -> a) -> b -> b",
-      "always": "Tag -> String -> a -> Boolean",
-      "src/File.mad#createSink": "String -> { end :: {} -> {}, write :: String -> {} }",
-      "confChange": "a -> { ...base, change :: a } -> { ...base, change :: a }"
+      "src/Decorator.mad#ARROW": "String",
+      "env": "Show a => Tag -> String -> a -> a",
+      "tap": "(a -> b -> c) -> a -> (d -> b) -> d -> d",
+      "src/Configuration.mad#configurate": "(String -> Tag -> String -> a -> String) -> (String -> a -> a) -> (a -> a) -> (Tag -> String -> a -> Boolean) -> { change :: a -> a, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> a -> a, seed :: String }",
+      "src/Configuration.mad#configurateWithSeed": "String -> (String -> Tag -> String -> a -> String) -> (String -> a -> a) -> (a -> a) -> (Tag -> String -> a -> Boolean) -> { change :: a -> a, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> a -> a, seed :: String }",
+      "src/Configuration.mad#setDecorator": "a -> { ...base, decorate :: a } -> { ...base, decorate :: a }",
+      "src/Configuration.mad#STYLED_CONFIG": "Show a => { change :: a -> a, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> a -> a, seed :: String }",
+      "src/Predicate.mad#checkEnvironment": "List TagQuery -> Tag -> Boolean"
     },
-    "apiTypes": {
-      "StreamMode": [
-        "EagerStream",
-        "LazyStream"
-      ],
-      "src/Error.mad#PartyFoul": [
-        "ExecutableNotFound",
-        "UnableToCreatePath",
-        "UnableToWriteFile",
-        "PathDoesNotExist"
-      ],
-      "PartyEvent a": [
-        "PartyEvent DateTime Tag a"
-      ],
-      "FlushMode": [
-        "EagerFlush",
-        "LazyFlush"
-      ]
-    }
+    "apiTypes": {}
   },
   "llvmApi": {
-    "apiInstances": [
-      "Json Tag"
-    ],
+    "apiInstances": [],
     "apiAliases": {
-      "src/SideEffect.mad#SideEffect a": "(String -> a -> a)",
+      "src/Configuration.mad#PartyBusConfig raw mod": "{ change :: raw -> mod, check :: PartyPredicate raw, decorate :: Decorator raw, effect :: SideEffect mod, seed :: String }",
+      "src/Configuration.mad#SideEffect a": "(String -> a -> a)",
       "Signal a": "(Tag -> String -> a -> a)",
-      "Decorator a": "(String -> Tag -> String -> a -> String)",
-      "PartyPredicate a": "(Tag -> String -> a -> Boolean)",
-      "Config": "{ change :: a -> b, check :: PartyPredicate a, decorate :: Decorator a, effect :: SideEffect b, mirror :: Mirror a b, seed :: String }"
+      "src/Predicate.mad#PartyPredicate a": "(Tag -> String -> a -> Boolean)",
+      "src/Decorator.mad#Decorator a": "(String -> Tag -> String -> a -> String)",
+      "SideEffect a": "(String -> a -> a)"
     },
     "apiInterfaces": {},
     "apiNames": {
-      "decorateWithStyleAndDate": "String -> Tag -> String -> a -> String",
-      "keyedEnv": "Show String => #[String, String] -> { change :: String -> String, check :: Tag -> String -> String -> Boolean, decorate :: String -> Tag -> String -> String -> String, effect :: String -> String -> String, mirror :: Maybe { decorate :: String -> Tag -> String -> String -> String, effect :: String -> String -> String }, seed :: String } -> Tag -> String -> String -> String",
+      "src/Decorator.mad#colorizeTag": "String -> Tag -> String",
+      "src/Decorator.mad#SPACE_ARROW": "String",
+      "keyedEnv": "Show a => #[String, String] -> { change :: a -> b, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b, seed :: String } -> Tag -> String -> a -> a",
+      "src/Decorator.mad#none": "String -> Tag -> String -> a -> String",
       "src/Env.mad#getEnvWithKey": "String -> Dictionary String String -> List TagQuery",
-      "configurate": "(String -> Tag -> String -> a -> String) -> (String -> b -> b) -> (a -> b) -> (Tag -> String -> a -> Boolean) -> Maybe { decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b } -> { change :: a -> b, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b, mirror :: Maybe { decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b }, seed :: String }",
-      "decorateWithDate": "String -> Tag -> String -> a -> String",
-      "partyBusWithLog": "Show String => Maybe String -> List TagQuery -> { change :: String -> String, check :: Tag -> String -> String -> Boolean, decorate :: String -> Tag -> String -> String -> String, effect :: String -> String -> String, mirror :: Maybe { decorate :: String -> Tag -> String -> String -> String, effect :: String -> String -> String }, seed :: String } -> Tag -> String -> String -> String",
-      "src/File.mad#barrage": "String -> List String -> List String",
-      "confMirror": "a -> { ...base, mirror :: a } -> { ...base, mirror :: a }",
-      "colorizeTag": "String -> Tag -> String",
-      "DEFAULT_CONFIG": "Show a => { change :: a -> a, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> a -> a, mirror :: Maybe { decorate :: String -> Tag -> String -> a -> String, effect :: String -> a -> a }, seed :: String }",
-      "bus": "Show String => { change :: String -> String, check :: Tag -> String -> String -> Boolean, decorate :: String -> Tag -> String -> String -> String, effect :: String -> String -> String, mirror :: Maybe { decorate :: String -> Tag -> String -> String -> String, effect :: String -> String -> String }, seed :: String } -> Tag -> String -> String -> String",
-      "signalWithConfig": "Show a => { change :: a -> b, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b, mirror :: Maybe { decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b }, seed :: String } -> Tag -> String -> a -> a",
-      "taggedSignal": "Show a => Tag -> String -> a -> a",
+      "src/Configuration.mad#setChange": "a -> { ...base, change :: a } -> { ...base, change :: a }",
+      "src/Decorator.mad#withColor": "String -> Tag -> String -> a -> String",
+      "src/Configuration.mad#DEFAULT_CONFIG": "Show a => { change :: a -> a, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> a -> a, seed :: String }",
+      "src/Predicate.mad#checkAgainstEnvironmentAlso": "(Tag -> a -> b -> Boolean) -> List TagQuery -> Tag -> a -> b -> Boolean",
+      "src/Predicate.mad#always": "Tag -> String -> a -> Boolean",
+      "bus": "Show a => { change :: a -> b, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b, seed :: String } -> Tag -> String -> a -> a",
+      "src/Predicate.mad#never": "Tag -> String -> a -> Boolean",
+      "signalWithConfig": "Show a => { change :: a -> b, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b, seed :: String } -> Tag -> String -> a -> a",
+      "src/Configuration.mad#setSeed": "a -> { ...base, seed :: a } -> { ...base, seed :: a }",
       "tag": "String -> Tag",
-      "DATED_CONFIG": "Show a => { change :: a -> a, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> a -> a, mirror :: Maybe { decorate :: String -> Tag -> String -> a -> String, effect :: String -> a -> a }, seed :: String }",
-      "configurateWithSeed": "String -> (String -> Tag -> String -> a -> String) -> (String -> b -> b) -> (a -> b) -> (Tag -> String -> a -> Boolean) -> Maybe { decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b } -> { change :: a -> b, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b, mirror :: Maybe { decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b }, seed :: String }",
-      "pushTag": "String -> Tag -> Tag",
-      "decorateRaw": "String -> Tag -> String -> a -> String",
       "createTags": "Functor m => String -> m (List String) -> m Tag",
+      "src/Configuration.mad#setEffect": "a -> { ...base, effect :: a } -> { ...base, effect :: a }",
       "signal": "Show a => Tag -> String -> a -> a",
-      "STYLED_CONFIG": "Show a => { change :: a -> a, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> a -> a, mirror :: Maybe { decorate :: String -> Tag -> String -> a -> String, effect :: String -> a -> a }, seed :: String }",
-      "confCheck": "a -> { ...base, check :: a } -> { ...base, check :: a }",
-      "envFrom": "Show String => Dictionary String String -> #[String, String] -> { change :: String -> String, check :: Tag -> String -> String -> Boolean, decorate :: String -> Tag -> String -> String -> String, effect :: String -> String -> String, mirror :: Maybe { decorate :: String -> Tag -> String -> String -> String, effect :: String -> String -> String }, seed :: String } -> Tag -> String -> String -> String",
-      "confSeed": "a -> { ...base, seed :: a } -> { ...base, seed :: a }",
-      "checkEnvironment": "List TagQuery -> Tag -> Boolean",
-      "src/File.mad#shout": "String -> String -> String",
-      "confEffect": "a -> { ...base, effect :: a } -> { ...base, effect :: a }",
-      "jsonL": "a -> Tag -> String -> String -> String",
-      "confDecorator": "a -> { ...base, decorate :: a } -> { ...base, decorate :: a }",
-      "decorateWithStyle": "String -> Tag -> String -> a -> String",
+      "src/Decorator.mad#withColorAndDate": "String -> Tag -> String -> a -> String",
+      "envFrom": "Show a => Dictionary String String -> #[String, String] -> { change :: a -> b, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b, seed :: String } -> Tag -> String -> a -> a",
+      "src/Decorator.mad#withDate": "String -> Tag -> String -> a -> String",
+      "ENV_VARS": "#[String, String]",
+      "src/Configuration.mad#setCheck": "a -> { ...base, check :: a } -> { ...base, check :: a }",
+      "partyBus": "Show a => List TagQuery -> { change :: a -> b, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> b -> b, seed :: String } -> Tag -> String -> a -> a",
       "tagWithScope": "String -> List String -> Tag",
-      "dateTaggedSignal": "Show a => Tag -> String -> a -> a",
-      "env": "Show String => Tag -> String -> String -> String",
-      "tap": "(String -> a -> a) -> String -> (b -> a) -> b -> b",
-      "always": "Tag -> String -> a -> Boolean",
-      "src/File.mad#createSink": "String -> { end :: {} -> {}, write :: String -> {} }",
-      "confChange": "a -> { ...base, change :: a } -> { ...base, change :: a }"
+      "src/Decorator.mad#ARROW": "String",
+      "env": "Show a => Tag -> String -> a -> a",
+      "tap": "(a -> b -> c) -> a -> (d -> b) -> d -> d",
+      "src/Configuration.mad#configurate": "(String -> Tag -> String -> a -> String) -> (String -> a -> a) -> (a -> a) -> (Tag -> String -> a -> Boolean) -> { change :: a -> a, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> a -> a, seed :: String }",
+      "src/Configuration.mad#configurateWithSeed": "String -> (String -> Tag -> String -> a -> String) -> (String -> a -> a) -> (a -> a) -> (Tag -> String -> a -> Boolean) -> { change :: a -> a, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> a -> a, seed :: String }",
+      "src/Configuration.mad#setDecorator": "a -> { ...base, decorate :: a } -> { ...base, decorate :: a }",
+      "src/Configuration.mad#STYLED_CONFIG": "Show a => { change :: a -> a, check :: Tag -> String -> a -> Boolean, decorate :: String -> Tag -> String -> a -> String, effect :: String -> a -> a, seed :: String }",
+      "src/Predicate.mad#checkEnvironment": "List TagQuery -> Tag -> Boolean"
     },
-    "apiTypes": {
-      "StreamMode": [
-        "EagerStream",
-        "LazyStream"
-      ],
-      "src/Error.mad#PartyFoul": [
-        "ExecutableNotFound",
-        "UnableToCreatePath",
-        "UnableToWriteFile",
-        "PathDoesNotExist"
-      ],
-      "PartyEvent a": [
-        "PartyEvent DateTime Tag a"
-      ],
-      "FlushMode": [
-        "EagerFlush",
-        "LazyFlush"
-      ]
-    }
+    "apiTypes": {}
   },
   "versionHash": "25e64aa754c310d45c1e084d574c1bb0"
 }

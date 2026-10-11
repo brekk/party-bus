@@ -20,15 +20,12 @@
       "version": "3.0.0",
       "versionHash": "51fcac2d9036ff81628df5d57425329b"
     },
-    "https://github.com/brekk/party-bus/archive/refs/tags/v0.0.9.zip": {
-      "buildHash": "19488e8e804f79e9328dc37802ce8d6a",
-      "dependencies": [
-        "https://github.com/brekk/dye/archive/refs/tags/v0.0.10.zip",
-        "https://github.com/brekk/study/archive/refs/tags/v0.0.7.zip"
-      ],
-      "name": "PartyBus",
-      "version": "0.0.9",
-      "versionHash": "0fe62b963ce472b48dfecf0855803fec"
+    "https://github.com/brekk/pyrite/archive/refs/tags/v2.0.0.zip": {
+      "buildHash": "f6dd822e333f8f25d371306e5e302e3e",
+      "dependencies": [],
+      "name": "pyrite",
+      "version": "2.0.0",
+      "versionHash": "add4637b08ec0c8edf8664cd1f96e737"
     },
     "https://github.com/brekk/study/archive/refs/tags/v0.0.8.zip": {
       "buildHash": "26036373971967d8901f3af3c43d0c49",

@@ -1,0 +1,223 @@
+import Fn from "Function"
+import {} from "Json"
+import Parser from "Json/Parse"
+import Printer from "Json/Print"
+import Maybe from "Maybe"
+import String from "String"
+
+import Study from "Study"
+
+import Json from "@/Json"
+import PartyBus from "@/PartyBus"
+import Pred from "@/Predicate"
+
+
+
+singletonToTaggedJson = (t) => Printer.object([
+  #[
+    "tag",
+    pipe(
+      show,
+      Printer.string,
+    )(t),
+  ],
+])
+// }
+type PepperKind = Habanero | Bell | Jalapeno | Thai
+instance Scan PepperKind {
+  scan = pipe(
+    String.toLower,
+    (x) => if (x == "habanero") {
+      of(Habanero)
+    } else if (x == "bell") {
+      of(Bell)
+    } else if (x == "jalapeno") {
+      of(Jalapeno)
+    } else if (x == "thai") {
+      of(Thai)
+    } else {
+      Maybe.Nothing
+    },
+  )
+}
+pepperFromTag = pipe(
+  scan,
+  map(Parser.succeed),
+  Maybe.fromMaybe(Parser.fail("Unknown Pepper")),
+)
+taggedFromJson = (construct) => pipe(
+  Parser.field("tag"),
+  chain(construct),
+)(Parser.string)
+instance Json PepperKind {
+  fromJson = taggedFromJson(pepperFromTag)
+
+  toJson = singletonToTaggedJson
+}
+type CheeseKind = Mozzarella | Jack | Cheddar | Feta
+instance Scan CheeseKind {
+  scan = pipe(
+    String.toLower,
+    (x) => if (x == "jack") {
+      of(Jack)
+    } else if (x == "cheddar") {
+      of(Cheddar)
+    } else if (x == "feta") {
+      of(Feta)
+    } else if (x == "mozzarella") {
+      of(Mozzarella)
+    } else {
+      Maybe.Nothing
+    },
+  )
+}
+cheeseFromTag = pipe(
+  scan,
+  map(Parser.succeed),
+  Maybe.fromMaybe(Parser.fail("Unknown Cheese")),
+)
+instance Json CheeseKind {
+  fromJson = taggedFromJson(cheeseFromTag)
+
+  toJson = singletonToTaggedJson
+}
+type Ingredient
+  = Pepperoni
+  | Cheese(CheeseKind)
+  | Pepper(PepperKind)
+  | Onion
+  | Sausage
+  | Chicken
+  | Olive
+  | Corn
+  | Potato
+  | Bacon
+  | Tomato
+  | Garlic
+hasParens = Fn.both(String.match("\\("), String.endsWith(")"))
+instance Scan Ingredient {
+  scan = pipe(
+    String.toLower,
+    (x) => if (String.startsWith("cheese", x)) {
+      if (hasParens(x)) {
+        pipe(
+          String.dropLast(1),
+          scan,
+        )(x)
+      } else {
+        of(Cheese(Mozzarella))
+      }
+    } else if (x == "pepperoni") {
+      of(Pepperoni)
+    } else if (String.startsWith("pepper", x)) {
+      if (hasParens(x)) {
+        pipe(
+          String.dropLast(1),
+          scan,
+        )(x)
+      } else {
+        of(Pepper(Habanero))
+      }
+    } else if (x == "onion") {
+      of(Onion)
+    } else if (x == "sausage") {
+      of(Sausage)
+    } else if (x == "chicken") {
+      of(Chicken)
+    } else if (x == "olive") {
+      of(Olive)
+    } else if (x == "corn") {
+      of(Corn)
+    } else if (x == "tomato") {
+      of(Tomato)
+    } else if (x == "potato") {
+      of(Potato)
+    } else if (x == "bacon") {
+      of(Bacon)
+    } else if (x == "garlic") {
+      of(Garlic)
+    } else {
+      Maybe.Nothing
+    },
+  )
+}
+ingredientFromTag = (x) => if (x == "Cheese") {
+  Parser.map1(Cheese, Parser.field("kind", fromJson))
+} else if (x == "Pepper") {
+  Parser.map1(Pepper, Parser.field("kind", fromJson))
+} else {
+  pipe(
+    scan,
+    map(Parser.succeed),
+    Maybe.fromMaybe(Parser.fail("Unknown ingredient")),
+  )(x)
+}
+instance Json Ingredient {
+  fromJson = taggedFromJson(ingredientFromTag)
+
+  toJson = (t) => where(t) {
+    Cheese(k) =>
+      Printer.object([#["tag", Printer.string("Cheese")], #["kind", singletonToTaggedJson(k)]])
+
+    Pepper(k) =>
+      Printer.object([#["tag", Printer.string("Pepper")], #["kind", singletonToTaggedJson(k)]])
+
+    _ =>
+      singletonToTaggedJson(t)
+  }
+}
+type Pizza = Pizza(String, Float, List Ingredient)
+instance Json Pizza {
+  fromJson = pizzaParser
+
+  toJson = pizzaToJson
+}
+// squad goals
+pizzaParser = Parser.map3(
+  Pizza,
+  Parser.field("name", fromJson),
+  Parser.field("cost", fromJson),
+  Parser.field("ingredients", fromJson),
+)
+name = where {
+  Pizza(n, _, _) =>
+    n
+}
+price = where {
+  Pizza(_, p, _) =>
+    p
+}
+ingredients = where {
+  Pizza(_, _, i) =>
+    i
+}
+pizzaToJson = (x) => Printer.object([
+  #[
+    "name",
+    pipe(
+      name,
+      Printer.string,
+    )(x),
+  ],
+  #[
+    "age",
+    pipe(
+      price,
+      Printer.float,
+    )(x),
+  ],
+  #[
+    "ingredients",
+    pipe(
+      ingredients,
+      Printer.list(toJson),
+    )(x),
+  ],
+])
+salamiScharf = Pizza("Salami Scharf", 14.95, [Pepper(Habanero), Bacon, Corn, Cheese(Mozzarella)])
+checkSignal = Study.report(Study.caseN4(Json.signalWithConfig), "signalWithConfig")
+checkSignal([
+  #[#[Json.DEFAULT_CONFIG, PartyBus.tag("yo"), "ahoy", "raw"], "raw"],
+  #[#[{ ...Json.DEFAULT_CONFIG, check: Pred.never }, PartyBus.tag("yo"), "ahoy", "raw"], "raw"],
+])
+checkSignal([#[#[Json.DEFAULT_CONFIG, PartyBus.tag("yo"), "ahoy", salamiScharf], salamiScharf]])

@@ -34,7 +34,6 @@ export signalWithConfig = ({ seed, decorate, effect, check, change }, tg, messag
 )
 signal :: Show a => Tag -> String -> a -> a
 export signal = signalWithConfig(Config.DEFAULT_CONFIG)
-export dateTaggedSignal = signalWithConfig(Config.STYLED_CONFIG)
 partyBus :: Show a => List Freitag.TagQuery -> PartyBusConfig a b -> Tag -> String -> a -> a
 export partyBus = (legend, config) => pipe(
   Config.setCheck(Predicate.checkAgainstEnvironmentAlso(config.check, legend)),

@@ -3,14 +3,14 @@ import Fn from "Function"
 import IO from "IO"
 import List from "List"
 import String from "String"
-import { assertEquals, test } from "Test"
 
+import Study from "Study"
 import Dye from "dye"
 import FTag from "freitag/Tag"
 
 import Config from "@/Configuration"
 import Decorator from "@/Decorator"
-import { signalWithConfig } from "@/PartyBus"
+import PB from "@/PartyBus"
 import Predicate from "@/Predicate"
 
 
@@ -19,32 +19,30 @@ tag = pipe(
   of,
   FTag.create,
 )
-test("always", () => assertEquals(Predicate.always(tag("unimportant"), "nothing", true), true))
-test(
+Study.report(
+  Study.caseN3(Predicate.always),
+  "always",
+  [#[#[tag("unimportant"), "nothing", true], true]],
+)
+Study.report(
+  Config.configurate(Decorator.none, IO.pTrace, Fn.identity),
   "configurate",
-  () => do {
-    return assertEquals(
-      IO.pTrace(
-        "RAW",
-        Config.configurate(Decorator.none, IO.pTrace, Fn.identity, Predicate.always),
-      ),
-      Config.DEFAULT_CONFIG,
-    )
-  },
+  [#[Predicate.always, Config.DEFAULT_CONFIG]],
 )
-test(
+Study.report(
+  Study.caseN4(Decorator.none),
   "decorateRaw",
-  () => assertEquals(Decorator.none("party-bus", tag("yo"), "cool", "blah"), "cool"),
+  [#[#["party-bus", tag("yo"), "cool", "blah"], "cool"]],
 )
-test(
-  "withColor",
-  () => assertEquals(
-    pipe(
-      Decorator.withColor("party-bus", $, "yo", "blah"),
-      Dye.stripAnsi,
-    )(tag("silly")),
-    " silly  yo",
+Study.report(
+  pipe(
+    tag,
+    Decorator.withColor("party-bus", $, "yo", "blah"),
+    Dye.stripAnsi,
+    String.trim,
   ),
+  "withColor",
+  [#["silly", "silly  yo"]],
 )
 skipDateInStyledString = pipe(
   Dye.stripAnsi,
@@ -55,15 +53,26 @@ skipDateInStyledString = pipe(
   map(String.fromList),
   String.unwords,
 )
-test(
-  "decorateWithStyleAndDate",
-  () => assertEquals(
-    pipe(
-      Decorator.withColorAndDate("party-bus", tag("hey"), "yo"),
-      skipDateInStyledString,
-    )("blah"),
-    " hey " ++ Decorator.SPACE_ARROW ++ "yo",
+Study.report(
+  pipe(
+    Decorator.withColorAndDate("party-bus", tag("hey"), "yo"),
+    skipDateInStyledString,
   ),
+  "decorateWithStyleAndDate",
+  [#["blah", " hey " ++ Decorator.SPACE_ARROW ++ "yo"]],
+)
+skipDateInUnstyledString = pipe(
+  String.words,
+  List.takeLast(1),
+  String.unwords,
+)
+Study.report(
+  pipe(
+    Decorator.withDate("party-bus", tag("hey"), $, "blah"),
+    skipDateInUnstyledString,
+  ),
+  "decorateWithDate",
+  [#["yo", "yo"]],
 )
 binaryIdentity = (_, b) => b
 MY_CONF = {
@@ -73,32 +82,23 @@ MY_CONF = {
   change: Config.STYLED_CONFIG.change,
   check: Config.STYLED_CONFIG.check,
 }
-test(
+Study.report(
+  PB.signalWithConfig(MY_CONF, tag("yo"), "blah"),
   "STYLED_CONFIG-ish / taggedSignal-ish",
-  () => {
-    return assertEquals(signalWithConfig(MY_CONF, tag("yo"), "blah", "raw"), "raw")
-  },
+  [#["raw", "raw"]],
 )
-test(
-  "DEFAULT_CONFIG-ish / signal-ish",
-  () => do {
-    return assertEquals(
-      pipe(
-        signalWithConfig(MY_CONF, tag("yo"), "blah"),
-      )("raw"),
-      "raw",
-    )
-  },
+Study.report(
+  PB.signal(tag("yo"), "blah"),
+  "STYLED_CONFIG-ish / taggedSignal-ish",
+  [#["raw", "raw"]],
 )
-test(
-  "confDecorator + confChange + confSeed",
-  () => do {
-    conf = pipe(
-      Config.setSeed("ahoy"),
-      Config.setDecorator(Decorator.none),
-      Config.setChange((_) => "x"),
-    )(Config.DEFAULT_CONFIG)
-    _ <- assertEquals(conf.decorate("ahoy", tag("a"), "b", "c"), "b")
-    return assertEquals(conf.change("hello?"), "x")
-  },
+customTestConfig = pipe(
+  Config.setSeed("ahoy"),
+  Config.setDecorator(Decorator.none),
+  Config.setChange((_) => "x"),
+)(Config.DEFAULT_CONFIG)
+Study.report(
+  Study.caseN4(customTestConfig.decorate),
+  "decorate",
+  [#[#["ahoy", tag("a"), "b", "c"], "b"]],
 )

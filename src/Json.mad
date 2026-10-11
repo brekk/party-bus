@@ -16,6 +16,7 @@ import Tag from "freitag/Tag"
 import Env from "@/Env"
 import _File from "@/File"
 import PartyBus from "@/PartyBus"
+import Pred from "@/Predicate"
 
 
 
@@ -23,7 +24,7 @@ export alias Serializer a = a -> JV.Value
 export alias SerialConverter a = Tag -> String -> a -> JV.Value
 export alias JsonEffect = JV.Value -> {}
 export alias JsonConfig raw = {
-  check :: PartyBus.PartyPredicate raw,
+  check :: Pred.PartyPredicate raw,
   convert :: SerialConverter raw,
   effect :: JsonEffect,
 }
@@ -61,13 +62,17 @@ export jsonL = (tg, m, v) => Print.object([
   #["value", toJson(v)],
 ])
 // our primary effect, shouting values into a json file
+// we need long ass lines as newlines aren't allowed in JSONL
 jsonPrint :: String -> JV.Value -> {}
-export jsonPrint = (logFile, jjjjjjj) => pipe(
-  // we need long ass lines as newlines aren't allowed in JSONL
-  Print.printJson(100000000000000000),
+export jsonPrint = (logFile) => pipe(
+  Print.printJson(100000000),
   _File.shout(logFile),
   Fn.always({}),
-)(jjjjjjj)
+)
+export writeToFileEffect = (ref) => {
+  logFile = ref ?? ""
+  return String.isEmpty(logFile) ? (_) => {} : jsonPrint(logFile)
+}
 // the analog to `partyBus` in `PartyBus.mad`
 partyCabinet :: Json a => Maybe String
   -> List Freitag.TagQuery
@@ -76,15 +81,11 @@ partyCabinet :: Json a => Maybe String
   -> String
   -> a
   -> a
-export partyCabinet = (logRef, legend, config, t, msg, x) => {
-  logFile = logRef ?? ""
-  effect = String.isEmpty(logFile) ? (_) => {} : jsonPrint(logFile)
-  return signalWithConfig(
-    { convert: jsonL, check: PartyBus.checkAgainstEnvironmentAlso(config.check, legend), effect },
-    t,
-    msg,
-  )(x)
-}
+export partyCabinet = (logRef, legend, { check, convert }) => signalWithConfig({
+  convert,
+  check: Pred.checkAgainstEnvironmentAlso(check, legend),
+  effect: writeToFileEffect(logRef),
+})
 envFrom :: Json a => Dictionary String String
   -> #[String, String]
   -> JsonConfig a
@@ -92,22 +93,14 @@ envFrom :: Json a => Dictionary String String
   -> String
   -> a
   -> a
-export envFrom = (envDict, #[key, fileHook], config, t, msg, x) => partyCabinet(
+export envFrom = (envDict, #[key, fileHook]) => partyCabinet(
   Dict.get(fileHook, Process.Env),
   Env.getEnvWithKey(key, envDict),
-  config,
-  t,
-  msg,
-  x,
 )
 keyedEnv :: Json a => #[String, String] -> JsonConfig a -> Tag -> String -> a -> a
 export keyedEnv = envFrom(Process.Env)
 DEFAULT_CONFIG :: Json a => JsonConfig a
-export DEFAULT_CONFIG = {
-  check: PartyBus.always,
-  effect: (_) => {},
-  convert: (_, _, a) => toJson(a),
-}
+export DEFAULT_CONFIG = { check: Pred.always, effect: (_) => {}, convert: jsonL }
 bus :: Json a => JsonConfig a -> Tag -> String -> a -> a
 export bus = keyedEnv(PartyBus.ENV_VARS)
 export env = bus(DEFAULT_CONFIG)

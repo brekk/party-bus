@@ -27,12 +27,14 @@ export createSink = (f) => {
   return { write: sinkWrite(f), end: () => sinkEnd(f) }
 }
 #endif
+shout :: String -> String -> String
 export shout = (x, s) => {
   sink = createSink(x)
   sink.write(s)
   sink.end()
   return s
 }
+barrage :: String -> List String -> List String
 export barrage = (x, ts) => {
   sink = createSink(x)
   List.forEach(sink.write, ts)

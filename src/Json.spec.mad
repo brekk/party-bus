@@ -2,10 +2,14 @@ import Fn from "Function"
 import {} from "Json"
 import Parser from "Json/Parse"
 import Printer from "Json/Print"
+import { Just } from "Maybe"
 import Maybe from "Maybe"
+import Process from "Process"
 import String from "String"
 
 import Study from "Study"
+import Freitagged from "freitag"
+import Freitag from "freitag/Tag"
 
 import Json from "@/Json"
 import PartyBus from "@/PartyBus"
@@ -221,3 +225,19 @@ checkSignal([
   #[#[{ ...Json.DEFAULT_CONFIG, check: Pred.never }, PartyBus.tag("yo"), "ahoy", "raw"], "raw"],
 ])
 checkSignal([#[#[Json.DEFAULT_CONFIG, PartyBus.tag("yo"), "ahoy", salamiScharf], salamiScharf]])
+FIXTURE = "./test2.log"
+Study.report(
+  Json.partyCabinet(
+    Just(FIXTURE),
+    [Freitagged.AnyTag],
+    Json.DEFAULT_CONFIG,
+    Freitag.Tag(["test"]),
+    "test",
+  ),
+  "partyCabinet",
+  [#[32.03, 32.03]],
+)
+afterAll = () => pipe(
+  Process.exec("rm", [FIXTURE]),
+  map(Fn.always({})),
+)(Process.DEFAULT_COMMAND_OPTIONS)

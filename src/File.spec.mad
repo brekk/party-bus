@@ -1,0 +1,21 @@
+import File from "File"
+import Fn from "Function"
+import Process from "Process"
+
+import Study from "Study"
+
+import _File from "@/File"
+
+
+
+FILE = "./test.log"
+Study.report(Study.caseN2(_File.shout), "shout", [#[#[FILE, "BLAHBLAHBLAH"], "BLAHBLAHBLAH"]])
+Study.report(
+  _File.barrage(FILE),
+  "shout",
+  [#[["hooray", "hooray", "hooray"], ["hooray", "hooray", "hooray"]]],
+)
+afterAll = () => pipe(
+  Process.exec("rm", ["./test.log"]),
+  map(Fn.always({})),
+)(Process.DEFAULT_COMMAND_OPTIONS)

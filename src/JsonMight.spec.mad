@@ -56,3 +56,30 @@ Study.report(
   "one effect per signal",
   [#[3, 3]],
 )
+mkEagerConfig = (n, shouldCheck) => (
+  {
+    check: (_, _, _) => shouldCheck,
+    convert: (_, m, _) => Print.string(m),
+    effect: (_) => Might.run(Baton.changeDrop((c) => c + 1, n)),
+  }
+)
+Study.report(
+  (shouldCheck) => {
+    n = Baton.baton(0)
+    out = Json.signalWithConfig(mkEagerConfig(n, shouldCheck), t, "hi", 1)
+    return #[out, Might.run(Baton.grab(n))]
+  },
+  "Json.signalWithConfig (eager) logs through the lift",
+  [#[true, #[1, 1]], #[false, #[1, 0]]],
+)
+Study.report(
+  (_) => {
+    n = Baton.baton(0)
+    sig = Json.signalWithConfig(mkEagerConfig(n, true), t)
+    sig("a", 1)
+    sig("b", 2)
+    return Might.run(Baton.grab(n))
+  },
+  "Json.signalWithConfig (eager) partial application",
+  [#[0, 2]],
+)

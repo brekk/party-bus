@@ -72,3 +72,35 @@ Study.report(
   "delay defers",
   [#[0, #[0, 1]]],
 )
+mkEagerConfig = (log, shouldCheck) => (
+  {
+    seed: "s",
+    decorate: Dec.none,
+    check: (_, _, _) => shouldCheck,
+    change: (n) => n * 2,
+    effect: (_, y) => {
+      Might.run(Baton.changeDrop((xs) => xs ++ [y], log))
+      return y
+    },
+  }
+)
+Study.report(
+  (shouldCheck) => {
+    log = Baton.baton([])
+    out = PartyBus.signalWithConfig(mkEagerConfig(log, shouldCheck), t, "hi", 2)
+    return #[out, Might.run(Baton.grab(log))]
+  },
+  "signalWithConfig (eager) logs through the lift",
+  [#[true, #[2, [4]]], #[false, #[2, []]]],
+)
+Study.report(
+  (_) => {
+    log = Baton.baton([])
+    sig = PartyBus.signalWithConfig(mkEagerConfig(log, true), t)
+    sig("a", 1)
+    sig("b", 2)
+    return Might.run(Baton.grab(log))
+  },
+  "signalWithConfig (eager) partial application",
+  [#[0, [2, 4]]],
+)

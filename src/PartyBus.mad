@@ -45,7 +45,7 @@ delay :: SideEffect a -> MightEffect a
 export delay = (effect, msg, x) => Might.Might(
   () => {
     effect(msg, x)
-    return x
+    return {}
   },
 )
 sinks :: List (MightEffect a) -> MightEffect a

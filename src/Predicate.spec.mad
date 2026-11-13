@@ -1,0 +1,12 @@
+import Study from "Study"
+import Tag from "freitag/Tag"
+
+import Pred from "@/Predicate"
+
+
+
+Study.report(
+  Pred.checkAgainstEnvironmentAlso((_, _, _) => true, [], Tag.create(["barf"]), "yes"),
+  "checkAgainstEnvironmentAlso",
+  [#["cool", false]],
+)

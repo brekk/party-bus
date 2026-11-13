@@ -9,7 +9,10 @@ import String from "String"
 
 import Study from "Study"
 import Freitagged from "freitag"
+import Tag from "freitag/Tag"
 import Freitag from "freitag/Tag"
+import Might from "might"
+import Baton from "might/Baton"
 
 import Json from "@/Json"
 import PartyBus from "@/PartyBus"
@@ -236,6 +239,24 @@ Study.report(
   ),
   "partyCabinet",
   [#[32.03, 32.03]],
+)
+mkConfig = (n, shouldCheck) => (
+  {
+    check: (_, _, _) => shouldCheck,
+    convert: (_, m, _) => Printer.string(m),
+    effect: (_) => Baton.changeDrop((c) => c + 1, n),
+  }
+)
+Study.report(
+  (shouldCheck) => Might.run(
+    do {
+      n <- Baton.might(0)
+      _ <- Json.signalWithConfigM(mkConfig(n, shouldCheck), Tag.NoTag, "hi", 1)
+      return Baton.grab(n)
+    },
+  ),
+  "signalWithConfigM runs the sink only when check passes",
+  [#[true, 1], #[false, 0]],
 )
 afterAll = () => pipe(
   Process.exec("rm", [FIXTURE]),

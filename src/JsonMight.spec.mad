@@ -1,0 +1,58 @@
+import Print from "Json/Print"
+
+import List from "List"
+import Study from "Study"
+import Tag from "freitag/Tag"
+import Might from "might"
+import Baton from "might/Baton"
+
+import Json from "@/Json"
+
+
+
+t = Tag.create(["t"])
+mkConfig = (n, shouldCheck) => (
+  {
+    check: (_, _, _) => shouldCheck,
+    convert: (_, m, _) => Print.string(m),
+    effect: (_) => Baton.changeDrop((c) => c + 1, n),
+  }
+)
+Study.report(
+  (shouldCheck) => Might.run(
+    do {
+      n <- Baton.might(0)
+      _ <- Json.signalWithConfigM(mkConfig(n, shouldCheck), t, "hi", 1)
+      return Baton.grab(n)
+    },
+  ),
+  "Json.signalWithConfigM",
+  [#[true, 1], #[false, 0]],
+)
+Study.report(
+  (_) => Might.run(
+    do {
+      n <- Baton.might(0)
+      _ <- Might.mighty(Json.signalWithConfigM(mkConfig(n, true), t, "hi", 1))
+      return Baton.grab(n)
+    },
+  ),
+  "Json.signalWithConfigM defers until run",
+  [#[0, 0]],
+)
+// /*
+// effect fires once per signal
+Study.report(
+  (k) => Might.run(
+    do {
+      n <- Baton.might(0)
+      _ <- Might.forEach(
+        (_) => Json.signalWithConfigM(mkConfig(n, true), t, "hi", {}),
+        List.range(0, k),
+      )
+      return Baton.grab(n)
+    },
+  ),
+  "one effect per signal",
+  [#[3, 3]],
+)

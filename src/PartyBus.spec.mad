@@ -1,17 +1,54 @@
-import { caseN3, report } from "Study"
+import Fn from "Function"
+
+import Study from "Study"
 import { create } from "freitag/Tag"
+import Might from "might"
+import Baton from "might/Baton"
 
 import Config from "@/Configuration"
-import { createTags, envFrom, tag, tagWithScope } from "@/PartyBus"
+import Dec from "@/Decorator"
+import { createTags, envFrom, signalWithConfigM, tag, tagWithScope } from "@/PartyBus"
+import Pred from "@/Predicate"
 
 
 
+mkConfig = (log) => (
+  {
+    seed: "s",
+    decorate: Dec.none,
+    check: Pred.always,
+    change: Fn.identity,
+    effect: (msg, _) => Baton.changeDrop((xs) => xs ++ [msg], log),
+  }
+)
+Study.report(
+  (_) => Might.run(
+    do {
+      log <- Baton.might([])
+      _ <- signalWithConfigM(mkConfig(log), tag("t"), "hello", 1)
+      return Baton.grab(log)
+    },
+  ),
+  "signalWithConfigM runs the sink",
+  [#[0, ["hello"]]],
+)
+Study.report(
+  (_) => Might.run(
+    do {
+      log <- Baton.might([])
+      _ <- Might.mighty(signalWithConfigM(mkConfig(log), tag("t"), "hello", 1))
+      return Baton.grab(log)
+    },
+  ),
+  "signalWithConfigM defers until run",
+  [#[0, []]],
+)
 createTag = create
 TEST_ENV = {{ "DEBUG": "test:scope:detail,check,-nice" }}
-report(tag, "tag", [#["one", create(["one"])]])
-report(tagWithScope("one"), "tagWithScope", [#[["two"], create(["one", "two"])]])
-report(
-  caseN3(
+Study.report(tag, "tag", [#["one", create(["one"])]])
+Study.report(tagWithScope("one"), "tagWithScope", [#[["two"], create(["one", "two"])]])
+Study.report(
+  Study.caseN3(
     envFrom(TEST_ENV, #["DEBUG", "DEBUG_LOG"], Config.setEffect((_, x) => x, Config.STYLED_CONFIG)),
   ),
   "partyBus",
@@ -21,7 +58,7 @@ report(
     #[#[createTag(["nothing"]), "message!", "raw"], "raw"],
   ],
 )
-report(
+Study.report(
   createTags("test"),
   "createTags",
   [
@@ -36,7 +73,7 @@ report(
     ],
   ],
 )
-report(
+Study.report(
   createTags("test"),
   "createTags - Dictionary",
   [

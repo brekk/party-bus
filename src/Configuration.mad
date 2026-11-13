@@ -45,3 +45,16 @@ export STYLED_CONFIG = {
   effect: IO.pTrace,
   seed: "party-bus",
 }
+import type { Might } from "might"
+
+
+
+alias Meh = Might {}
+export alias MightEffect a = String -> a -> Meh
+export alias PartyBusConfigM raw mod = {
+  change :: raw -> mod,
+  check :: Pred.PartyPredicate raw,
+  decorate :: Dec.Decorator raw,
+  effect :: MightEffect mod,
+  seed :: String,
+}

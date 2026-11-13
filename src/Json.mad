@@ -12,6 +12,7 @@ import String from "String"
 import Dye from "dye"
 import Freitag from "freitag"
 import Tag from "freitag/Tag"
+import Might from "might"
 
 import Env from "@/Env"
 import _File from "@/File"
@@ -28,15 +29,26 @@ export alias JsonConfig raw = {
   convert :: SerialConverter raw,
   effect :: JsonEffect,
 }
-signalWithConfig :: JsonConfig a -> Tag -> String -> a -> a
-export signalWithConfig = ({ convert, effect, check }, tg, message, x) => if (
-  check(tg, message, x)
-) do {
-  effect(convert(tg, message, x))
-  return x
-} else {
-  x
+export alias JsonEffectM = JV.Value -> Might.Might {}
+export alias JsonConfigM raw = {
+  check :: Pred.PartyPredicate raw,
+  convert :: SerialConverter raw,
+  effect :: JsonEffectM,
 }
+liftJsonConfig :: JsonConfig a -> JsonConfigM a
+export liftJsonConfig = ({ check, convert, effect }) => (
+  { check, convert, effect: (v) => Might.Might(() => effect(v)) }
+)
+signalWithConfigM :: JsonConfigM a -> Tag -> String -> a -> Might.Might a
+export signalWithConfigM = ({ convert, effect, check }, tg, message, x) => (
+  !check(tg, message, x)
+    ? Might.mighty(x)
+    : chain((line) => map(() => x, effect(line)), Might.Might(() => convert(tg, message, x)))
+)
+signalWithConfig :: JsonConfig a -> Tag -> String -> a -> a
+export signalWithConfig = (config, tg, message, x) => Might.run(
+  signalWithConfigM(liftJsonConfig(config), tg, message, x),
+)
 tagToJsonList :: Tag -> JV.Value
 export tagToJsonList = pipe(
   Tag.toList,

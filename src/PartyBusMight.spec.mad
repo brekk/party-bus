@@ -1,0 +1,74 @@
+import Study from "Study"
+import Might from "might"
+// placeholder path
+import Baton from "might/Baton"
+
+import Dec from "@/Decorator"
+import PartyBus from "@/PartyBus"
+import Pred from "@/Predicate"
+
+
+
+t = PartyBus.tag("t")
+mkConfig = (log, shouldCheck) => (
+  {
+    seed: "s",
+    decorate: Dec.none,
+    check: (_, _, _) => shouldCheck,
+    change: (n) => n * 2,
+    effect: (_, y) => Baton.changeDrop((xs) => xs ++ [y], log),
+  }
+)
+Study.report(
+  (shouldCheck) => Might.run(
+    do {
+      log <- Baton.might([])
+      out <- PartyBus.signalWithConfigM(mkConfig(log, shouldCheck), t, "hi", 2)
+      logged <- Baton.grab(log)
+      return Might.mighty(#[out, logged])
+    },
+  ),
+  "signalWithConfigM",
+  [#[true, #[2, [4]]], #[false, #[2, []]]],
+)
+Study.report(
+  (_) => Might.run(
+    do {
+      log <- Baton.might([])
+      _ <- Might.mighty(PartyBus.signalWithConfigM(mkConfig(log, true), t, "hi", 2))
+      return Baton.grab(log)
+    },
+  ),
+  "signalWithConfigM defers until run",
+  [#[0, []]],
+)
+Study.report(
+  (_) => Might.run(
+    do {
+      log <- Baton.might([])
+      mark = (s) => (_, _) => Baton.changeDrop((xs) => xs ++ [s], log)
+      _ <- PartyBus.sinks([mark("a"), mark("b")], "m", 1)
+      return Baton.grab(log)
+    },
+  ),
+  "sinks order",
+  [#[0, ["a", "b"]]],
+)
+Study.report(
+  (_) => Might.run(
+    do {
+      b <- Baton.might(0)
+      eager = (_, x) => {
+        Might.run(Baton.changeDrop((n) => n + 1, b))
+        return x
+      }
+      pending = PartyBus.delay(eager, "m", {})
+      before <- Baton.grab(b)
+      _ <- pending
+      after <- Baton.grab(b)
+      return Might.mighty(#[before, after])
+    },
+  ),
+  "delay defers",
+  [#[0, #[0, 1]]],
+)

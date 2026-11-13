@@ -1,4 +1,7 @@
-import type { PartyBusConfig } from "@/Configuration"
+import type { Tag } from "freitag/Tag"
+import type { Might } from "might"
+
+import type { PartyBusConfig, PartyBusConfigM } from "@/Configuration"
 
 import List from "List"
 import Maybe from "Maybe"
@@ -27,11 +30,43 @@ export tap = (spout, msg, taproot, x) => {
   spout(msg, taproot(x))
   return x
 }
+liftConfig :: PartyBusConfig a b -> PartyBusConfigM a b
+export liftConfig = ({ seed, decorate, effect, check, change }) => (
+  { seed, decorate, check, change, effect: delay(effect) }
+)
+import Might from "might"
+
+
+
+alias Meh = Might {}
+export alias MightEffect a = String -> a -> Meh
+export alias MightSignal a = Tag -> String -> a -> Might a
+delay :: SideEffect a -> MightEffect a
+export delay = (effect, msg, x) => Might.Might(
+  () => {
+    effect(msg, x)
+    return x
+  },
+)
+sinks :: List (MightEffect a) -> MightEffect a
+export sinks = (xs, msg, x) => Might.forEach((s) => s(msg, x), xs)
+signalWithConfigM :: Show a => PartyBusConfigM a b -> MightSignal a
+export signalWithConfigM = ({ seed, decorate, effect, check, change }, tg, message, x) => if (
+  !check(tg, message, x)
+) {
+  Might.mighty(x)
+} else {
+  chain(
+    (line) => map(() => x, effect(line, change(x))),
+    Might.Might(() => decorate(seed, tg, message, x)),
+  )
+}
 ///////// The main thing that PartyBus offers, in a tiny form
 signalWithConfig :: Show a => PartyBusConfig a b -> Signal a
-export signalWithConfig = ({ seed, decorate, effect, check, change }, tg, message, x) => (
-  !check(tg, message, x) ? x : tap(effect, decorate(seed, tg, message, x), change, x)
+export signalWithConfig = (config, tg, message, x) => Might.run(
+  signalWithConfigM(liftConfig(config), tg, message, x),
 )
+// partially apply our default config
 signal :: Show a => Tag -> String -> a -> a
 export signal = signalWithConfig(Config.DEFAULT_CONFIG)
 partyBus :: Show a => List Freitag.TagQuery -> PartyBusConfig a b -> Tag -> String -> a -> a

@@ -28,7 +28,7 @@
     }
   ],
   "hooks": {
-    "postInstall": "./scripts/build-lib"
+    "postInstall": "make -C lib -j"
   },
   "staticLibs": ["lib/build/sink.a"]
 }

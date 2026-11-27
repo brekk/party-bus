@@ -10,15 +10,14 @@
       "version": "0.0.12",
       "versionHash": "c99de30e5c0b887bc1fe2f7bc115e5f0"
     },
-    "https://github.com/brekk/freitag/archive/refs/tags/v3.0.0.zip": {
-      "buildHash": "22971a48255f259498ca5785abb77cca",
+    "https://github.com/brekk/freitag/archive/refs/tags/v3.0.1.zip": {
+      "buildHash": "75cd81d88f16ba29e41e73242590a63a",
       "dependencies": [
-        "https://github.com/brekk/study/archive/refs/tags/v0.2.0.zip",
-        "https://github.com/brekk/party-bus/archive/refs/tags/v0.0.9.zip"
+        "https://github.com/brekk/study/archive/refs/tags/v0.2.0.zip"
       ],
       "name": "freitag",
-      "version": "3.0.0",
-      "versionHash": "51fcac2d9036ff81628df5d57425329b"
+      "version": "3.0.1",
+      "versionHash": "7c857b8da46d34168e42e289ee3c2deb"
     },
     "https://github.com/brekk/might/archive/refs/tags/v1.0.1.zip": {
       "buildHash": "c92fec522de872ee0efa5a08163cd52c",
@@ -29,16 +28,6 @@
       "version": "1.0.1",
       "versionHash": "60ecc75a5f6d3d7d461b025d54625712"
     },
-    "https://github.com/brekk/party-bus/archive/refs/tags/v0.0.9.zip": {
-      "buildHash": "19488e8e804f79e9328dc37802ce8d6a",
-      "dependencies": [
-        "https://github.com/brekk/dye/archive/refs/tags/v0.0.12.zip",
-        "https://github.com/brekk/study/archive/refs/tags/v0.2.0.zip"
-      ],
-      "name": "PartyBus",
-      "version": "0.0.9",
-      "versionHash": "0fe62b963ce472b48dfecf0855803fec"
-    },
     "https://github.com/brekk/study/archive/refs/tags/v0.2.0.zip": {
       "buildHash": "c6f59e03b16455c0e582e870e4668b0a",
       "dependencies": [],
@@ -48,11 +37,6 @@
     }
   },
   "resolutions": {
-    "dye": {
-      "strategy": "latestPatch",
-      "url": "https://github.com/brekk/dye/archive/refs/tags/v0.0.12.zip",
-      "version": "0.0.12"
-    },
     "study": {
       "strategy": "exact",
       "url": "https://github.com/brekk/study/archive/refs/tags/v0.2.0.zip",
